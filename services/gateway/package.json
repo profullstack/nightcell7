@@ -1,0 +1,17 @@
+{
+  "name": "@nightcell7/service-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nightcell7/observability": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}

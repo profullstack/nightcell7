@@ -1,0 +1,29 @@
+{
+  "name": "@nightcell7/service-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "hono": "^4.12.0",
+    "@hono/node-server": "^1.13.7",
+    "zod": "^3.24.1",
+    "ioredis": "^5.4.2",
+    "@nightcell7/observability": "workspace:*",
+    "@nightcell7/entitlements": "workspace:*",
+    "@nightcell7/coinpay": "workspace:*",
+    "@nightcell7/multiplayer-protocol": "workspace:*",
+    "@nightcell7/game-core": "workspace:*",
+    "@nightcell7/auth": "workspace:*",
+    "@nightcell7/content-schema": "workspace:*",
+    "@nightcell7/database": "workspace:*",
+    "bullmq": "^5.34.5",
+    "drizzle-orm": "^0.38.3"
+  }
+}

@@ -1,0 +1,43 @@
+# Alternative gateway implementation (PRD §17.1 permits Caddy OR a small
+# audited TypeScript proxy). The TypeScript proxy in services/gateway is the
+# default because it is unit-testable; this file is kept in sync as a fallback.
+#
+# ROUTE ORDER IS LOAD-BEARING: the multiplayer sync matcher must be evaluated
+# before the general /api/v1 matcher, or WebSocket upgrades get swallowed.
+{$PUBLIC_HOST:nightcell7.com} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	# 1. Realtime gameplay sync — WebSocket upgrade.
+	handle /api/v1/multiplayer/sync/* {
+		reverse_proxy {$MULTIPLAYER_UPSTREAM} {
+			header_up Host {upstream_hostport}
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	# 2. Everything else under the API.
+	handle /api/v1/* {
+		header Cache-Control "no-store"
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	# 3. The game build.
+	handle /play/* {
+		reverse_proxy {$GAME_UPSTREAM}
+	}
+	handle /play {
+		reverse_proxy {$GAME_UPSTREAM}
+	}
+
+	# 4. The marketing site.
+	handle {
+		reverse_proxy {$SITE_UPSTREAM}
+	}
+}

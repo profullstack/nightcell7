@@ -1,0 +1,15 @@
+{
+  "name": "@nightcell7/tools-multiplayer-loadtest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nightcell7/game-core": "workspace:*",
+    "@nightcell7/multiplayer-protocol": "workspace:*",
+    "@nightcell7/multiplayer-sim": "workspace:*"
+  }
+}

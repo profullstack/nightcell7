@@ -1,0 +1,4 @@
+{
+  "$comment": "MCP servers are executable code (PRD §15.5, CLAUDE.md). Pin versions, restrict the filesystem, and keep release secrets out of reach. Servers are declared here but intentionally left unconfigured until the asset-pipeline milestone.",
+  "mcpServers": {}
+}

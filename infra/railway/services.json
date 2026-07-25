@@ -1,0 +1,136 @@
+{
+  "$comment": "Declarative record of the Railway project layout (PRD §22.3). Kept in the repo so a topology change is reviewable in a pull request rather than living only in a dashboard.",
+  "project": "nightcell7",
+  "environments": ["staging", "production"],
+  "publicDomain": { "service": "gateway", "host": "nightcell7.com" },
+  "services": [
+    {
+      "name": "gateway",
+      "public": true,
+      "dockerfile": "infra/docker/node-service.Dockerfile",
+      "buildArgs": { "SERVICE": "gateway" },
+      "healthcheckPath": "/health/ready",
+      "minReplicas": 1,
+      "watchPaths": ["services/gateway/**", "packages/observability/**", "pnpm-lock.yaml"]
+    },
+    {
+      "name": "site",
+      "public": false,
+      "dockerfile": "infra/docker/site.Dockerfile",
+      "healthcheckPath": "/",
+      "minReplicas": 1,
+      "watchPaths": [
+        "apps/site/**",
+        "packages/ui/**",
+        "packages/game-core/**",
+        "packages/entitlements/**",
+        "pnpm-lock.yaml"
+      ]
+    },
+    {
+      "name": "game-web",
+      "public": false,
+      "dockerfile": "infra/docker/game-web.Dockerfile",
+      "healthcheckPath": "/health/ready",
+      "minReplicas": 1,
+      "watchPaths": [
+        "apps/game/**",
+        "packages/game-core/**",
+        "packages/multiplayer-protocol/**",
+        "packages/multiplayer-sim/**",
+        "packages/save-data/**",
+        "packages/content-schema/**",
+        "packages/ui/**",
+        "public/assets/**",
+        "pnpm-lock.yaml"
+      ]
+    },
+    {
+      "name": "api",
+      "public": false,
+      "dockerfile": "infra/docker/node-service.Dockerfile",
+      "buildArgs": { "SERVICE": "api" },
+      "healthcheckPath": "/health/ready",
+      "minReplicas": 1,
+      "watchPaths": [
+        "services/api/**",
+        "packages/entitlements/**",
+        "packages/coinpay/**",
+        "packages/auth/**",
+        "packages/database/**",
+        "packages/multiplayer-protocol/**",
+        "packages/game-core/**",
+        "packages/content-schema/**",
+        "packages/observability/**",
+        "pnpm-lock.yaml"
+      ]
+    },
+    {
+      "name": "multiplayer",
+      "public": false,
+      "dockerfile": "infra/docker/node-service.Dockerfile",
+      "buildArgs": { "SERVICE": "multiplayer" },
+      "healthcheckPath": "/health/ready",
+      "minReplicas": 1,
+      "shutdownGraceSeconds": 120,
+      "watchPaths": [
+        "services/multiplayer/**",
+        "packages/multiplayer-protocol/**",
+        "packages/multiplayer-sim/**",
+        "packages/game-core/**",
+        "packages/observability/**",
+        "pnpm-lock.yaml"
+      ]
+    },
+    {
+      "name": "worker",
+      "public": false,
+      "dockerfile": "infra/docker/node-service.Dockerfile",
+      "buildArgs": { "SERVICE": "worker" },
+      "healthcheckPath": "/health/ready",
+      "minReplicas": 1,
+      "watchPaths": [
+        "services/worker/**",
+        "packages/entitlements/**",
+        "packages/coinpay/**",
+        "packages/database/**",
+        "packages/multiplayer-protocol/**",
+        "packages/observability/**",
+        "pnpm-lock.yaml"
+      ]
+    },
+    {
+      "name": "redis",
+      "public": false,
+      "managed": "railway-redis",
+      "minReplicas": 1
+    }
+  ],
+  "cron": [
+    {
+      "name": "cron-reconcile-payments",
+      "schedule": "*/10 * * * *",
+      "command": "node dist/index.js reconcile-payments"
+    },
+    {
+      "name": "cron-expire-orders",
+      "schedule": "0 * * * *",
+      "command": "node dist/index.js expire-orders"
+    },
+    {
+      "name": "cron-cleanup-tickets",
+      "schedule": "0 */6 * * *",
+      "command": "node dist/index.js cleanup-tickets"
+    },
+    {
+      "name": "cron-cleanup-rooms",
+      "schedule": "0 */6 * * *",
+      "command": "node dist/index.js cleanup-rooms"
+    },
+    {
+      "name": "cron-audit-orphan-results",
+      "schedule": "*/30 * * * *",
+      "command": "node dist/index.js audit-orphan-results"
+    }
+  ]
+}

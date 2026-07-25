@@ -1,0 +1,25 @@
+{
+  "name": "@nightcell7/site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p ${PORT:-3000}",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "next": "^16.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@nightcell7/ui": "workspace:*",
+    "@nightcell7/game-core": "workspace:*",
+    "@nightcell7/entitlements": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.7.2"
+  }
+}
