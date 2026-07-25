@@ -4,3 +4,6 @@ out
 .next
 pnpm-lock.yaml
 public/assets
+
+# drizzle-kit generated migration metadata — regenerated, never hand-edited
+packages/database/drizzle

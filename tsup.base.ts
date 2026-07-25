@@ -23,5 +23,12 @@ export const serviceBuild: Options = {
   // not supported" the moment it lands in an ESM bundle. Bundling a workspace
   // package pulls its transitive deps in with it, so these have to be named
   // explicitly even though no service lists them directly.
-  external: ["libsql", /^@libsql\//, /^@neon-rs\//, "better-sqlite3", "bufferutil", "utf-8-validate"],
+  external: [
+    "libsql",
+    /^@libsql\//,
+    /^@neon-rs\//,
+    "better-sqlite3",
+    "bufferutil",
+    "utf-8-validate",
+  ],
 };
