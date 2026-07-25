@@ -1,4 +1,5 @@
 import type Redis from "ioredis";
+import { namespacedKey } from "@nightcell7/observability";
 
 /**
  * Route-specific rate limits (PRD §29.2, §33.3).
@@ -43,7 +44,7 @@ export class RedisRateLimiter implements RateLimiter {
 
   async consume(name: RateLimitName, subject: string): Promise<RateLimitResult> {
     const rule = RATE_LIMITS[name];
-    const key = `rl:${name}:${subject}`;
+    const key = namespacedKey("rl", name, subject);
 
     // INCR + conditional EXPIRE is a fixed window: cheap, and adequate for the
     // abuse shapes here. A sliding window would be a later refinement.

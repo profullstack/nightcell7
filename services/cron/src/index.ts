@@ -144,7 +144,7 @@ async function cleanupTickets(): Promise<void> {
   let cursor = "0";
 
   do {
-    const [next, keys] = await redis.scan(cursor, "MATCH", "ticket:*", "COUNT", 500);
+    const [next, keys] = await redis.scan(cursor, "MATCH", "nc7:ticket:*", "COUNT", 500);
     cursor = next;
     for (const key of keys) {
       scanned += 1;
@@ -167,7 +167,7 @@ async function cleanupRooms(): Promise<void> {
   let cursor = "0";
 
   do {
-    const [next, keys] = await redis.scan(cursor, "MATCH", "private:*", "COUNT", 500);
+    const [next, keys] = await redis.scan(cursor, "MATCH", "nc7:private:*", "COUNT", 500);
     cursor = next;
     for (const key of keys) {
       const ttl = await redis.ttl(key);

@@ -1,7 +1,13 @@
 import { serve } from "@hono/node-server";
 import Redis from "ioredis";
 import { Queue } from "bullmq";
-import { HealthReporter, createLogger, installGracefulShutdown } from "@nightcell7/observability";
+import {
+  BULLMQ_PREFIX,
+  HealthReporter,
+  createLogger,
+  installGracefulShutdown,
+  namespacedKey,
+} from "@nightcell7/observability";
 import { getDatabase, closeDatabase } from "@nightcell7/database";
 import { CoinpayClient } from "@nightcell7/coinpay";
 import { PROTOCOL_VERSION } from "@nightcell7/multiplayer-protocol";
@@ -33,7 +39,7 @@ const queues = new Map<string, Queue>();
 function queueFor(name: string): Queue {
   let queue = queues.get(name);
   if (!queue) {
-    queue = new Queue(name, { connection: redis });
+    queue = new Queue(name, { connection: redis, prefix: BULLMQ_PREFIX });
     queues.set(name, queue);
   }
   return queue;
@@ -80,7 +86,7 @@ const app = createApp({
   registerTicket: async (ticketId, ttlSeconds) => {
     // Registered here, consumed once by the match service. The SET NX in the
     // multiplayer service is what makes replay impossible (PRD §18.6).
-    await redis.set(`ticket:${ticketId}`, "issued", "EX", ttlSeconds);
+    await redis.set(namespacedKey("ticket", ticketId), "issued", "EX", ttlSeconds);
   },
 });
 

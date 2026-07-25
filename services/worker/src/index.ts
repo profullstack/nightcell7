@@ -1,7 +1,12 @@
 import http from "node:http";
 import { Queue, Worker, type Job } from "bullmq";
 import Redis from "ioredis";
-import { HealthReporter, createLogger, installGracefulShutdown } from "@nightcell7/observability";
+import {
+  BULLMQ_PREFIX,
+  HealthReporter,
+  createLogger,
+  installGracefulShutdown,
+} from "@nightcell7/observability";
 import { closeDatabase, getDatabase } from "@nightcell7/database";
 import type { MatchResultEvent } from "@nightcell7/multiplayer-protocol";
 import { processCoinpayEvent, type CoinpayEventJob } from "./processors/payments";
@@ -38,7 +43,7 @@ workers.push(
     async (job: Job<CoinpayEventJob>) => {
       const result = await processCoinpayEvent(db, logger.child({ jobId: job.id }), job.data, {
         enqueue: async (queue, name, payload) => {
-          await new Queue(queue, { connection }).add(name, payload, {
+          await new Queue(queue, { connection, prefix: BULLMQ_PREFIX }).add(name, payload, {
             removeOnComplete: 1000,
             attempts: 5,
             backoff: { type: "exponential", delay: 2000 },
@@ -51,7 +56,7 @@ workers.push(
       if (result.outcome === "unknown_order") return result;
       return result;
     },
-    { connection, concurrency: env.WORKER_CONCURRENCY },
+    { connection, concurrency: env.WORKER_CONCURRENCY, prefix: BULLMQ_PREFIX },
   ),
 );
 
@@ -60,7 +65,7 @@ workers.push(
     "match-results",
     async (job: Job<MatchResultEvent>) =>
       processMatchResult(db, logger.child({ jobId: job.id }), job.data, env.MATCH_RESULT_SECRET),
-    { connection, concurrency: env.WORKER_CONCURRENCY },
+    { connection, concurrency: env.WORKER_CONCURRENCY, prefix: BULLMQ_PREFIX },
   ),
 );
 
@@ -70,7 +75,7 @@ workers.push(
     async (job: Job<EmailJob>) => {
       await email.send(job.data);
     },
-    { connection, concurrency: 2 },
+    { connection, concurrency: 2, prefix: BULLMQ_PREFIX },
   ),
 );
 
@@ -81,7 +86,7 @@ workers.push(
       // Guest-claim resolution (PRD §23.4). Kept as its own queue so a claim
       // backlog cannot delay payment fulfilment.
       processClaim(db, logger.child({ jobId: job.id }), job.data, env.AUTH_SECRET),
-    { connection, concurrency: 2 },
+    { connection, concurrency: 2, prefix: BULLMQ_PREFIX },
   ),
 );
 

@@ -104,6 +104,27 @@ export function createLogger(options: LoggerOptions): Logger {
 }
 
 // --------------------------------------------------------------------------
+// Redis namespacing
+// --------------------------------------------------------------------------
+
+/**
+ * Every Redis key this product writes is prefixed.
+ *
+ * The Railway Redis is shared across many services in the same project, and
+ * BullMQ queue names like "email" or "payments" are generic enough to collide
+ * with another application's queues — which would mean one service silently
+ * consuming another's jobs. This prefix makes that impossible.
+ */
+export const REDIS_KEY_PREFIX = "nc7";
+
+/** BullMQ options that keep every queue inside our namespace. */
+export const BULLMQ_PREFIX = `${REDIS_KEY_PREFIX}:bull`;
+
+export function namespacedKey(...parts: string[]): string {
+  return [REDIS_KEY_PREFIX, ...parts].join(":");
+}
+
+// --------------------------------------------------------------------------
 // Correlation ids
 // --------------------------------------------------------------------------
 

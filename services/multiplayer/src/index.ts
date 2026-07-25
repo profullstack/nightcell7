@@ -5,7 +5,12 @@ import { RedisPresence } from "@colyseus/redis-presence";
 import { RedisDriver } from "@colyseus/redis-driver";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
-import { HealthReporter, createLogger, installGracefulShutdown } from "@nightcell7/observability";
+import {
+  BULLMQ_PREFIX,
+  HealthReporter,
+  createLogger,
+  installGracefulShutdown,
+} from "@nightcell7/observability";
 import { CONTENT_VERSION, PROTOCOL_VERSION } from "@nightcell7/multiplayer-protocol";
 import { ARDAVAN_YARD, mapChecksum } from "@nightcell7/multiplayer-sim";
 import { TDM_RULES } from "@nightcell7/game-core";
@@ -33,7 +38,7 @@ const logger = createLogger({
 const health = new HealthReporter("multiplayer", env.BUILD_VERSION, PROTOCOL_VERSION);
 
 const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
-const resultsQueue = new Queue("match-results", { connection: redis });
+const resultsQueue = new Queue("match-results", { connection: redis, prefix: BULLMQ_PREFIX });
 
 const httpServer = http.createServer((req, res) => {
   // Health endpoints are answered here so the platform can probe the process

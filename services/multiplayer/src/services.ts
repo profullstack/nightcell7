@@ -1,5 +1,6 @@
 import type Redis from "ioredis";
 import type { Queue } from "bullmq";
+import { namespacedKey } from "@nightcell7/observability";
 import { signMatchResult } from "@nightcell7/multiplayer-protocol/server";
 import type { MatchResult } from "@nightcell7/multiplayer-protocol";
 
@@ -21,14 +22,14 @@ export function createRoomServices(redis: Redis, resultsQueue: Queue): RoomServi
     async consumeTicket(ticketId) {
       // DEL returns the number of keys removed. Exactly one connection can see
       // a 1, which is the replay guard (PRD §18.6).
-      const removed = await redis.del(`ticket:${ticketId}`);
+      const removed = await redis.del(namespacedKey("ticket", ticketId));
       return removed === 1;
     },
 
     async isBanned(userId) {
       // Ban state is mirrored into Redis by the worker so the join path stays
       // fast and does not touch the durable database on every connection.
-      const value = await redis.get(`ban:${userId}`);
+      const value = await redis.get(namespacedKey("ban", userId));
       return value !== null;
     },
 
