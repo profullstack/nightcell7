@@ -7,6 +7,11 @@ build/
 coverage/
 *.tsbuildinfo
 
+# Local libSQL development databases
+*.db
+*.db-shm
+*.db-wal
+
 # Local env — never commit secrets (PRD §33.4)
 .env
 .env.*
