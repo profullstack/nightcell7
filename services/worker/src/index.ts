@@ -1,5 +1,5 @@
 import http from "node:http";
-import { Worker, type Job } from "bullmq";
+import { Queue, Worker, type Job } from "bullmq";
 import Redis from "ioredis";
 import { HealthReporter, createLogger, installGracefulShutdown } from "@nightcell7/observability";
 import { closeDatabase, getDatabase } from "@nightcell7/database";
@@ -7,6 +7,7 @@ import type { MatchResultEvent } from "@nightcell7/multiplayer-protocol";
 import { processCoinpayEvent, type CoinpayEventJob } from "./processors/payments";
 import { processMatchResult } from "./processors/match-results";
 import { createResendSender, type EmailJob } from "./processors/email";
+import { processClaim, type ClaimJob } from "./processors/claims";
 import { loadEnv } from "./env";
 
 /**
@@ -35,7 +36,17 @@ workers.push(
   new Worker(
     "payments",
     async (job: Job<CoinpayEventJob>) => {
-      const result = await processCoinpayEvent(db, logger.child({ jobId: job.id }), job.data);
+      const result = await processCoinpayEvent(db, logger.child({ jobId: job.id }), job.data, {
+        enqueue: async (queue, name, payload) => {
+          await new Queue(queue, { connection }).add(name, payload, {
+            removeOnComplete: 1000,
+            attempts: 5,
+            backoff: { type: "exponential", delay: 2000 },
+          });
+        },
+        claimSecret: env.AUTH_SECRET,
+        publicOrigin: env.PUBLIC_ORIGIN,
+      });
       // An unknown order is not retryable — retrying cannot make it exist.
       if (result.outcome === "unknown_order") return result;
       return result;
@@ -66,12 +77,10 @@ workers.push(
 workers.push(
   new Worker(
     "entitlements",
-    async (job: Job<{ token: string; userId: string }>) => {
+    async (job: Job<ClaimJob>) =>
       // Guest-claim resolution (PRD §23.4). Kept as its own queue so a claim
       // backlog cannot delay payment fulfilment.
-      logger.info("claim job received", { jobId: job.id });
-      return { status: "not_implemented" };
-    },
+      processClaim(db, logger.child({ jobId: job.id }), job.data, env.AUTH_SECRET),
     { connection, concurrency: 2 },
   ),
 );

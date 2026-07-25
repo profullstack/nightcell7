@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "infra/docker/cron.Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "node services/cron/dist/index.js reconcile-payments",
+    "restartPolicyType": "NEVER",
+    "restartPolicyMaxRetries": 10
+  }
+}

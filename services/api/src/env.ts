@@ -23,6 +23,13 @@ export const apiEnvSchema = baseEnvSchema.extend({
   COINPAY_API_KEY: z.string().min(1),
   COINPAY_WEBHOOK_SECRET: z.string().min(16),
 
+  // R2 is optional at boot so local development and CI do not need object
+  // storage; the content routes degrade to an obvious placeholder instead.
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET: z.string().default("nightcell7-content"),
+
   MULTIPLAYER_REGION: z.string().default("us-west"),
   MULTIPLAYER_SHARD: z.string().default("1"),
 });

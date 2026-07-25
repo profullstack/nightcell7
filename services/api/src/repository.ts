@@ -2,6 +2,9 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import type { Database } from "@nightcell7/database";
 import {
   devices,
+  downloads,
+  episodeVersions,
+  offlineLicenses,
   entitlementEvents,
   entitlements,
   feedback,
@@ -42,6 +45,10 @@ export interface Repositories {
 
   recordPaymentEvent(input: RecordPaymentEventInput): Promise<{ duplicate: boolean }>;
 
+  findCurrentEpisodeVersion(episodeId: string): Promise<EpisodeVersionRow | null>;
+  recordOfflineLicense(input: RecordOfflineLicenseInput): Promise<void>;
+  startDownload(input: StartDownloadInput): Promise<void>;
+
   listDevices(userId: string): Promise<DeviceRow[]>;
   revokeDevice(userId: string, deviceId: string): Promise<boolean>;
 
@@ -76,6 +83,35 @@ export interface RecordPaymentEventInput {
   orderId: string | null;
   payloadHash: string;
   receivedAt: string;
+}
+
+export interface EpisodeVersionRow {
+  id: string;
+  version: string;
+  manifestKey: string;
+  minimumGameVersion: string;
+  sizeBytes: number;
+}
+
+export interface RecordOfflineLicenseInput {
+  id: string;
+  userId: string;
+  episodeId: string;
+  deviceId: string;
+  tokenId: string;
+  issuedAt: string;
+  expiresAt: string;
+  platform: string;
+  label: string;
+}
+
+export interface StartDownloadInput {
+  id: string;
+  userId: string;
+  episodeId: string;
+  versionId: string;
+  platform: string;
+  startedAt: string;
 }
 
 export interface OrderSummary {
@@ -271,6 +307,66 @@ export function createRepositories(db: Database): Repositories {
         if (isUniqueViolation(error)) return { duplicate: true };
         throw error;
       }
+    },
+
+    async findCurrentEpisodeVersion(episodeId) {
+      // Only a published version is downloadable; a draft must never leak to a
+      // player just because the row exists.
+      const rows = await db
+        .select({
+          id: episodeVersions.id,
+          version: episodeVersions.version,
+          manifestKey: episodeVersions.manifestKey,
+          minimumGameVersion: episodeVersions.minimumGameVersion,
+          sizeBytes: episodeVersions.sizeBytes,
+        })
+        .from(episodeVersions)
+        .where(
+          and(eq(episodeVersions.episodeId, episodeId), eq(episodeVersions.status, "published")),
+        )
+        .orderBy(desc(episodeVersions.publishedAt))
+        .limit(1);
+      return rows[0] ?? null;
+    },
+
+    async recordOfflineLicense(input) {
+      await db.insert(offlineLicenses).values({
+        id: input.id,
+        userId: input.userId,
+        episodeId: input.episodeId,
+        deviceId: input.deviceId,
+        tokenId: input.tokenId,
+        issuedAt: input.issuedAt,
+        expiresAt: input.expiresAt,
+      });
+
+      // Issuing a licence also remembers the device, so the user can see and
+      // revoke it from their account page (PRD §26.6).
+      await db
+        .insert(devices)
+        .values({
+          id: input.deviceId,
+          userId: input.userId,
+          label: input.label,
+          platform: input.platform,
+          firstSeenAt: input.issuedAt,
+          lastSeenAt: input.issuedAt,
+        })
+        .onConflictDoUpdate({
+          target: devices.id,
+          set: { lastSeenAt: input.issuedAt, revokedAt: null },
+        });
+    },
+
+    async startDownload(input) {
+      await db.insert(downloads).values({
+        id: input.id,
+        userId: input.userId,
+        episodeId: input.episodeId,
+        versionId: input.versionId,
+        platform: input.platform,
+        startedAt: input.startedAt,
+      });
     },
 
     async listDevices(userId) {

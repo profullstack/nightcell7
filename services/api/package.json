@@ -25,6 +25,8 @@
     "@nightcell7/database": "workspace:*",
     "bullmq": "^5.34.5",
     "drizzle-orm": "^0.38.3",
-    "@libsql/client": "^0.14.0"
+    "@libsql/client": "^0.14.0",
+    "@aws-sdk/client-s3": "^3.716.0",
+    "@aws-sdk/s3-request-presigner": "^3.716.0"
   }
 }

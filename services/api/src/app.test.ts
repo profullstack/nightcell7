@@ -12,6 +12,7 @@ import { createApp, buildSyncUrl, generatePrivateCode, readCookie } from "./app"
 import type { Dependencies } from "./app";
 import { MemoryRateLimiter } from "./rate-limit";
 import type { Repositories } from "./repository";
+import type { ContentManifest } from "@nightcell7/content-schema";
 import type { ApiEnv } from "./env";
 
 const TICKET_SECRET = "ticket-secret-for-tests-0000000";
@@ -32,6 +33,7 @@ const env: ApiEnv = {
   COINPAY_API_BASE: "https://api.coinpayportal.test",
   COINPAY_API_KEY: "key",
   COINPAY_WEBHOOK_SECRET: WEBHOOK_SECRET,
+  R2_BUCKET: "nightcell7-content-test",
   MULTIPLAYER_REGION: "us-west",
   MULTIPLAYER_SHARD: "1",
 };
@@ -102,6 +104,11 @@ function fakeRepos(overrides: Partial<Repositories> = {}): Repositories {
     },
     async subscribeNewsletter() {},
     async createFeedback() {},
+    async findCurrentEpisodeVersion() {
+      return null;
+    },
+    async recordOfflineLicense() {},
+    async startDownload() {},
   };
   return { ...base, ...overrides };
 }
@@ -113,7 +120,10 @@ interface Harness {
   tickets: string[];
 }
 
-function harness(repoOverrides: Partial<Repositories> = {}): Harness {
+function harness(
+  repoOverrides: Partial<Repositories> = {},
+  manifest: ContentManifest | null = null,
+): Harness {
   const enqueued: Harness["enqueued"] = [];
   const tickets: string[] = [];
   const state = { invoices: 0 };
@@ -143,6 +153,10 @@ function harness(repoOverrides: Partial<Repositories> = {}): Harness {
     },
     registerTicket: async (ticketId) => {
       tickets.push(ticketId);
+    },
+    content: {
+      loadManifest: async () => manifest,
+      sign: async (key, ttl) => `https://r2.test/${key}?ttl=${ttl}`,
     },
   });
 

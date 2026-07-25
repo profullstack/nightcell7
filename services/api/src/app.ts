@@ -8,8 +8,16 @@ import {
   newCorrelationId,
 } from "@nightcell7/observability";
 import { SESSION_COOKIE_NAME, canPlayMultiplayer, type AccountContext } from "@nightcell7/auth";
-import { CATALOG, formatPrice, resolvePrice } from "@nightcell7/entitlements";
-import { hasAccess } from "@nightcell7/entitlements";
+import {
+  CATALOG,
+  MAX_REMEMBERED_DEVICES,
+  OFFLINE_GRACE_DAYS,
+  formatPrice,
+  hasAccess,
+  resolvePrice,
+} from "@nightcell7/entitlements";
+import { createOfflineLicense } from "@nightcell7/entitlements/server";
+import { signManifest, type ContentManifest, type ObjectSigner } from "@nightcell7/content-schema";
 import {
   COINPAY_SIGNATURE_HEADER,
   COINPAY_TIMESTAMP_HEADER,
@@ -19,6 +27,7 @@ import {
   type CoinpayClient,
 } from "@nightcell7/coinpay";
 import {
+  CLIENT_PLATFORMS,
   CONTENT_VERSION,
   MIN_SUPPORTED_PROTOCOL_VERSION,
   PROTOCOL_VERSION,
@@ -59,6 +68,11 @@ export interface Dependencies {
   enqueue: (queue: string, name: string, payload: unknown) => Promise<void>;
   /** Redis-backed ticket nonce registry, so a ticket can be consumed once. */
   registerTicket: (ticketId: string, ttlSeconds: number) => Promise<void>;
+  /** Content manifest loading and per-object R2 signing (PRD §26.4). */
+  content: {
+    loadManifest: (episodeId: string, version: string) => Promise<ContentManifest | null>;
+    sign: ObjectSigner;
+  };
   now?: () => Date;
 }
 
@@ -333,24 +347,129 @@ export function createApp(deps: Dependencies) {
   });
 
   // --------------------------------------------------------------- content
-  v1.get("/content/:episode/manifest", async (c) => {
-    const account = requireAccount(c);
-    const episodeId = c.req.param("episode");
-    const entitlement = await deps.repos.findEntitlement(account.userId!, episodeId);
+
+  /**
+   * Require an active entitlement for `episodeId`, or refuse.
+   *
+   * A suspended entitlement (payment disputed) is treated exactly like no
+   * entitlement for content access, while leaving the row intact so it can be
+   * restored (PRD §5.6).
+   */
+  async function requireEntitlement(userId: string, episodeId: string): Promise<void> {
+    const entitlement = await deps.repos.findEntitlement(userId, episodeId);
     if (!entitlement || entitlement.status !== "active") {
       throw forbidden("entitlement_required", "Purchase this episode to download it.");
     }
-    // Manifest generation and R2 signing are the content service's job; this
-    // route exists to prove the entitlement gate sits in front of it.
-    return c.json(
+  }
+
+  v1.get("/content/:episode/manifest", async (c) => {
+    const account = requireAccount(c);
+    const episodeId = c.req.param("episode");
+    await requireEntitlement(account.userId!, episodeId);
+
+    const version = await deps.repos.findCurrentEpisodeVersion(episodeId);
+    if (!version) {
+      throw notFound("no_published_version", "This episode has no published content yet.");
+    }
+
+    const manifest = await deps.content.loadManifest(episodeId, version.version);
+    if (!manifest) {
+      throw notFound("manifest_unavailable", "Content manifest is not available.");
+    }
+
+    // Every asset URL is individually signed and short-lived; the manifest
+    // itself is entitlement-protected, not just the assets (PRD §26.4).
+    const signed = await signManifest({
+      manifest,
+      hasEntitlement: true,
+      sign: deps.content.sign,
+      now: now(),
+    });
+
+    return c.json(signed);
+  });
+
+  const offlineLicenseSchema = z.object({
+    deviceId: z.string().min(8).max(128),
+    deviceLabel: z.string().max(64).optional(),
+    platform: z.enum(CLIENT_PLATFORMS),
+  });
+
+  v1.post("/content/:episode/offline-license", async (c) => {
+    const account = requireAccount(c);
+    const episodeId = c.req.param("episode");
+    const body = offlineLicenseSchema.parse(await c.req.json());
+    await requireEntitlement(account.userId!, episodeId);
+
+    // Remembered devices are capped, but with a soft policy: no invasive
+    // hardware fingerprinting, and the user can revoke from their account
+    // page (PRD §26.6).
+    const devices = await deps.repos.listDevices(account.userId!);
+    const active = devices.filter((d) => !d.revokedAt);
+    if (active.length >= MAX_REMEMBERED_DEVICES && !active.some((d) => d.id === body.deviceId)) {
+      throw new ApiError(
+        409,
+        "device_limit_reached",
+        "Remove a device from your account before adding another.",
+      );
+    }
+
+    const nowSeconds = Math.floor(now().getTime() / 1000);
+    const license = createOfflineLicense(
       {
+        userId: account.userId!,
         episodeId,
+        deviceId: body.deviceId,
         contentVersion: CONTENT_VERSION,
-        status: "not_implemented",
-        message: "Manifest signing lands with the R2 delivery milestone (PRD §26.2).",
       },
-      501,
+      deps.env.AUTH_SECRET,
+      nowSeconds,
+      OFFLINE_GRACE_DAYS,
     );
+
+    await deps.repos.recordOfflineLicense({
+      id: `ol_${randomUUID()}`,
+      userId: account.userId!,
+      episodeId,
+      deviceId: body.deviceId,
+      tokenId: license.jti,
+      issuedAt: new Date(license.issuedAt * 1000).toISOString(),
+      expiresAt: new Date(license.expiresAt * 1000).toISOString(),
+      platform: body.platform,
+      label: body.deviceLabel ?? body.platform,
+    });
+
+    return c.json({
+      license: license.token,
+      episodeId,
+      contentVersion: CONTENT_VERSION,
+      issuedAt: new Date(license.issuedAt * 1000).toISOString(),
+      // Surfaced so the client can show a clear renewal date rather than
+      // failing mysteriously one day (PRD §26.5).
+      expiresAt: new Date(license.expiresAt * 1000).toISOString(),
+      graceDays: OFFLINE_GRACE_DAYS,
+    });
+  });
+
+  v1.post("/content/:episode/download-session", async (c) => {
+    const account = requireAccount(c);
+    const episodeId = c.req.param("episode");
+    await requireEntitlement(account.userId!, episodeId);
+
+    const version = await deps.repos.findCurrentEpisodeVersion(episodeId);
+    if (!version) throw notFound("no_published_version", "No published content.");
+
+    const sessionId = `dl_${randomUUID()}`;
+    await deps.repos.startDownload({
+      id: sessionId,
+      userId: account.userId!,
+      episodeId,
+      versionId: version.id,
+      platform: c.req.header("x-nightcell-platform") ?? "web",
+      startedAt: now().toISOString(),
+    });
+
+    return c.json({ sessionId, episodeId, version: version.version });
   });
 
   // ----------------------------------------------------------- multiplayer

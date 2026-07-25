@@ -7,6 +7,8 @@ export const workerEnvSchema = baseEnvSchema.extend({
   TURSO_DATABASE_URL: z.string().min(1),
   TURSO_AUTH_TOKEN: z.string().optional(),
   MATCH_RESULT_SECRET: z.string().min(16),
+  /** Signs guest-claim tokens; must match the API that mints them. */
+  AUTH_SECRET: z.string().min(16),
   RESEND_API_KEY: z.string().min(1),
   EMAIL_FROM: z.string().min(1),
   WORKER_CONCURRENCY: z.coerce.number().int().positive().default(5),

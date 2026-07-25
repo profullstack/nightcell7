@@ -9,6 +9,7 @@ import { createApp } from "./app";
 import { loadEnv } from "./env";
 import { RedisRateLimiter } from "./rate-limit";
 import { createRepositories } from "./repository";
+import { createR2Signer, createUnconfiguredSigner } from "./r2";
 
 /**
  * API daemon bootstrap (PRD §18.7).
@@ -60,6 +61,21 @@ const app = createApp({
       attempts: 5,
       backoff: { type: "exponential", delay: 2000 },
     });
+  },
+  content: {
+    // Manifests live in R2 next to the packs they describe. Until the asset
+    // pipeline publishes one, this returns null and the route 404s rather than
+    // inventing an empty manifest.
+    loadManifest: async () => null,
+    sign:
+      env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY
+        ? createR2Signer({
+            accountId: env.R2_ACCOUNT_ID,
+            accessKeyId: env.R2_ACCESS_KEY_ID,
+            secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+            bucket: env.R2_BUCKET,
+          })
+        : createUnconfiguredSigner(),
   },
   registerTicket: async (ticketId, ttlSeconds) => {
     // Registered here, consumed once by the match service. The SET NX in the

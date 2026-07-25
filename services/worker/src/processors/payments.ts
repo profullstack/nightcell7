@@ -9,6 +9,7 @@ import {
   type Database,
 } from "@nightcell7/database";
 import {
+  CATALOG,
   ENTITLEMENT_STATUS,
   ORDER_STATUS,
   applyOrderToEntitlement,
@@ -16,6 +17,7 @@ import {
   transition,
   type OrderStatus,
 } from "@nightcell7/entitlements";
+import { createClaimToken } from "@nightcell7/entitlements/server";
 import type { Logger } from "@nightcell7/observability";
 
 /**
@@ -25,6 +27,16 @@ import type { Logger } from "@nightcell7/observability";
  * written to be safe to run twice: the same job re-executed must not grant
  * twice, revoke twice, or produce a second audit event.
  */
+
+/**
+ * Side effects the fulfilment path needs. Injected so the decision logic stays
+ * testable without a queue.
+ */
+export interface PaymentSideEffects {
+  enqueue: (queue: string, name: string, payload: unknown) => Promise<void>;
+  claimSecret: string;
+  publicOrigin: string;
+}
 
 export interface CoinpayEventJob {
   providerEventId: string;
@@ -51,6 +63,7 @@ export async function processCoinpayEvent(
   db: Database,
   logger: Logger,
   job: CoinpayEventJob,
+  effects?: PaymentSideEffects,
 ): Promise<PaymentProcessResult> {
   const now = new Date().toISOString();
 
@@ -104,6 +117,24 @@ export async function processCoinpayEvent(
   }
 
   const result = await applyEntitlements(db, logger, order.id, order.userId, effectiveStatus, now);
+
+  // A guest purchase is worthless to the buyer until they can claim it, so the
+  // claim email is part of fulfilment rather than a separate concern.
+  if (effects && effectiveStatus === ORDER_STATUS.FULFILLED && !order.userId && order.email) {
+    const claim = createClaimToken(
+      { orderId: order.id, email: order.email },
+      effects.claimSecret,
+      Math.floor(Date.now() / 1000),
+    );
+    await effects.enqueue("email", "purchase-claim", {
+      kind: "purchase-claim",
+      to: order.email,
+      claimUrl: `${effects.publicOrigin}/claim/${claim.token}`,
+      episodeTitle: await episodeTitleFor(db, order.id),
+    });
+    logger.info("claim link queued for guest purchase", { orderId: order.id });
+  }
+
   await markEventProcessed(db, job.providerEventId, "processed", now);
   return { ...result, orderId: order.id };
 }
@@ -216,6 +247,16 @@ async function applyEntitlements(
   }
 
   return { outcome };
+}
+
+async function episodeTitleFor(db: Database, orderId: string): Promise<string> {
+  const rows = await db
+    .select({ episodeId: orderItems.episodeId })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId))
+    .limit(1);
+  const episodeId = rows[0]?.episodeId;
+  return CATALOG.find((entry) => entry.episodeId === episodeId)?.title ?? "your episode";
 }
 
 async function markEventProcessed(
