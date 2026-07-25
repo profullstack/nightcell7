@@ -18,4 +18,10 @@ export const serviceBuild: Options = {
   // Everything under the workspace scope is inlined; third-party deps stay
   // external and are installed from the lockfile.
   noExternal: [/^@nightcell7\//],
+  // Native/dynamic-require modules must NOT be inlined. `libsql` ships a
+  // native binding loaded via `require()`, which throws "Dynamic require is
+  // not supported" the moment it lands in an ESM bundle. Bundling a workspace
+  // package pulls its transitive deps in with it, so these have to be named
+  // explicitly even though no service lists them directly.
+  external: ["libsql", /^@libsql\//, /^@neon-rs\//, "better-sqlite3", "bufferutil", "utf-8-validate"],
 };

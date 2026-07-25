@@ -260,6 +260,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.15(hono@4.12.32)
+      '@libsql/client':
+        specifier: ^0.14.0
+        version: 0.14.0
       '@nightcell7/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -302,6 +305,9 @@ importers:
 
   services/cron:
     dependencies:
+      '@libsql/client':
+        specifier: ^0.14.0
+        version: 0.14.0
       '@nightcell7/coinpay':
         specifier: workspace:*
         version: link:../../packages/coinpay
@@ -377,6 +383,9 @@ importers:
 
   services/worker:
     dependencies:
+      '@libsql/client':
+        specifier: ^0.14.0
+        version: 0.14.0
       '@nightcell7/coinpay':
         specifier: workspace:*
         version: link:../../packages/coinpay

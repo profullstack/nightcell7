@@ -17,6 +17,7 @@
     "@nightcell7/entitlements": "workspace:*",
     "@nightcell7/coinpay": "workspace:*",
     "@nightcell7/database": "workspace:*",
-    "drizzle-orm": "^0.38.3"
+    "drizzle-orm": "^0.38.3",
+    "@libsql/client": "^0.14.0"
   }
 }

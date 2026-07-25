@@ -24,6 +24,7 @@
     "@nightcell7/content-schema": "workspace:*",
     "@nightcell7/database": "workspace:*",
     "bullmq": "^5.34.5",
-    "drizzle-orm": "^0.38.3"
+    "drizzle-orm": "^0.38.3",
+    "@libsql/client": "^0.14.0"
   }
 }

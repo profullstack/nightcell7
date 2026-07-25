@@ -21,6 +21,7 @@
     "@nightcell7/multiplayer-protocol": "workspace:*",
     "@nightcell7/database": "workspace:*",
     "@nightcell7/game-core": "workspace:*",
-    "drizzle-orm": "^0.38.3"
+    "drizzle-orm": "^0.38.3",
+    "@libsql/client": "^0.14.0"
   }
 }
