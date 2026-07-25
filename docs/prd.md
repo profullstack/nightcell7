@@ -6,9 +6,10 @@ This file records the locked decisions and maps each PRD section to the code
 that implements it. When a decision changes, update this file in the same
 commit as the code (CLAUDE.md).
 
-> The full narrative PRD text (story bible, mission scripts, art direction
-> prose, asset inventory) is the product document and lives alongside this file
-> as `docs/prd-v1.3.md`. This file is the engineering-facing extract and index.
+> **Not yet in the repo:** the full narrative PRD text (story bible, mission
+> scripts, art-direction prose, asset inventory). Commit it as
+> `docs/prd-v1.3.md` so the document CLAUDE.md points at is actually here.
+> This file is the engineering-facing extract and index, not a replacement.
 
 ---
 
