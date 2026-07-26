@@ -193,7 +193,8 @@ async function boot(): Promise<void> {
           { x: aim.x, y: aim.y, z: aim.z },
           world_.distance,
         );
-        effects.fire(muzzle, eye, aim, onTarget?.point);
+        // A hit on a person gets the heavy burst.
+        effects.fire(muzzle, eye, aim, onTarget?.point, onTarget !== null);
       }
     }
     effects.update();

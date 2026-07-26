@@ -335,7 +335,7 @@ export class WeaponEffects {
     );
   }
 
-  fire(origin: Vector3, eye: Vector3, direction: Vector3, override?: Vec3): void {
+  fire(origin: Vector3, eye: Vector3, direction: Vector3, override?: Vec3, heavy = false): void {
     const now = performance.now();
 
     // ---- muzzle flash
@@ -366,7 +366,7 @@ export class WeaponEffects {
     const end = toVector(landed);
 
     this.spawnTracer(origin, end, now);
-    if (override || trace.hit) this.spawnImpact(end, direction, now);
+    if (override || trace.hit) this.spawnImpact(end, direction, now, heavy);
   }
 
   private spawnTracer(from: Vector3, to: Vector3, now: number): void {
@@ -385,7 +385,13 @@ export class WeaponEffects {
     tracer.until = now + TRACER_LIFE;
   }
 
-  private spawnImpact(at: Vector3, direction: Vector3, now: number): void {
+  /**
+   * @param heavy a hit on a person rather than on concrete — a much larger,
+   *   longer burst, because a body taking a round has to read completely
+   *   differently from a ricochet off a wall or the player cannot tell whether
+   *   they connected.
+   */
+  private spawnImpact(at: Vector3, direction: Vector3, now: number, heavy = false): void {
     const impact = this.impacts[this.nextImpact % this.impacts.length];
     this.nextImpact += 1;
     if (!impact) return;
@@ -398,17 +404,18 @@ export class WeaponEffects {
     impact.sparks.emitter = spawn;
     impact.sparks.direction1 = back.add(new Vector3(-0.75, -0.35, -0.75));
     impact.sparks.direction2 = back.add(new Vector3(0.75, 0.9, 0.75));
-    impact.sparks.manualEmitCount = 30 + Math.floor(Math.random() * 16);
+    const scale = heavy ? 2.6 : 1.0;
+    impact.sparks.manualEmitCount = Math.floor((30 + Math.random() * 16) * scale);
     impact.sparks.start();
 
     impact.dust.emitter = spawn;
     impact.dust.direction1 = back.add(new Vector3(-0.5, 0.1, -0.5));
     impact.dust.direction2 = back.add(new Vector3(0.5, 0.7, 0.5));
-    impact.dust.manualEmitCount = 16 + Math.floor(Math.random() * 8);
+    impact.dust.manualEmitCount = Math.floor((16 + Math.random() * 8) * scale);
     impact.dust.start();
 
     impact.light.position.copyFrom(spawn);
-    impact.light.intensity = 40 + Math.random() * 18;
+    impact.light.intensity = (40 + Math.random() * 18) * (heavy ? 1.6 : 1.0);
 
     // Grow with distance so a hit is as readable across the yard as it is at
     // point blank, but clamped so a close impact does not fill the screen.
@@ -420,7 +427,7 @@ export class WeaponEffects {
     impact.flash.rotation.z = Math.random() * Math.PI;
     impact.flash.setEnabled(true);
 
-    impact.until = now + 340;
+    impact.until = now + (heavy ? 620 : 340);
   }
 
   /** Advance and retire effects. Call once per frame. */
@@ -447,7 +454,7 @@ export class WeaponEffects {
 
     for (const impact of this.impacts) {
       if (!impact.until) continue;
-      const remaining = (impact.until - now) / 340;
+      const remaining = (impact.until - now) / 340; // decay reference, not the exact life
       impact.light.intensity = Math.max(0, 20 * remaining);
       // The flash is the briefest part: it is a spark of light, not a fire.
       impact.flash.visibility = Math.max(0, (remaining - 0.72) / 0.28);
