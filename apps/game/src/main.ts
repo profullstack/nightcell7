@@ -9,7 +9,7 @@ import { PlayerController } from "./player";
 import { Viewmodel } from "./viewmodel";
 import { GameAudio } from "./audio";
 import { WeaponEffects } from "./vfx";
-import { TrainingTargets } from "./targets";
+import { Opponents } from "./opponents";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
 import "./style.css";
@@ -129,8 +129,9 @@ async function boot(): Promise<void> {
   // The flash lights the yard, not the gun held in front of it.
   effects.excludeFromFlash(viewmodel.meshes());
 
-  // Something to shoot at. PRD §40 wants "one enemy" before anything else.
-  const targets = new TrainingTargets(scene, world.assets);
+  // Live opponents. These run the real MatchSimulation and BotController, so
+  // they move, aim and shoot under exactly the rules the server enforces.
+  const opponents = new Opponents(scene, world.assets);
 
   const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
 
@@ -187,18 +188,21 @@ async function boot(): Promise<void> {
         // A target only counts if it is in front of whatever the round would
         // otherwise hit, so one standing behind a container cannot be shot
         // through it.
-        const world_ = effects.trace(eye, aim);
-        const onTarget = targets.tryHit(
+        const onTarget = opponents.tryHit(
           { x: eye.x, y: eye.y, z: eye.z },
           { x: aim.x, y: aim.y, z: aim.z },
-          world_.distance,
+          effects.trace(eye, aim).distance,
         );
         // A hit on a person gets the heavy burst.
         effects.fire(muzzle, eye, aim, onTarget?.point, onTarget !== null);
       }
     }
     effects.update();
-    targets.update();
+    opponents.update(deltaMs, status.position, camera.rotation.y);
+    // Draw whatever the bots shot at this tick, so incoming fire is visible.
+    for (const shot of opponents.drainShots()) {
+      effects.tracerOnly(shot.from, shot.to);
+    }
     hud.update(status, engine.getFps());
     scene.render();
   });

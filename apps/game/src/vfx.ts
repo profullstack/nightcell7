@@ -430,6 +430,21 @@ export class WeaponEffects {
     impact.until = now + (heavy ? 620 : 340);
   }
 
+  /**
+   * Draw a tracer between two points with no muzzle flash or impact.
+   *
+   * Used for incoming fire: the shot came from someone else's weapon, so the
+   * player should see the round cross the yard without a flash appearing at
+   * their own muzzle.
+   */
+  tracerOnly(from: Vec3, to: Vec3): void {
+    this.spawnTracer(
+      new Vector3(from.x, from.y, from.z),
+      new Vector3(to.x, to.y, to.z),
+      performance.now(),
+    );
+  }
+
   /** Advance and retire effects. Call once per frame. */
   update(): void {
     const now = performance.now();
