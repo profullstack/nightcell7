@@ -67,6 +67,7 @@ function SignedOut({ what }: { what: string }) {
 export function AccountView() {
   const { me, loading } = useMe();
   const [devices, setDevices] = useState<Device[]>([]);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   const loadDevices = useCallback(() => {
     fetch("/api/v1/me/devices", { credentials: "include", cache: "no-store" })
@@ -80,8 +81,35 @@ export function AccountView() {
   }, [me, loadDevices]);
 
   async function signOut() {
-    await fetch("/api/v1/auth/sign-out", { method: "POST", credentials: "include" });
-    window.location.assign("/");
+    // The content-type is required: without it Better Auth answers 415 and the
+    // session cookie is never cleared, so "signed out" was a lie that left the
+    // session live.
+    const response = await fetch("/api/v1/auth/sign-out", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "include",
+      body: "{}",
+    });
+
+    if (!response.ok) {
+      setSignOutError(
+        `Sign out failed (${response.status}). Your session is still active — try again.`,
+      );
+      return;
+    }
+
+    // Clear anything cached about the signed-in user. Campaign saves are
+    // deliberately left alone: signing out on a shared machine should not
+    // destroy someone's progress.
+    try {
+      sessionStorage.clear();
+    } catch {
+      // Storage can be unavailable in private modes; not worth failing over.
+    }
+
+    // Replace rather than assign, so Back does not return to a stale
+    // authenticated view rendered from bfcache.
+    window.location.replace("/");
   }
 
   async function revoke(id: string) {
@@ -170,6 +198,12 @@ export function AccountView() {
           <a href="/support">Support</a>
         </li>
       </ul>
+
+      {signOutError ? (
+        <p className="auth-form__error" role="alert">
+          {signOutError}
+        </p>
+      ) : null}
 
       <p className="cta-row">
         <button className="button button--ghost" onClick={signOut}>

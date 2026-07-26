@@ -14,27 +14,29 @@ export function renderGate(
   root.innerHTML = "";
 
   const panel = document.createElement("section");
-  panel.className = "gate";
+  panel.className = "access-gate";
   panel.setAttribute("role", "alert");
 
   const eyebrow = document.createElement("p");
-  eyebrow.className = "gate__eyebrow";
+  eyebrow.className = "access-gate__eyebrow";
   eyebrow.textContent = "NIGHTCELL 7";
 
   const heading = document.createElement("h1");
   heading.textContent = decision.title;
 
   const detail = document.createElement("p");
-  detail.className = "gate__detail";
+  detail.className = "access-gate__detail";
   detail.textContent = decision.detail;
 
   const actions = document.createElement("div");
-  actions.className = "gate__actions";
+  actions.className = "access-gate__actions";
   for (const action of decision.actions) {
     const link = document.createElement("a");
     link.href = action.href;
     link.textContent = action.label;
-    link.className = action.primary ? "gate__button gate__button--primary" : "gate__button";
+    link.className = action.primary
+      ? "access-gate__button access-gate__button--primary"
+      : "access-gate__button";
     actions.append(link);
   }
 

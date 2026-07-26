@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import {
   CORRELATION_HEADER,
@@ -324,7 +324,17 @@ export function createApp(deps: Dependencies) {
   });
 
   // ------------------------------------------------------- coinpay webhook
-  v1.post("/webhooks/coinpay", async (c) => {
+
+  /**
+   * Verified CoinPay webhook. The ONLY thing that fulfils an order.
+   *
+   * Registered at both /webhooks/coinpay (canonical, PRD §29) and the singular
+   * /webhook/coinpay, because the provider dashboard was configured with the
+   * singular form and a 404 here means a paid order silently never unlocks.
+   * Accepting both costs nothing; losing a payment notification costs a
+   * customer.
+   */
+  const handleCoinpayWebhook = async (c: Context<{ Variables: Variables }>) => {
     await limit("webhook", "global");
 
     // The signature covers the RAW body; it must be read as text before any
@@ -376,7 +386,10 @@ export function createApp(deps: Dependencies) {
 
     deps.logger.info("coinpay webhook accepted", redactEventForLog(event));
     return c.json({ received: true });
-  });
+  };
+
+  v1.post("/webhooks/coinpay", handleCoinpayWebhook);
+  v1.post("/webhook/coinpay", handleCoinpayWebhook);
 
   // --------------------------------------------------------------- content
 

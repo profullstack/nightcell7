@@ -446,11 +446,14 @@ body {
   }
 }
 
-/* ------------------------------------------------------------------ gate */
+/* ----------------------------------------------------------- access gate */
+/* Namespaced `access-gate`, NOT `gate`: this file already defines .gate__button
+   for the start-game button. Reusing the name repainted that button's text and
+   dropped it to a 1.47:1 contrast ratio. */
 /* Shown instead of the game when a mode is not available. Matches the site's
    DIVIDED SIGNAL palette so it does not read as a browser error page. */
 
-.gate {
+.access-gate {
   position: fixed;
   inset: 0;
   display: grid;
@@ -471,7 +474,7 @@ body {
   font-family: "IBM Plex Sans", system-ui, sans-serif;
 }
 
-.gate__eyebrow {
+.access-gate__eyebrow {
   margin: 0;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 0.7rem;
@@ -479,7 +482,7 @@ body {
   color: #ad9365;
 }
 
-.gate h1 {
+.access-gate h1 {
   margin: 0;
   font-family: "Barlow Condensed", system-ui, sans-serif;
   font-size: clamp(2rem, 6vw, 3.5rem);
@@ -488,21 +491,21 @@ body {
   line-height: 1.05;
 }
 
-.gate__detail {
+.access-gate__detail {
   margin: 0;
   max-width: 46ch;
   color: #c6c1b7;
   line-height: 1.6;
 }
 
-.gate__actions {
+.access-gate__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1.5rem;
 }
 
-.gate__button {
+.access-gate__button {
   padding: 0.8rem 1.5rem;
   border: 1px solid color-mix(in srgb, #c6c1b7 35%, transparent);
   border-radius: 2px;
@@ -514,12 +517,12 @@ body {
   text-transform: uppercase;
 }
 
-.gate__button:hover {
+.access-gate__button:hover {
   color: #ece8df;
   border-color: #ece8df;
 }
 
-.gate__button--primary {
+.access-gate__button--primary {
   background: #ece8df;
   border-color: #ece8df;
   color: #07090c;

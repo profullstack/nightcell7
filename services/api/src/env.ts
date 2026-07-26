@@ -21,6 +21,7 @@ export const apiEnvSchema = baseEnvSchema.extend({
 
   COINPAY_API_BASE: z.string().url(),
   COINPAY_API_KEY: z.string().min(1),
+  COINPAY_MERCHANT_ID: z.string().optional(),
   COINPAY_WEBHOOK_SECRET: z.string().min(16),
 
   // R2 is optional at boot so local development and CI do not need object
