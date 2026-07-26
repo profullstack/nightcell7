@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { MULTIPLAYER_MAP, TDM_RULES } from "@nightcell7/game-core";
-import { CaptureStrip, CapturePlate, GreyboxNotice } from "../gallery";
+import { CaptureStrip, CapturePlate, CaptureNotice } from "../gallery";
 
 export const metadata: Metadata = {
   title: "Multiplayer Alpha",
@@ -90,7 +90,7 @@ export default async function MultiplayerPage() {
           Every frame below is the geometry the server actually simulates.
         </p>
         <CaptureStrip names={["tank-row", "central-hardpoint", "north-gate"]} />
-        <GreyboxNotice />
+        <CaptureNotice />
 
         <h3 style={{ marginTop: "4rem" }}>How it works</h3>
         <ul className="includes">

@@ -16,6 +16,7 @@
  *   node tools/art/build-assets.mjs --previews     # ...and render preview PNGs
  *   node tools/art/build-assets.mjs --textures-only
  *   node tools/art/build-assets.mjs --models-only
+ *   node tools/art/build-assets.mjs --audio-only
  *
  * Requires Blender 4.5+ on PATH or in $BLENDER. Blender's bundled Python
  * provides numpy for the texture generator, so there is no pip dependency.
@@ -31,6 +32,7 @@ const ROOT = resolve(HERE, "../..");
 const OUT = join(ROOT, "apps/game/public/assets");
 const MODELS_OUT = join(OUT, "models");
 const TEXTURES_OUT = join(OUT, "textures");
+const AUDIO_OUT = join(ROOT, "apps/game/public/audio");
 const PREVIEWS_OUT = join(ROOT, "build/asset-previews");
 
 const args = process.argv.slice(2);
@@ -129,8 +131,10 @@ function main() {
   const version = execFileSync(blender, ["--version"], { encoding: "utf8" }).split("\n")[0].trim();
   console.log(`NIGHTCELL 7 asset build\n  ${version}\n`);
 
-  const doModels = !has("--textures-only");
-  const doTextures = !has("--models-only");
+  const only = has("--textures-only") || has("--models-only") || has("--audio-only");
+  const doModels = !only || has("--models-only");
+  const doTextures = !only || has("--textures-only");
+  const doAudio = !only || has("--audio-only");
 
   if (doModels) {
     console.log("models");
@@ -169,6 +173,47 @@ function main() {
     const bytes = toWebp(staging, TEXTURES_OUT);
     rmSync(staging, { recursive: true, force: true });
     process.stdout.write(`    ${(bytes / 1048576).toFixed(2)} MB of WebP\n`);
+  }
+
+  if (doAudio) {
+    console.log("\naudio");
+    const python = blenderPython(blender);
+    const masters = join(ROOT, "build/audio-wav");
+    rmSync(masters, { recursive: true, force: true });
+    mkdirSync(masters, { recursive: true });
+
+    run(python, [join(HERE, "audio/generate.py"), "--out", masters], "generate.py");
+
+    // WAV masters, compressed runtime audio (CLAUDE.md). The masters are a
+    // build artefact, not committed: they are reproducible from the generator.
+    process.stdout.write("  encoding mp3\n");
+    mkdirSync(AUDIO_OUT, { recursive: true });
+    let audioBytes = 0;
+    for (const file of readdirSync(masters).sort()) {
+      if (!file.endsWith(".wav")) continue;
+      const target = join(AUDIO_OUT, file.replace(/\.wav$/, ".mp3"));
+      execFileSync(
+        "ffmpeg",
+        [
+          "-y",
+          "-loglevel",
+          "error",
+          "-i",
+          join(masters, file),
+          "-codec:a",
+          "libmp3lame",
+          "-b:a",
+          "128k",
+          "-ar",
+          "48000",
+          target,
+        ],
+        { stdio: "pipe" },
+      );
+      audioBytes += statSync(target).size;
+    }
+    rmSync(masters, { recursive: true, force: true });
+    process.stdout.write(`    ${(audioBytes / 1048576).toFixed(2)} MB of MP3\n`);
   }
 
   if (has("--previews")) {
@@ -210,6 +255,12 @@ function main() {
 
   const modelBytes = directoryBytes(MODELS_OUT);
   const textureBytes = directoryBytes(TEXTURES_OUT);
+  const audioBytesTotal = directoryBytes(AUDIO_OUT);
+  const audio = existsSync(AUDIO_OUT)
+    ? readdirSync(AUDIO_OUT)
+        .filter((f) => f.endsWith(".mp3"))
+        .sort()
+    : [];
 
   const commit = (() => {
     try {
@@ -234,7 +285,13 @@ function main() {
         webpQuality: WEBP_QUALITY,
         models,
         textures,
-        bytes: { models: modelBytes, textures: textureBytes, total: modelBytes + textureBytes },
+        audio,
+        bytes: {
+          models: modelBytes,
+          textures: textureBytes,
+          audio: audioBytesTotal,
+          total: modelBytes + textureBytes + audioBytesTotal,
+        },
       },
       null,
       2,
@@ -242,10 +299,11 @@ function main() {
     "utf8",
   );
 
-  const total = modelBytes + textureBytes;
+  const total = modelBytes + textureBytes + audioBytesTotal;
   console.log(
     `\n${models.length} models (${(modelBytes / 1048576).toFixed(2)} MB) + ` +
-      `${textures.length} textures (${(textureBytes / 1048576).toFixed(2)} MB) ` +
+      `${textures.length} textures (${(textureBytes / 1048576).toFixed(2)} MB) + ` +
+      `${audio.length} sounds (${(audioBytesTotal / 1048576).toFixed(2)} MB) ` +
       `= ${(total / 1048576).toFixed(2)} MB uncompressed`,
   );
   console.log(`manifest -> ${join(OUT, "manifest.json")}`);

@@ -2,11 +2,11 @@
   "generator": "tools/art/capture.mjs",
   "source": "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
-  "commit": "bf4d13f789386baa436f5e17e69be82763b3e142",
-  "capturedAt": "2026-07-26T09:04:30.282Z",
+  "commit": "fae10c13fb39b93d0d4d66f67a506d9d9078487d",
+  "capturedAt": "2026-07-26T09:48:30.981Z",
   "viewport": {
-    "width": 1920,
-    "height": 1080
+    "width": 2560,
+    "height": 1440
   },
   "shots": [
     {
@@ -58,6 +58,42 @@
       "yaw": 3.141592653589793,
       "pitch": 0.06,
       "file": "north-gate.webp"
+    },
+    {
+      "name": "pipe-rack-run",
+      "caption": "The west lane pipe rack, looking south under the catwalk. Cover here is continuous but low, so the lane rewards movement over holding an angle.",
+      "position": [-24, 1.7, -18],
+      "yaw": 0,
+      "pitch": 0.04,
+      "fovDegrees": 80,
+      "file": "pipe-rack-run.webp"
+    },
+    {
+      "name": "container-alley",
+      "caption": "Between the northern container stacks. The corrugation and corner castings are the only cover in the centre lane, and both sides can reach it in the opening seconds.",
+      "position": [0, 1.7, -8],
+      "yaw": 3.141592653589793,
+      "pitch": 0,
+      "fovDegrees": 74,
+      "file": "container-alley.webp"
+    },
+    {
+      "name": "muster-point",
+      "caption": "The Nightcell muster point at the southern gate, where a squad forms up before pushing into the yard.",
+      "position": [0, 1.7, 52],
+      "yaw": 3.141592653589793,
+      "pitch": 0.05,
+      "fovDegrees": 84,
+      "file": "muster-point.webp"
+    },
+    {
+      "name": "under-the-gantry",
+      "caption": "Beneath the east gantry, looking up the tank row. Holding the deck overhead means giving up the lane below it.",
+      "position": [27, 1.7, 6],
+      "yaw": 3.267256359733385,
+      "pitch": 0.22,
+      "fovDegrees": 80,
+      "file": "under-the-gantry.webp"
     }
   ]
 }

@@ -1,11 +1,13 @@
 import { FreeCamera, Scene, Vector3 } from "@babylonjs/core";
 import { ARDAVAN_YARD, mapChecksum, spawnsForTeam, TEAM_IDS } from "@nightcell7/multiplayer-sim";
+import { fireIntervalMs, getWeapon, MULTIPLAYER_LOADOUT } from "@nightcell7/game-core";
 import { decideAccess, loadViewer, parseMode } from "./access";
 import { modeLabel, renderGate } from "./gate";
 import { createHud, renderFault } from "./hud";
 import { requestedVantage } from "./photo";
 import { PlayerController } from "./player";
 import { Viewmodel } from "./viewmodel";
+import { GameAudio } from "./audio";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
 import "./style.css";
@@ -79,6 +81,13 @@ async function boot(): Promise<void> {
     camera.rotation.set(vantage.pitch, vantage.yaw, 0);
     if (vantage.fovDegrees) camera.fov = (vantage.fovDegrees * Math.PI) / 180;
 
+    // A still is not bound by the frame budget gameplay is. Push MSAA and
+    // render at native scale so edges and the grating pattern survive the
+    // downscale into the page.
+    world.pipeline.samples = 8;
+    world.pipeline.fxaaEnabled = false;
+    engine.setHardwareScalingLevel(1);
+
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
     engine.resize();
@@ -101,6 +110,16 @@ async function boot(): Promise<void> {
   // lower third of frame hides the yard they exist to show.
   const viewmodel = new Viewmodel(scene, camera, world.assets);
 
+  // Audio. Decoding happens now so the first shot of a match is not the one
+  // that pays for it; the context stays suspended until the player clicks.
+  const audio = new GameAudio();
+  void audio.load();
+
+  // Cadence comes from the same weapon table the server enforces, so the sound
+  // cannot drift away from the rate of fire that actually happens.
+  const primary = MULTIPLAYER_LOADOUT[0];
+  const fireInterval = primary ? fireIntervalMs(getWeapon(primary)) : 100;
+
   const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
 
   const hud = createHud(ui, {
@@ -110,10 +129,17 @@ async function boot(): Promise<void> {
     onStart: () => player.requestLock(),
   });
 
-  player.onLockChanged = (locked) => hud.setLocked(locked);
+  player.onLockChanged = (locked) => {
+    hud.setLocked(locked);
+    if (!locked) return;
+    // Browsers only allow audio to start from a user gesture, and taking
+    // pointer lock is one. Without this every sound is silently discarded.
+    void audio.unlock().then(() => audio.startAmbience());
+  };
   hud.setLocked(false);
 
   const dynamicResolution = new DynamicResolution(engine);
+  let lastShotAt = 0;
 
   engine.runRenderLoop(() => {
     const deltaMs = engine.getDeltaTime();
@@ -123,6 +149,22 @@ async function boot(): Promise<void> {
     if (player.isLocked) player.update(deltaMs);
     const status = player.status();
     viewmodel.update(deltaMs, status.speed, camera.rotation.y, camera.rotation.x);
+
+    // Footsteps advance with distance travelled, so they track sprinting and
+    // crouching without a separate state machine.
+    if (status.locked) {
+      audio.step(
+        (status.speed * deltaMs) / 1000,
+        status.grounded,
+        // Catwalk and gantry decking sit at 6 m; anything up there is steel.
+        status.position.y > 5.5,
+      );
+
+      if (status.firing && performance.now() - lastShotAt >= fireInterval) {
+        lastShotAt = performance.now();
+        audio.fire();
+      }
+    }
     hud.update(status, engine.getFps());
     scene.render();
   });

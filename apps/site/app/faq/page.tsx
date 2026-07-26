@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "../_components/page-shell";
+import { CapturePlate } from "../gallery";
 
 export const metadata: Metadata = { title: "FAQ" };
 
@@ -60,6 +61,8 @@ export default function FaqPage() {
       <p>
         Still stuck? <a href="/support">Contact support</a>.
       </p>
+
+      <CapturePlate name="north-gate" label="Ardavan Yard" />
     </PageShell>
   );
 }

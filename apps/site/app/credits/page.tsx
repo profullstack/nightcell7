@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "../_components/page-shell";
+import { CapturePlate } from "../gallery";
 
 export const metadata: Metadata = { title: "Credits" };
 
@@ -43,6 +44,8 @@ export default function CreditsPage() {
           github.com/profullstack/nightcell7
         </a>
       </p>
+
+      <CapturePlate name="pipe-rack-run" label="In engine" />
     </PageShell>
   );
 }

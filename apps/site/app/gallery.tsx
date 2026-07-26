@@ -1,5 +1,6 @@
 import Image from "next/image";
 import manifest from "../public/media/yard/manifest.json";
+import { ClickableGallery } from "./_components/clickable-gallery";
 
 /**
  * In-engine capture gallery.
@@ -8,9 +9,10 @@ import manifest from "../public/media/yard/manifest.json";
  * `tools/art/capture.mjs`, so the page cannot claim a shot the tool did not
  * take, and a re-capture updates the copy automatically.
  *
- * These are real frames from the greybox build, labelled as such. Dressing an
- * unfinished build up as finished art is the one thing a game marketing page
- * must not do.
+ * These are real frames from the current build. Dressing an unfinished build
+ * up as finished art is the one thing a game marketing page must not do — and
+ * equally, now that the yard is no longer a greybox, calling it one would be
+ * inaccurate in the other direction.
  */
 
 interface Shot {
@@ -22,52 +24,19 @@ interface Shot {
 const SHOTS = manifest.shots as Shot[];
 
 export function CaptureGallery() {
-  const [lead, ...rest] = SHOTS;
-  if (!lead) return null;
-
   return (
-    <div className="gallery">
-      <figure className="gallery__lead">
-        <Image
-          src={`/media/yard/${lead.file}`}
-          alt={lead.caption}
-          width={manifest.viewport.width}
-          height={manifest.viewport.height}
-          sizes="(min-width: 1100px) 1100px, 100vw"
-          priority={false}
-        />
-        <figcaption>
-          <span className="gallery__index">01</span>
-          {lead.caption}
-        </figcaption>
-      </figure>
-
-      <ul className="gallery__grid">
-        {rest.map((shot, i) => (
-          <li key={shot.name}>
-            <figure>
-              <Image
-                src={`/media/yard/${shot.file}`}
-                alt={shot.caption}
-                width={manifest.viewport.width}
-                height={manifest.viewport.height}
-                sizes="(min-width: 900px) 33vw, 100vw"
-              />
-              <figcaption>
-                <span className="gallery__index">{String(i + 2).padStart(2, "0")}</span>
-                {shot.caption}
-              </figcaption>
-            </figure>
-          </li>
-        ))}
-      </ul>
-
+    <>
+      <ClickableGallery
+        shots={SHOTS}
+        width={manifest.viewport.width}
+        height={manifest.viewport.height}
+      />
       <p className="gallery__note">
         Captured in engine from the current build at {manifest.viewport.width}&times;
-        {manifest.viewport.height}. Ardavan Yard is still a greybox: the geometry you see is the
-        collision data the multiplayer server enforces, not final art.
+        {manifest.viewport.height}. Click any frame to view it full size. Ardavan Yard is the
+        geometry the multiplayer server enforces &mdash; what you see is what you collide with.
       </p>
-    </div>
+    </>
   );
 }
 
@@ -83,9 +52,9 @@ export function captureByName(name: string): Shot | undefined {
 /**
  * A single wide capture used as a section plate.
  *
- * `label` states what the reader is actually looking at. These are greybox
- * frames from the multiplayer map, so a page that implies they are campaign
- * art would be lying — and PRD §21.12 gates launch on exactly that.
+ * `label` states what the reader is actually looking at. These are frames from
+ * the multiplayer map, so a page that implies they are campaign art would be
+ * lying — and PRD §21.12 gates launch on exactly that.
  */
 export function CapturePlate({ name, label }: { name: string; label: string }) {
   const shot = captureByName(name);
@@ -137,12 +106,12 @@ export function CaptureStrip({ names }: { names: readonly string[] }) {
  * Shared honesty notice. Any page showing these frames must carry it, so the
  * disclaimer cannot drift out of sync between pages.
  */
-export function GreyboxNotice() {
+export function CaptureNotice() {
   return (
     <p className="gallery__note">
       In-engine capture of Ardavan Yard &mdash; the 6v6 map built from Episode 1&rsquo;s refinery
-      architecture. Still a greybox: this is the collision geometry the multiplayer server enforces,
-      not final art. Campaign locations are not yet photographable.
+      architecture. Every solid you see is the collision geometry the multiplayer server enforces.
+      Alpha footage: campaign locations are not yet photographable.
     </p>
   );
 }

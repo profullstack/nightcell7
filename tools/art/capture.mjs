@@ -13,8 +13,8 @@
  *
  * Options:
  *   --out <dir>     Output directory (default apps/site/public/media/yard)
- *   --width <px>    Capture width  (default 1920)
- *   --height <px>   Capture height (default 1080)
+ *   --width <px>    Capture width  (default 2560)
+ *   --height <px>   Capture height (default 1440)
  *   --port <n>      Local static port (default 8901)
  *   --chrome <path> Explicit Chromium/Chrome binary
  */
@@ -36,8 +36,8 @@ const opt = (name, fallback) => {
 };
 
 const OUT = resolve(ROOT, opt("out", "apps/site/public/media/yard"));
-const WIDTH = Number(opt("width", 1920));
-const HEIGHT = Number(opt("height", 1080));
+const WIDTH = Number(opt("width", 2560));
+const HEIGHT = Number(opt("height", 1440));
 const PORT = Number(opt("port", 8901));
 
 const MIME = {
@@ -102,7 +102,7 @@ async function toWebp(png, name) {
   try {
     execSync(
       `ffmpeg -y -loglevel error -i ${JSON.stringify(png)} ` +
-        `-quality 82 -compression_level 6 ${JSON.stringify(webp)}`,
+        `-quality 90 -compression_level 6 ${JSON.stringify(webp)}`,
     );
   } catch {
     console.warn(`ffmpeg unavailable — keeping ${name}.png`);

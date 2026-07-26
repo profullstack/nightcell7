@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell, DraftNotice } from "../_components/page-shell";
+import { CapturePlate } from "../gallery";
 
 export const metadata: Metadata = {
   title: "Downloads",
@@ -255,6 +256,8 @@ shasum -a 256 -c SHA256SUMS.txt --ignore-missing`}
         See <a href="/system-requirements">system requirements</a>. Run the in-game benchmark before
         buying anything &mdash; it is the honest answer for your machine.
       </p>
+
+      <CapturePlate name="muster-point" label="Ardavan Yard" />
     </PageShell>
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell, DraftNotice } from "../_components/page-shell";
-import { CaptureStrip, GreyboxNotice } from "../gallery";
+import { CaptureStrip, CaptureNotice } from "../gallery";
 
 export const metadata: Metadata = { title: "Press" };
 
@@ -67,7 +67,7 @@ export default function PressPage() {
 
       <h3>Images</h3>
       <CaptureStrip names={["west-catwalk", "tank-row", "gantry-overlook"]} />
-      <GreyboxNotice />
+      <CaptureNotice />
 
       <DraftNotice>
         There is no key art, character art or trailer yet, so there is no full press pack to

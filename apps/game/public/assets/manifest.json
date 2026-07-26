@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 4.5.12 LTS",
-  "commit": "bf4d13f789386baa436f5e17e69be82763b3e142",
+  "commit": "fae10c13fb39b93d0d4d66f67a506d9d9078487d",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
   "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
   "textureSize": 1024,
@@ -42,9 +42,34 @@
     "steel_normal.webp",
     "steel_orm.webp"
   ],
+  "audio": [
+    "ambience_yard.mp3",
+    "fire_01.mp3",
+    "fire_02.mp3",
+    "fire_03.mp3",
+    "fire_04.mp3",
+    "impact_concrete_01.mp3",
+    "impact_concrete_02.mp3",
+    "impact_concrete_03.mp3",
+    "impact_concrete_04.mp3",
+    "reload.mp3",
+    "step_concrete_01.mp3",
+    "step_concrete_02.mp3",
+    "step_concrete_03.mp3",
+    "step_concrete_04.mp3",
+    "step_concrete_05.mp3",
+    "step_grating_01.mp3",
+    "step_grating_02.mp3",
+    "step_grating_03.mp3",
+    "step_grating_04.mp3",
+    "ui_click.mp3",
+    "ui_error.mp3",
+    "ui_hover.mp3"
+  ],
   "bytes": {
     "models": 1135736,
     "textures": 1971598,
-    "total": 3107334
+    "audio": 323166,
+    "total": 3430500
   }
 }
