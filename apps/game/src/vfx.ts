@@ -326,7 +326,16 @@ export class WeaponEffects {
    *                crosshair at close range
    * @param direction normalised aim direction
    */
-  fire(origin: Vector3, eye: Vector3, direction: Vector3): void {
+  /** Where a round fired from `eye` would land on world geometry. */
+  trace(eye: Vector3, direction: Vector3): ShotTrace {
+    return traceShot(
+      { x: eye.x, y: eye.y, z: eye.z },
+      { x: direction.x, y: direction.y, z: direction.z },
+      this.map,
+    );
+  }
+
+  fire(origin: Vector3, eye: Vector3, direction: Vector3, override?: Vec3): void {
     const now = performance.now();
 
     // ---- muzzle flash
@@ -350,15 +359,14 @@ export class WeaponEffects {
     this.flashUntil = now + FLASH_LIFE;
 
     // ---- where does it land? Same raycast and same map the server uses.
-    const trace = traceShot(
-      { x: eye.x, y: eye.y, z: eye.z },
-      { x: direction.x, y: direction.y, z: direction.z },
-      this.map,
-    );
-    const end = toVector(trace.point);
+    // `override` is a closer hit — a training target standing in front of the
+    // geometry — so the round stops there instead of passing through it.
+    const trace = this.trace(eye, direction);
+    const landed = override ?? trace.point;
+    const end = toVector(landed);
 
     this.spawnTracer(origin, end, now);
-    if (trace.hit) this.spawnImpact(end, direction, now);
+    if (override || trace.hit) this.spawnImpact(end, direction, now);
   }
 
   private spawnTracer(from: Vector3, to: Vector3, now: number): void {
