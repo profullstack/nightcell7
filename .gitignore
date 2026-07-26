@@ -34,3 +34,6 @@ assets-source/**/raw/*
 # Python bytecode from the Blender asset generators.
 __pycache__/
 *.pyc
+
+# Scratch screenshots from local verification runs.
+shot-*.png
