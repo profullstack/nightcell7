@@ -392,6 +392,31 @@ export class WeaponEffects {
    *   they connected.
    */
   private spawnImpact(at: Vector3, direction: Vector3, now: number, heavy = false): void {
+    // Recolour for the surface being hit. Concrete throws bright orange
+    // sparks; a body does not, and firing ricochet colours at a person was
+    // both wrong and unreadable — the player could not tell a hit on a wall
+    // from a hit on a man.
+    const impactNow = this.impacts[this.nextImpact % this.impacts.length];
+    if (impactNow) {
+      if (heavy) {
+        impactNow.sparks.color1 = new Color4(0.62, 0.05, 0.05, 1);
+        impactNow.sparks.color2 = new Color4(0.34, 0.02, 0.02, 1);
+        impactNow.sparks.colorDead = new Color4(0.14, 0.01, 0.01, 0);
+        impactNow.dust.color1 = new Color4(0.42, 0.05, 0.05, 0.55);
+        impactNow.dust.color2 = new Color4(0.24, 0.03, 0.03, 0.38);
+        impactNow.dust.colorDead = new Color4(0.1, 0.01, 0.01, 0);
+        impactNow.light.diffuse = new Color3(0.7, 0.12, 0.1);
+      } else {
+        impactNow.sparks.color1 = new Color4(1, 0.86, 0.5, 1);
+        impactNow.sparks.color2 = new Color4(1, 0.52, 0.16, 1);
+        impactNow.sparks.colorDead = new Color4(0.5, 0.16, 0.04, 0);
+        impactNow.dust.color1 = new Color4(0.72, 0.7, 0.66, 0.5);
+        impactNow.dust.color2 = new Color4(0.5, 0.49, 0.47, 0.35);
+        impactNow.dust.colorDead = new Color4(0.4, 0.39, 0.38, 0);
+        impactNow.light.diffuse = new Color3(1, 0.7, 0.35);
+      }
+    }
+
     const impact = this.impacts[this.nextImpact % this.impacts.length];
     this.nextImpact += 1;
     if (!impact) return;
@@ -415,7 +440,7 @@ export class WeaponEffects {
     impact.dust.start();
 
     impact.light.position.copyFrom(spawn);
-    impact.light.intensity = (40 + Math.random() * 18) * (heavy ? 1.6 : 1.0);
+    impact.light.intensity = (40 + Math.random() * 18) * (heavy ? 0.5 : 1.0);
 
     // Grow with distance so a hit is as readable across the yard as it is at
     // point blank, but clamped so a close impact does not fill the screen.

@@ -21,7 +21,6 @@ import {
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
 import { placeAnimated, type AssetSet } from "./assets";
-import { brightenCharacter } from "./targets";
 
 /**
  * Pull a licensed character back into the yard's exposure range.
@@ -36,7 +35,8 @@ import { brightenCharacter } from "./targets";
 function tameForScene(root: TransformNode, scene: Scene): void {
   const seen = new Map<Material, Material>();
 
-  for (const mesh of root.getChildMeshes() as Mesh[]) {
+  const meshes = root.getChildMeshes() as Mesh[];
+  for (const mesh of meshes) {
     const source = mesh.material;
     if (!source) continue;
     let clone = seen.get(source);
@@ -152,8 +152,8 @@ export class Opponents {
     // The generated character renders correctly, so the bots use it until the
     // licensed ones are diagnosed. Swapping back is a one-line change:
     //   assets.models.get("fighter_swat") / ("fighter_worker")
-    const enemyModel = assets.models.get("character");
-    const friendlyModel = assets.models.get("character");
+    const enemyModel = assets.models.get("fighter_swat") ?? assets.models.get("character");
+    const friendlyModel = assets.models.get("fighter_worker") ?? assets.models.get("character");
     const character = enemyModel;
     const carbine = assets.models.get("carbine");
     if (!character) throw new Error("no character model loaded");
@@ -196,8 +196,20 @@ export class Opponents {
       // the same decision on the same tick.
       this.controllers.push(new BotController(id, 1000 + i * 37));
 
+      // Put them on a real spawn pad. `addPlayer` initialises movement to the
+      // origin and nothing else places them, so every bot stood on top of the
+      // central hard point in a single pile — which reads as "they all appear
+      // where I am" the moment the player walks into the middle.
+      const player = this.sim.players.get(id);
+      const spawns = spawnsForTeam(ARDAVAN_YARD, entry.team);
+      const spawn = spawns[i % Math.max(1, spawns.length)];
+      if (player && spawn) {
+        player.movement.position = { ...spawn.position };
+        player.movement.yaw = spawn.yaw;
+      }
+
       const placed = placeAnimated(entry.model ?? character, id, {
-        position: new Vector3(0, -50, 0), // parked until the sim spawns them
+        position: new Vector3(0, -50, 0), // moved to the spawn on the first sync
         rotationY: 0,
       });
       if (!placed) return;
@@ -206,7 +218,6 @@ export class Opponents {
       // not attached on top of it.
       void carbine;
 
-      brightenCharacter(placed.root);
       tameForScene(placed.root, scene);
 
       this.views.set(id, {
@@ -312,7 +323,7 @@ export class Opponents {
         const view = this.views.get(event.victimId);
         if (view && !view.dead) {
           view.dead = true;
-          this.play(view, "death", false);
+          this.play(view, "Death", false);
           this.deadUntil.set(event.victimId, performance.now() + RESPAWN_MS);
         }
         continue;
@@ -362,7 +373,7 @@ export class Opponents {
     if (!player.alive) {
       if (!view.dead) {
         view.dead = true;
-        this.play(view, "death", false);
+        this.play(view, "Death", false);
       }
       return;
     }
@@ -384,7 +395,7 @@ export class Opponents {
     const speed = Math.hypot(player.movement.velocity.x, player.movement.velocity.z);
     // Clip names come from the licensed pack, whose idle holds the weapon up
     // — exactly right for a fighter, and something my generated rig lacked.
-    const wanted = speed > RUN_SPEED ? "run" : speed > IDLE_SPEED ? "walk" : "idle";
+    const wanted = speed > RUN_SPEED ? "Run" : speed > IDLE_SPEED ? "Walk" : "Idle_Gun";
     if (wanted !== view.current) this.play(view, wanted, true);
   }
 
