@@ -7,7 +7,7 @@ import {
   type Logger,
   newCorrelationId,
 } from "@nightcell7/observability";
-import { SESSION_COOKIE_NAME, canPlayMultiplayer, type AccountContext } from "@nightcell7/auth";
+import { canPlayMultiplayer, type AccountContext } from "@nightcell7/auth";
 import {
   CATALOG,
   MAX_REMEMBERED_DEVICES,
@@ -68,6 +68,21 @@ export interface Dependencies {
   enqueue: (queue: string, name: string, payload: unknown) => Promise<void>;
   /** Redis-backed ticket nonce registry, so a ticket can be consumed once. */
   registerTicket: (ticketId: string, ttlSeconds: number) => Promise<void>;
+  /**
+   * Better Auth handler. Owns credentials, sessions and verification; the
+   * product rules around it live in @nightcell7/auth.
+   */
+  auth: {
+    handler: (request: Request) => Promise<Response>;
+    /**
+     * Resolves the caller from request headers.
+     *
+     * Delegated to Better Auth rather than reading a cookie ourselves: it owns
+     * the cookie name, signing and rotation, and a hand-rolled lookup silently
+     * saw nobody as signed in when those did not match.
+     */
+    getSession: (headers: Headers) => Promise<{ userId: string; verified: boolean } | null>;
+  };
   /** Content manifest loading and per-object R2 signing (PRD §26.4). */
   content: {
     loadManifest: (episodeId: string, version: string) => Promise<ContentManifest | null>;
@@ -106,11 +121,20 @@ export function createApp(deps: Dependencies) {
 
   app.notFound((c) => errorResponse(c, notFound(), c.get("correlationId")));
 
-  /** Resolve the caller's account from the session cookie, if any. */
+  /** Resolve the caller's account, if any. */
   app.use("*", async (c, next) => {
-    const cookie = c.req.header("cookie") ?? "";
-    const token = readCookie(cookie, SESSION_COOKIE_NAME);
-    c.set("account", token ? await deps.repos.findAccountBySessionToken(token) : null);
+    const session = await deps.auth.getSession(c.req.raw.headers);
+    if (!session) {
+      c.set("account", null);
+      await next();
+      return;
+    }
+
+    // Identity and verification come from the session; account status and ban
+    // state are ours and must be read fresh, so a ban applies immediately
+    // rather than at the next sign-in.
+    const account = await deps.repos.findAccountById(session.userId);
+    c.set("account", account ? { ...account, verified: session.verified } : null);
     await next();
   });
 
@@ -131,6 +155,14 @@ export function createApp(deps: Dependencies) {
     const body = deps.health.ready();
     return c.json(body, body.status === "ok" ? 200 : 503);
   });
+
+  /**
+   * Better Auth owns everything under /api/v1/auth.
+   *
+   * Mounted before the v1 router so its routes are not shadowed, and given the
+   * raw Request because it does its own cookie and body handling.
+   */
+  app.on(["GET", "POST"], "/api/v1/auth/*", (c) => deps.auth.handler(c.req.raw));
 
   const v1 = new Hono<{ Variables: Variables }>();
 

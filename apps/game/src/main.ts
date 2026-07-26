@@ -1,5 +1,7 @@
 import { FreeCamera, Scene, Vector3 } from "@babylonjs/core";
 import { ARDAVAN_YARD, mapChecksum, spawnsForTeam, TEAM_IDS } from "@nightcell7/multiplayer-sim";
+import { decideAccess, loadViewer, parseMode } from "./access";
+import { modeLabel, renderGate } from "./gate";
 import { createHud, renderFault } from "./hud";
 import { requestedVantage } from "./photo";
 import { PlayerController } from "./player";
@@ -23,6 +25,21 @@ async function boot(): Promise<void> {
 
   const ui = document.getElementById("ui");
   if (!ui) throw new Error("ui root missing");
+
+  // Access is decided BEFORE the renderer starts: unavailable content is never
+  // downloaded or booted, and the demo stays open to everyone (PRD §23.1).
+  const mode = parseMode(window.location.search);
+  const viewer = await loadViewer();
+  const access = decideAccess(mode, viewer);
+
+  if (!access.allowed) {
+    canvas.style.display = "none";
+    renderGate(ui, access);
+    console.info(JSON.stringify({ msg: "access denied", mode, reason: access.reason }));
+    return;
+  }
+
+  console.info(JSON.stringify({ msg: "starting", mode: modeLabel(mode) }));
 
   const { engine, kind } = await createRenderer(canvas);
 

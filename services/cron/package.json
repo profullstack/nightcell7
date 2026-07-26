@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "ioredis": "^5.4.2",
-    "zod": "^3.24.1",
+    "zod": "^4.1.13",
     "@nightcell7/observability": "workspace:*",
     "@nightcell7/entitlements": "workspace:*",
     "@nightcell7/coinpay": "workspace:*",

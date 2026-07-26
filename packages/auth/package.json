@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "better-auth": "^1.6.25",
-    "zod": "^3.24.1",
+    "zod": "^4.1.13",
     "@nightcell7/database": "workspace:*"
   }
 }

@@ -42,20 +42,17 @@ const env: ApiEnv = {
 function fakeRepos(overrides: Partial<Repositories> = {}): Repositories {
   const seenEvents = new Set<string>();
   const base: Repositories = {
-    async findAccountBySessionToken(token) {
-      if (token === "verified") {
-        return { userId: "u_verified", verified: true, status: "active" };
-      }
-      if (token === "unverified") {
-        return { userId: "u_unverified", verified: false, status: "active" };
-      }
-      if (token === "banned") {
+    async findAccountById(userId) {
+      if (userId === "u_banned") {
         return {
-          userId: "u_banned",
+          userId,
           verified: true,
           status: "active",
           multiplayerBannedUntil: "2099-01-01T00:00:00.000Z",
         };
+      }
+      if (userId.startsWith("u_")) {
+        return { userId, verified: true, status: "active" };
       }
       return null;
     },
@@ -157,6 +154,19 @@ function harness(
     content: {
       loadManifest: async () => manifest,
       sign: async (key, ttl) => `https://r2.test/${key}?ttl=${ttl}`,
+    },
+    // Better Auth owns its own subtree; these tests cover the routes around it.
+    auth: {
+      handler: async () => new Response("auth", { status: 200 }),
+      // Mirrors production: the session supplies identity and verification,
+      // the repository supplies status and ban state.
+      getSession: async (headers) => {
+        const cookie = headers.get("cookie") ?? "";
+        if (cookie.includes("=verified")) return { userId: "u_verified", verified: true };
+        if (cookie.includes("=unverified")) return { userId: "u_unverified", verified: false };
+        if (cookie.includes("=banned")) return { userId: "u_banned", verified: true };
+        return null;
+      },
     },
   });
 

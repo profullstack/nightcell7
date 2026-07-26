@@ -12,6 +12,6 @@
   },
   "dependencies": {
     "@nightcell7/observability": "workspace:*",
-    "zod": "^3.24.1"
+    "zod": "^4.1.13"
   }
 }

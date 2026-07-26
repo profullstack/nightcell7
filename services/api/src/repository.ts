@@ -18,7 +18,6 @@ import {
   orderItems,
   orders,
   paymentEvents,
-  sessions,
   users,
 } from "@nightcell7/database";
 import type { AccountContext } from "@nightcell7/auth";
@@ -32,7 +31,7 @@ import type { OrderStatus } from "@nightcell7/entitlements";
  * a fake implementation.
  */
 export interface Repositories {
-  findAccountBySessionToken(token: string): Promise<AccountContext | null>;
+  findAccountById(userId: string): Promise<AccountContext | null>;
   listEntitlements(
     userId: string,
   ): Promise<{ episodeId: string; status: string; grantedAt: string }[]>;
@@ -177,26 +176,19 @@ export interface CreateFeedbackInput {
 
 export function createRepositories(db: Database): Repositories {
   return {
-    async findAccountBySessionToken(token) {
+    async findAccountById(userId) {
       const rows = await db
         .select({
           userId: users.id,
           emailVerified: users.emailVerified,
           status: users.status,
-          expiresAt: sessions.expiresAt,
-          revokedAt: sessions.revokedAt,
         })
-        .from(sessions)
-        .innerJoin(users, eq(users.id, sessions.userId))
-        .where(eq(sessions.token, token))
+        .from(users)
+        .where(eq(users.id, userId))
         .limit(1);
 
       const row = rows[0];
       if (!row) return null;
-      if (row.revokedAt) return null;
-      // `expiresAt` is a real Date (integer timestamp column), so this
-      // comparison is meaningful rather than a silent NaN.
-      if (row.expiresAt.getTime() <= Date.now()) return null;
 
       // An active ban makes the multiplayer ticket endpoint fail closed.
       const bans = await db

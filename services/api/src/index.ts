@@ -15,6 +15,7 @@ import { createApp } from "./app";
 import { loadEnv } from "./env";
 import { RedisRateLimiter } from "./rate-limit";
 import { createRepositories } from "./repository";
+import { createAuth } from "@nightcell7/auth/server";
 import { createR2Signer, createUnconfiguredSigner } from "./r2";
 
 /**
@@ -53,8 +54,32 @@ const coinpay = new CoinpayClient({
   webhookUrl: `${env.PUBLIC_ORIGIN}/api/v1/webhooks/coinpay`,
 });
 
+const auth = createAuth({
+  db: database,
+  secret: env.AUTH_SECRET,
+  publicOrigin: env.PUBLIC_ORIGIN,
+  isProduction: env.NODE_ENV === "production",
+  // Verification and reset mail goes through the same queue as everything
+  // else, so a mail outage delays sign-ups rather than failing them outright.
+  sendEmail: async (job) => {
+    await queueFor("email").add(job.kind, job, {
+      removeOnComplete: 1000,
+      attempts: 5,
+      backoff: { type: "exponential", delay: 2000 },
+    });
+  },
+});
+
 const app = createApp({
   env,
+  auth: {
+    handler: (request) => auth.handler(request),
+    getSession: async (headers) => {
+      const session = await auth.api.getSession({ headers });
+      if (!session?.user) return null;
+      return { userId: session.user.id, verified: session.user.emailVerified === true };
+    },
+  },
   logger,
   health,
   repos: createRepositories(database),

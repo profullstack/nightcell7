@@ -34,7 +34,7 @@ type DecodeResult<T> =
   | { ok: true; claims: T }
   | { ok: false; reason: "malformed" | "bad_signature" | "invalid_claims" | "expired" };
 
-function decode<T extends z.ZodTypeAny>(
+function decode<T extends z.ZodType<{ exp: number }>>(
   token: string,
   secret: string,
   schema: T,

@@ -51,7 +51,7 @@ export const settingsSchema = z.object({
       ambience: z.number().min(0).max(1).default(0.7),
       ui: z.number().min(0).max(1).default(0.6),
     })
-    .default({}),
+    .prefault({}),
   dynamicRange: z.enum(["full", "night", "headphones"]).default("full"),
 });
 

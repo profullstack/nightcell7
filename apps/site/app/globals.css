@@ -909,6 +909,90 @@ a {
   border-radius: var(--radius-sharp);
 }
 
+/* ------------------------------------------------------------- auth forms */
+
+.auth-form {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 26rem;
+  margin: 2rem 0;
+}
+
+.auth-form__row {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.auth-form label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bone-300);
+}
+
+.auth-form input {
+  padding: 0.75rem 0.9rem;
+  background: var(--ink-900);
+  border: 1px solid color-mix(in srgb, var(--bone-300) 25%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--bone-100);
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+.auth-form input:focus-visible {
+  border-color: var(--signal-cyan);
+}
+
+.auth-form__help {
+  margin: 0;
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--bone-300) 80%, transparent);
+}
+
+/* Red border as well as red text: colour alone must never carry meaning
+   (PRD §22.6). */
+.auth-form__error {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-left: 3px solid var(--signal-red);
+  background: color-mix(in srgb, var(--signal-red) 10%, transparent);
+  color: var(--bone-100);
+  font-size: 0.9rem;
+}
+
+.auth-form button[type="submit"] {
+  justify-self: start;
+}
+
+.auth-form button[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.auth-form__foot {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--bone-300);
+}
+
+.auth-form__foot a,
+.prose .linklike {
+  color: var(--signal-cyan);
+}
+
+.linklike {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--signal-cyan);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 /* ---------------------------------------------------------------- footer */
 
 .footer {

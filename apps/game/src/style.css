@@ -445,3 +445,82 @@ body {
     display: none;
   }
 }
+
+/* ------------------------------------------------------------------ gate */
+/* Shown instead of the game when a mode is not available. Matches the site's
+   DIVIDED SIGNAL palette so it does not read as a browser error page. */
+
+.gate {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: clamp(1.5rem, 6vw, 5rem);
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(in srgb, #d33a3f 12%, transparent) 0%,
+      transparent 45%,
+      transparent 55%,
+      color-mix(in srgb, #54bdca 12%, transparent) 100%
+    ),
+    #07090c;
+  color: #ece8df;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+}
+
+.gate__eyebrow {
+  margin: 0;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: #ad9365;
+}
+
+.gate h1 {
+  margin: 0;
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.05;
+}
+
+.gate__detail {
+  margin: 0;
+  max-width: 46ch;
+  color: #c6c1b7;
+  line-height: 1.6;
+}
+
+.gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.gate__button {
+  padding: 0.8rem 1.5rem;
+  border: 1px solid color-mix(in srgb, #c6c1b7 35%, transparent);
+  border-radius: 2px;
+  color: #c6c1b7;
+  text-decoration: none;
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.gate__button:hover {
+  color: #ece8df;
+  border-color: #ece8df;
+}
+
+.gate__button--primary {
+  background: #ece8df;
+  border-color: #ece8df;
+  color: #07090c;
+}
