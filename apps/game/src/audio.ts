@@ -30,6 +30,26 @@ const VARIED = {
 
 const SINGLE = ["reload", "ui_hover", "ui_click", "ui_error", "ambience_yard"] as const;
 
+/**
+ * Background music.
+ *
+ * Streamed through an `<audio>` element rather than decoded like the effects.
+ * These are four-minute tracks at roughly 9 MB each; `decodeAudioData` would
+ * pull every one of them into memory as uncompressed PCM — hundreds of
+ * megabytes — to play one at a time. An element streams, starts immediately,
+ * and is what media playback is for.
+ *
+ * They are also deliberately excluded from the shell download budget: the game
+ * is playable before a note has arrived, so music is fetched on demand rather
+ * than gating the first match (PRD §30).
+ */
+const MUSIC = [
+  "music_frost-on-the-oar",
+  "music_ironwood-oath",
+  "music_runes-on-ice",
+  "music_storm-crown-oath",
+] as const;
+
 type VariedName = keyof typeof VARIED;
 
 const BASE = `${import.meta.env.BASE_URL}audio/`;
@@ -53,6 +73,8 @@ export class GameAudio {
   private readonly master: GainNode;
   private readonly buffers = new Map<string, AudioBuffer>();
   private ambience: AudioBufferSourceNode | null = null;
+  private music: HTMLAudioElement | null = null;
+  private musicIndex = 0;
   private stepAccumulator = 0;
   private lastVariation = new Map<string, number>();
   private ready = false;
@@ -195,11 +217,53 @@ export class GameAudio {
     this.ambience = source;
   }
 
+  /**
+   * Start the soundtrack, shuffled, advancing to the next track on end.
+   *
+   * Quiet by default. This sits under gunfire and footsteps, and music that
+   * competes with the audio cues a player needs is worse than silence.
+   */
+  startMusic(volume = 0.28): void {
+    if (this.music) return;
+
+    this.musicIndex = Math.floor(Math.random() * MUSIC.length);
+    const element = new Audio();
+    element.volume = volume;
+    element.preload = "none";
+
+    const advance = () => {
+      this.musicIndex = (this.musicIndex + 1) % MUSIC.length;
+      element.src = `${BASE}${MUSIC[this.musicIndex]}.mp3`;
+      void element.play().catch(() => {
+        // Autoplay can still be refused; failing quietly is right here,
+        // because losing the soundtrack must never interrupt a match.
+      });
+    };
+
+    element.addEventListener("ended", advance);
+    // A track that fails to load should move on rather than end the playlist.
+    element.addEventListener("error", advance);
+
+    element.src = `${BASE}${MUSIC[this.musicIndex]}.mp3`;
+    void element.play().catch(() => {});
+    this.music = element;
+  }
+
+  stopMusic(): void {
+    this.music?.pause();
+    this.music = null;
+  }
+
+  setMusicVolume(value: number): void {
+    if (this.music) this.music.volume = Math.max(0, Math.min(1, value));
+  }
+
   setVolume(value: number): void {
     this.master.gain.value = Math.max(0, Math.min(1, value));
   }
 
   dispose(): void {
+    this.stopMusic();
     this.ambience?.stop();
     this.ambience = null;
     void this.context.close();

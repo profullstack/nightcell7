@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 4.5.12 LTS",
-  "commit": "faaa9e34854efe175ca5e2c1a4b5ba4d4c704670",
+  "commit": "bfc24e463e97c8c28389df2ba795a458561313d5",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
   "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
   "textureSize": 1024,
@@ -67,6 +67,12 @@
     "ui_click.mp3",
     "ui_error.mp3",
     "ui_hover.mp3"
+  ],
+  "music": [
+    "music_frost-on-the-oar.mp3",
+    "music_ironwood-oath.mp3",
+    "music_runes-on-ice.mp3",
+    "music_storm-crown-oath.mp3"
   ],
   "bytes": {
     "models": 3668192,
