@@ -92,6 +92,9 @@ describe("generated models", () => {
     "prop_ammo_box",
     "prop_barrier",
     "prop_water_tank",
+    "wep_rifle",
+    "wep_smg",
+    "wep_sniper",
   ]);
 
   it("only uses material slots the engine can bind", () => {
@@ -108,9 +111,9 @@ describe("generated models", () => {
   });
 
   it("ships a collision proxy with every prop", () => {
-    // The carbine is exempt: it is a viewmodel held at the camera and a world
-    // model on a character's back. It never collides with anything, so a
-    // COL_ hull on it would be geometry that exists only to satisfy a rule.
+    // Weapons are exempt: they are held at the camera or in a fighter's hands
+    // and never collide with anything, so a COL_ hull on one would be geometry
+    // that exists only to satisfy a rule.
     const NO_COLLIDER = new Set(["carbine", ...LICENSED]);
 
     for (const model of MODELS) {
@@ -126,8 +129,49 @@ describe("generated models", () => {
   it("gives every weapon a SOCKET_MUZZLE", () => {
     // CLAUDE.md: "Every weapon has SOCKET_MUZZLE." The engine spawns muzzle
     // flash and tracer origins there.
-    const nodes = names(glbJson(join(MODELS_DIR, "carbine.glb")).nodes);
-    expect(nodes.some((n) => n.startsWith("SOCKET_MUZZLE"))).toBe(true);
+    //
+    // The licensed weapons are included even though they are otherwise exempt
+    // from the model conventions: their sockets are *placed by a heuristic*
+    // rather than modelled, so this is the one convention most likely to break
+    // silently when a new weapon is converted.
+    for (const weapon of ["carbine", "wep_rifle", "wep_smg", "wep_sniper"]) {
+      const nodes = names(glbJson(join(MODELS_DIR, `${weapon}.glb`)).nodes);
+      expect(
+        nodes.some((n) => n.startsWith("SOCKET_MUZZLE")),
+        `${weapon}.glb has no SOCKET_MUZZLE (CLAUDE.md)`,
+      ).toBe(true);
+    }
+  });
+
+  it("puts each weapon's muzzle at the barrel tip, not the stock", () => {
+    // The muzzle socket is placed by detecting the barrel axis, because Synty
+    // is not consistent about which way a weapon faces. An earlier heuristic
+    // ("the muzzle end is thinner") put the SMG's socket on its folding stock,
+    // which the numbers alone did not reveal — muzzle flash and tracers would
+    // have spawned behind the shooter's shoulder.
+    //
+    // Every weapon is modelled barrel-along--Y, which glTF's Y-up conversion
+    // maps to +Z, so the socket belongs at the far +Z end. Guarding the sign
+    // catches a flipped weapon; guarding the distance catches a socket left at
+    // the origin, which is what a mis-parented empty produces.
+    const MUZZLES: Record<string, number> = {
+      carbine: 0.492,
+      wep_rifle: 0.72,
+      wep_smg: 0.506,
+      wep_sniper: 1.163,
+    };
+
+    for (const [weapon, expected] of Object.entries(MUZZLES)) {
+      const gltf = glbJson(join(MODELS_DIR, `${weapon}.glb`)) as {
+        nodes?: { name?: string; translation?: number[] }[];
+      };
+      const node = (gltf.nodes ?? []).find((n) => (n.name ?? "").startsWith("SOCKET_MUZZLE"));
+      expect(node, `${weapon}.glb has no SOCKET_MUZZLE`).toBeDefined();
+
+      const along = node?.translation?.[2] ?? 0;
+      expect(along, `${weapon}.glb muzzle is on the wrong end`).toBeGreaterThan(0);
+      expect(Math.abs(along - expected), `${weapon}.glb muzzle moved`).toBeLessThan(0.02);
+    }
   });
 
   it("keeps the character's weapon and head sockets", () => {

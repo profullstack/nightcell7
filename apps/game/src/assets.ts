@@ -71,6 +71,13 @@ export const MODELS = [
   "prop_ammo_box",
   "prop_barrier",
   "prop_water_tank",
+  // Licensed Synty weapons, bound to the shared `synty_weapons` atlas. The
+  // rifle is the player's viewmodel and every fighter's world model; the SMG
+  // and sniper distinguish opponents at a glance. The generated `carbine`
+  // above is kept as a working fallback.
+  "wep_rifle",
+  "wep_smg",
+  "wep_sniper",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];
@@ -174,6 +181,32 @@ export function createMaterials(scene: Scene): Map<string, PBRMaterial | Standar
   vehicles.environmentIntensity = 0.35;
   vehicles.maxSimultaneousLights = 6;
   materials.set("synty_vehicles", vehicles);
+
+  // Synty weapons share one 512px atlas — the whole armoury costs 2 KB, because
+  // the pack colours by UV region rather than by detail. The pack ships ten
+  // recolours over that one layout; `Weapons_01` is the neutral gunmetal, since
+  // the camo and tiger-stripe variants would tie every weapon to one faction.
+  const weapons = new PBRMaterial("synty_weapons", scene);
+  weapons.albedoTexture = loadTexture(scene, "synty_weapons.webp", true);
+  // Barely metallic, on purpose.
+  //
+  // "Gun metal, so make it metallic" is the obvious reading and it renders the
+  // weapon black. A metallic surface in Babylon is lit almost entirely by what
+  // it reflects, and this atlas ships no metallic or roughness map — so a flat
+  // 0.55 metallic over a flat colour, with the environment contribution turned
+  // down for close-range work, leaves nothing to light it at all. Synty paint
+  // their metal into the albedo instead; the other two atlases already sit at
+  // 0 and 0.05 for the same reason.
+  weapons.metallic = 0.15;
+  weapons.roughness = 0.5;
+  // Same hot-yard correction as the other two atlases — see `synty_atlas`.
+  weapons.albedoColor = new Color3(0.36, 0.36, 0.36);
+  // Lower than the other atlases: the viewmodel is held 30 cm from the camera,
+  // where a metallic surface reflecting the yard's 2.9 environment blows out to
+  // white across the bottom third of the screen.
+  weapons.environmentIntensity = 0.25;
+  weapons.maxSimultaneousLights = 6;
+  materials.set("synty_weapons", weapons);
 
   // Lamp lenses are the one unlit surface: they are a light source, and
   // shading them would make the fitting darker than the pool of light it casts.
@@ -373,10 +406,26 @@ export function placeAnimated(
   return { root, clips };
 }
 
+/**
+ * `unique` gives real meshes instead of hardware instances.
+ *
+ * Instancing is what makes twenty wall panels one draw call, and it is the
+ * right default — but an `InstancedMesh` shares its source's material, and
+ * `mesh.material = x` on one is a *getter-backed no-op*: it neither applies nor
+ * throws. A caller that needs its own material (the viewmodel dims the
+ * environment contribution for close-range work) silently gets the shared one.
+ * That cost a debugging round where forcing the weapon bright red changed
+ * nothing on screen.
+ */
+export interface PlaceOptions {
+  readonly unique?: boolean;
+}
+
 export function placeAll(
   container: AssetContainer,
   name: string,
   placements: readonly Placement[],
+  options: PlaceOptions = {},
 ): TransformNode[] {
   const roots: TransformNode[] = [];
 
@@ -384,7 +433,7 @@ export function placeAll(
     const entry = container.instantiateModelsToScene(
       (source) => `${name}_${index}_${source}`,
       false,
-      { doNotInstantiate: false },
+      { doNotInstantiate: options.unique === true },
     );
 
     // `rootNodes` is typed as the base `Node`; only transform nodes can be

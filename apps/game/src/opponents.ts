@@ -1,4 +1,11 @@
-import { Vector3, type AnimationGroup, type Scene, type TransformNode } from "@babylonjs/core";
+import {
+  Vector3,
+  type AnimationGroup,
+  type AssetContainer,
+  type Mesh,
+  type Scene,
+  type TransformNode,
+} from "@babylonjs/core";
 import {
   ARDAVAN_YARD,
   rayAabb,
@@ -11,7 +18,7 @@ import {
   type Vec3,
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
-import { placeAnimated, type AssetSet } from "./assets";
+import { placeAll, placeAnimated, type AssetSet } from "./assets";
 
 /** Enemies on the Directorate side, and friendlies on the player's. */
 const ENEMY_COUNT = 4;
@@ -39,6 +46,40 @@ interface BotView {
 export interface BotShot {
   readonly from: Vec3;
   readonly to: Vec3;
+}
+
+/**
+ * Put a weapon in a fighter's hands.
+ *
+ * The rig carries a `SOCKET_WEAPON` node for exactly this. Parenting to the
+ * socket rather than the root is what makes the weapon follow the animation —
+ * it inherits the hand bone's transform, so it swings with a walk cycle and
+ * drops with a death instead of hanging in the air where the body used to be.
+ *
+ * The yaw matches the viewmodel's: the weapons are modelled barrel-along--Y,
+ * and Babylon's glTF loader flips handedness, so an unrotated weapon points
+ * back at its owner. Failing to find the socket is not fatal — an unarmed bot
+ * is worse-looking, not broken — so this returns quietly.
+ */
+function attachWeapon(root: TransformNode, model: AssetContainer | null, id: string): void {
+  if (!model) return;
+
+  const socket = root
+    .getDescendants()
+    .find((node): node is TransformNode => node.name.includes("SOCKET_WEAPON"));
+  if (!socket) return;
+
+  const [weapon] = placeAll(model, `${id}_weapon`, [{ position: Vector3.Zero() }]);
+  if (!weapon) return;
+
+  weapon.parent = socket;
+  weapon.position = Vector3.Zero();
+  weapon.rotation = new Vector3(0, Math.PI, 0);
+
+  for (const mesh of weapon.getChildMeshes() as Mesh[]) {
+    // A weapon is never shot at directly; hits resolve against the body.
+    mesh.isPickable = false;
+  }
 }
 
 export class Opponents {
@@ -86,8 +127,16 @@ export class Opponents {
     const enemyModel = assets.models.get("character");
     const friendlyModel = assets.models.get("character");
     const character = enemyModel;
-    const carbine = assets.models.get("carbine");
     if (!character) throw new Error("no character model loaded");
+
+    // Weapons for the bots.
+    //
+    // They fought empty-handed until now, which read as unfinished from any
+    // distance. Two silhouettes rather than one: the Directorate carries the
+    // rifle, Nightcell the SMG, so which side a figure is on is legible before
+    // the team tint on its marker resolves.
+    const weaponFor = (team: number) =>
+      assets.models.get(team === TEAM_IDS.DIRECTORATE ? "wep_rifle" : "wep_smg") ?? null;
 
     this.sim = new MatchSimulation({ matchId: "sandbox", map: ARDAVAN_YARD });
 
@@ -145,9 +194,7 @@ export class Opponents {
       });
       if (!placed) return;
 
-      // The licensed character already carries its own weapon, so ours is
-      // not attached on top of it.
-      void carbine;
+      attachWeapon(placed.root, weaponFor(entry.team), id);
 
       this.views.set(id, {
         id,

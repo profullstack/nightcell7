@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 4.5.12 LTS",
-  "commit": "dfb11e7362e0b5e6f91388e6af2457edb96d0764",
+  "commit": "4ab3c3275c616631d122f19ff15e7bc88904723c",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
   "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
   "textureSize": 1024,
@@ -25,7 +25,10 @@
     "tank.glb",
     "veh_armored_car.glb",
     "veh_technical.glb",
-    "wall.glb"
+    "wall.glb",
+    "wep_rifle.glb",
+    "wep_smg.glb",
+    "wep_sniper.glb"
   ],
   "textures": [
     "concrete_albedo.webp",
@@ -51,7 +54,8 @@
     "steel_normal.webp",
     "steel_orm.webp",
     "synty_atlas.webp",
-    "synty_vehicles.webp"
+    "synty_vehicles.webp",
+    "synty_weapons.webp"
   ],
   "audio": [
     "ambience_yard.mp3",
@@ -86,9 +90,9 @@
     "throngva/the-wolf-called-want.mp3"
   ],
   "bytes": {
-    "models": 3905884,
-    "textures": 2405506,
+    "models": 4708608,
+    "textures": 2447388,
     "audio": 323166,
-    "total": 6634556
+    "total": 7479162
   }
 }

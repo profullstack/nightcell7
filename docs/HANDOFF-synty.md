@@ -15,13 +15,13 @@ shipped**, because their animation retarget is broken.
 | Thing                                                 | State                                           |
 | ----------------------------------------------------- | ----------------------------------------------- |
 | `models/fighter_insurgent.glb`, `fighter_soldier.glb` | committed, load, textured, animation wrong      |
-| `textures/synty_atlas.webp`                           | working, 357 KB, shared by characters + props   |
+| `textures/synty_atlas.webp`                           | working, 388 KB, shared by characters + props   |
 | `tools/art/blender/import_synty.py`                   | character converter; maths fixed, export broken |
 | `tools/art/blender/import_synty_prop.py`              | static-mesh converter; **working, shipped**     |
 | 2 vehicles + 5 props (`veh_*`, `prop_*`)              | **integrated** — converted, textured, placed    |
 | `textures/synty_vehicles.webp`                        | working, 76 KB, shared by all vehicles          |
-| Weapons                                               | **none integrated** — still the next win        |
-| Shell budget                                          | 6.33 MB against a 9 MB guard                    |
+| 3 weapons (`wep_*`) + `synty_weapons.webp`            | **integrated** — player viewmodel and bot hands |
+| Shell budget                                          | 7.13 MB against a 9 MB guard                    |
 
 Source pack is at `~/src/nightcell7-assets/SourceFiles/` (406 MB, outside the
 repo, not committed).
@@ -100,10 +100,27 @@ single animation named `target_rig`** — after the object, not the actions.
    kept out of the three lanes, so rule 1 still holds for the play space.
    Promoting any to real cover is a `map.ts` collision + checksum change.
 
-5. **Then weapons.** `SM_Wep_*` with the `PolygonMilitary_Weapons_*` atlases,
-   replacing the generated carbine. `import_synty_prop.py` is the right starting
-   point, but a weapon needs a `SOCKET_MUZZLE` node and is exempt from the
-   `COL_` rule — see how `assets.test.ts` handles the carbine.
+5. ~~**Then weapons.**~~ **Done.** `import_synty_weapon.py` assembles the
+   modular `SM_Wep_*` parts into one mesh and places `SOCKET_MUZZLE`.
+   `wep_rifle` is the player's viewmodel; the Directorate carry it and Nightcell
+   the SMG, so the two sides are legible at a glance. The generated `carbine` is
+   still built and still ships as a fallback. Three lessons:
+   - **The muzzle end cannot be guessed from cross-section.** See PROVENANCE.md
+     — the SMG's folding stock defeats it. The grip is the reliable reference.
+   - **Bake the FBX import transform into the mesh.** Left alone it is a 0.01
+     scale and a -90° X rotation, which survives export as a node transform and
+     makes every child coordinate centimetres in a rotated basis — the muzzle
+     socket read `72.0` instead of `0.72`.
+   - **`placeAll` returns hardware instances, and assigning to an
+     `InstancedMesh`'s material is a silent no-op.** The viewmodel needs its own
+     material, so it now asks for `unique` meshes. Without it every material
+     change was landing on nothing; forcing the weapon bright red changed
+     nothing on screen, which is what finally identified it.
+
+6. **Everything licensed is reproducible.** `node tools/art/import-synty.mjs`
+   holds the source file, slot, decimation and atlas for every Synty asset and
+   reproduces the committed files byte for byte. Before it, those parameters
+   lived only in one session's shell history.
 
 ## Traps already hit — do not repeat
 
