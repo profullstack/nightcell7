@@ -9,6 +9,7 @@ import { PlayerController } from "./player";
 import { Viewmodel } from "./viewmodel";
 import { GameAudio } from "./audio";
 import { WeaponEffects } from "./vfx";
+import { TrainingTargets } from "./targets";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
 import "./style.css";
@@ -128,6 +129,9 @@ async function boot(): Promise<void> {
   // The flash lights the yard, not the gun held in front of it.
   effects.excludeFromFlash(viewmodel.meshes());
 
+  // Something to shoot at. PRD §40 wants "one enemy" before anything else.
+  const targets = new TrainingTargets(scene, world.assets);
+
   const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
 
   const hud = createHud(ui, {
@@ -178,10 +182,22 @@ async function boot(): Promise<void> {
         // off the crosshair at close range.
         const eye = camera.globalPosition;
         const aim = camera.getDirection(Vector3.Forward());
-        effects.fire(viewmodel.muzzlePosition() ?? eye, eye, aim);
+        const muzzle = viewmodel.muzzlePosition() ?? eye;
+
+        // A target only counts if it is in front of whatever the round would
+        // otherwise hit, so one standing behind a container cannot be shot
+        // through it.
+        const world_ = effects.trace(eye, aim);
+        const onTarget = targets.tryHit(
+          { x: eye.x, y: eye.y, z: eye.z },
+          { x: aim.x, y: aim.y, z: aim.z },
+          world_.distance,
+        );
+        effects.fire(muzzle, eye, aim, onTarget?.point);
       }
     }
     effects.update();
+    targets.update();
     hud.update(status, engine.getFps());
     scene.render();
   });
