@@ -16,7 +16,7 @@ import { loadEnv } from "./env";
 import { RedisRateLimiter } from "./rate-limit";
 import { createRepositories } from "./repository";
 import { createAuth } from "@nightcell7/auth/server";
-import { createR2Signer, createUnconfiguredSigner } from "./r2";
+import { createR2ManifestLoader, createR2Signer, createUnconfiguredSigner } from "./r2";
 
 /**
  * API daemon bootstrap (PRD §18.7).
@@ -53,6 +53,17 @@ const coinpay = new CoinpayClient({
   cancelUrl: `${env.PUBLIC_ORIGIN}/checkout/cancel`,
   webhookUrl: `${env.PUBLIC_ORIGIN}/api/v1/webhooks/coinpay`,
 });
+
+/** R2 is optional: unset credentials degrade to an obvious placeholder. */
+const r2Config =
+  env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY
+    ? {
+        accountId: env.R2_ACCOUNT_ID,
+        accessKeyId: env.R2_ACCESS_KEY_ID,
+        secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+        bucket: env.R2_BUCKET,
+      }
+    : null;
 
 const auth = createAuth({
   db: database,
@@ -94,19 +105,11 @@ const app = createApp({
     });
   },
   content: {
-    // Manifests live in R2 next to the packs they describe. Until the asset
-    // pipeline publishes one, this returns null and the route 404s rather than
-    // inventing an empty manifest.
-    loadManifest: async () => null,
-    sign:
-      env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY
-        ? createR2Signer({
-            accountId: env.R2_ACCOUNT_ID,
-            accessKeyId: env.R2_ACCESS_KEY_ID,
-            secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-            bucket: env.R2_BUCKET,
-          })
-        : createUnconfiguredSigner(),
+    // Manifests live in R2 next to the packs they describe. With R2
+    // unconfigured this stays null and the route 404s rather than inventing an
+    // empty manifest.
+    loadManifest: r2Config ? createR2ManifestLoader(r2Config) : async () => null,
+    sign: r2Config ? createR2Signer(r2Config) : createUnconfiguredSigner(),
   },
   registerTicket: async (ticketId, ttlSeconds) => {
     // Registered here, consumed once by the match service. The SET NX in the

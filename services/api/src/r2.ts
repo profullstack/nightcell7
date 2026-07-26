@@ -1,4 +1,5 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { manifestSchema, type ContentManifest } from "@nightcell7/content-schema";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { ObjectSigner } from "@nightcell7/content-schema";
 
@@ -31,6 +32,40 @@ export function createR2Signer(config: R2Config): ObjectSigner {
   return async (key: string, ttlSeconds: number): Promise<string> => {
     const command = new GetObjectCommand({ Bucket: config.bucket, Key: key });
     return getSignedUrl(client, command, { expiresIn: ttlSeconds });
+  };
+}
+
+/**
+ * Read and validate a content manifest from R2.
+ *
+ * The manifest is parsed against the schema before it is trusted: it decides
+ * which files a paying customer downloads, so a malformed or truncated object
+ * must fail loudly rather than produce a half-manifest.
+ */
+export function createR2ManifestLoader(config: R2Config) {
+  const client = new S3Client({
+    region: "auto",
+    endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
+  });
+
+  return async (episodeId: string, version: string): Promise<ContentManifest | null> => {
+    const key = `private/episodes/${episodeId}/${version}/manifest.json`;
+    try {
+      const result = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key: key }));
+      const body = await result.Body?.transformToString();
+      if (!body) return null;
+      return manifestSchema.parse(JSON.parse(body));
+    } catch (error) {
+      // A missing manifest is a legitimate "not published yet"; anything else
+      // is a real fault and must not be mistaken for one.
+      const name = (error as { name?: string })?.name;
+      if (name === "NoSuchKey" || name === "NotFound") return null;
+      throw error;
+    }
   };
 }
 
