@@ -104,28 +104,48 @@ def main() -> None:
     if not clips:
         raise SystemExit("import_synty: source glb carried no actions")
 
-    # ---- constrain target bones to their source counterparts -------------
+    # ---- retarget, rest-pose relative -------------------------------------
+    #
+    # Copy-rotation constraints in world space were the first attempt and are
+    # wrong: they force the target bone to adopt the source bone's *absolute*
+    # orientation, which is only correct if both skeletons share rest poses.
+    # Synty uses Unreal's axis convention and our clips use another, so every
+    # bone sat at its rest-pose difference from where it belonged and the error
+    # compounded down each limb. The figure measured 1.90 x 2.00 x 2.47 m
+    # instead of roughly 0.6 x 0.4 x 1.8 — limbs splayed in every direction.
+    #
+    # The correct relation carries the rest difference through:
+    #
+    #     target.matrix = source.matrix @ (source.rest⁻¹ @ target.rest)
+    #
+    # so the source's *motion away from its own rest* is what transfers, rather
+    # than its raw orientation.
+    bpy.ops.object.select_all(action="DESELECT")
+    target.select_set(True)
+    bpy.context.view_layer.objects.active = target
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+
+    pairs = []
     for our_name, synty_name in BONE_MAP.items():
-        bone = target.pose.bones.get(synty_name)
-        if bone is None or source.pose.bones.get(our_name) is None:
+        t_bone = target.pose.bones.get(synty_name)
+        s_bone = source.pose.bones.get(our_name)
+        if t_bone is None or s_bone is None:
             continue
-        constraint = bone.constraints.new("COPY_ROTATION")
-        constraint.target = source
-        constraint.subtarget = our_name
-        constraint.target_space = "WORLD"
-        constraint.owner_space = "WORLD"
+        rest_delta = s_bone.bone.matrix_local.inverted() @ t_bone.bone.matrix_local
+        pairs.append((s_bone, t_bone, rest_delta))
 
-    # The hips also translate — without this the figure runs on the spot.
-    hips = target.pose.bones.get("Pelvis")
-    if hips and source.pose.bones.get("Hips"):
-        loc = hips.constraints.new("COPY_LOCATION")
-        loc.target = source
-        loc.subtarget = "Hips"
-        loc.target_space = "WORLD"
-        loc.owner_space = "WORLD"
+    # Parents before children: setting a pose bone's matrix reads its parent's
+    # current transform, so a child solved first is immediately invalidated.
+    def depth(pose_bone):
+        n, b = 0, pose_bone.bone
+        while b.parent:
+            n += 1
+            b = b.parent
+        return n
 
-    # ---- bake each clip onto the target ----------------------------------
-    bones = [b for b in BONE_MAP.values() if target.pose.bones.get(b)]
+    pairs.sort(key=lambda entry: depth(entry[1]))
+
+    hips_pair = next((p for p in pairs if p[1].name == "Pelvis"), None)
     baked = []
 
     for clip in clips:
@@ -134,43 +154,34 @@ def main() -> None:
 
         start = int(clip.frame_range[0])
         end = int(clip.frame_range[1])
-        bpy.context.scene.frame_start = start
-        bpy.context.scene.frame_end = end
 
-        bpy.ops.object.select_all(action="DESELECT")
-        target.select_set(True)
-        bpy.context.view_layer.objects.active = target
-        bpy.ops.object.mode_set(mode="POSE")
-        for bone in target.pose.bones:
-            bone.bone.select = bone.name in bones
+        target.animation_data_create()
+        action = bpy.data.actions.new(f"__baked_{clip.name}")
+        target.animation_data.action = action
 
-        bpy.ops.nla.bake(
-            frame_start=start,
-            frame_end=end,
-            only_selected=True,
-            visual_keying=True,
-            clear_constraints=False,
-            clear_parents=False,
-            use_current_action=False,
-            bake_types={"POSE"},
-        )
-        bpy.ops.object.mode_set(mode="OBJECT")
+        for pose_bone in target.pose.bones:
+            pose_bone.rotation_mode = "QUATERNION"
 
-        action = target.animation_data.action
-        # Free the source name first. Blender appends .001 if the name is taken,
-        # and the engine looks clips up by exact name — "Walk.001" is a clip the
-        # game will never ask for.
+        for frame in range(start, end + 1):
+            bpy.context.scene.frame_set(frame)
+            bpy.context.view_layer.update()
+
+            for s_bone, t_bone, rest_delta in pairs:
+                world = source.matrix_world @ s_bone.matrix @ rest_delta
+                t_bone.matrix = target.matrix_world.inverted() @ world
+                # Each child reads the parent just written, so flush per bone.
+                bpy.context.view_layer.update()
+
+            for _, t_bone, _ in pairs:
+                t_bone.keyframe_insert("rotation_quaternion", frame=frame)
+            if hips_pair:
+                hips_pair[1].keyframe_insert("location", frame=frame)
+
         source_name = clip.name
         clip.name = f"__src_{source_name}"
         action.name = source_name
         action.use_fake_user = True
         baked.append(action.name)
-
-    # Constraints have served their purpose; leaving them in would re-drive the
-    # baked keys from a source rig that is about to be deleted.
-    for bone in target.pose.bones:
-        for constraint in list(bone.constraints):
-            bone.constraints.remove(constraint)
 
     for obj in [source, *source_meshes]:
         bpy.data.objects.remove(obj, do_unlink=True)

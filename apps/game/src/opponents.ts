@@ -51,6 +51,19 @@ export class Opponents {
   private readonly deadUntil = new Map<string, number>();
 
   constructor(_scene: Scene, assets: AssetSet) {
+    // Back on the generated character.
+    //
+    // The Synty models are committed and load, but the animation retarget
+    // splays their limbs — measured at 1.90 x 2.00 x 2.47 m against an
+    // expected 0.6 x 0.4 x 1.8. The cause is understood (see import_synty.py:
+    // the rest-pose difference between the two skeletons) and the corrected
+    // rest-relative maths is written, but its baked actions do not survive the
+    // glTF export yet, so the models cannot be shipped animated.
+    //
+    // Shipping a figure that renders correctly beats shipping a better model
+    // that does not. Swapping back is these two lines once the export is fixed:
+    //   assets.models.get("fighter_soldier") / ("fighter_insurgent")
+    //
     // One model per faction.
     //
     // Nightcell are irregulars: olive drab, boots, a pack — someone fighting
@@ -70,8 +83,8 @@ export class Opponents {
     // The generated character renders correctly, so the bots use it until the
     // licensed ones are diagnosed. Swapping back is a one-line change:
     //   assets.models.get("fighter_soldier") / ("fighter_worker")
-    const enemyModel = assets.models.get("fighter_soldier") ?? assets.models.get("character");
-    const friendlyModel = assets.models.get("fighter_insurgent") ?? assets.models.get("character");
+    const enemyModel = assets.models.get("character");
+    const friendlyModel = assets.models.get("character");
     const character = enemyModel;
     const carbine = assets.models.get("carbine");
     if (!character) throw new Error("no character model loaded");
@@ -239,7 +252,7 @@ export class Opponents {
         const view = this.views.get(event.victimId);
         if (view && !view.dead) {
           view.dead = true;
-          this.play(view, "Death", false);
+          this.play(view, "death", false);
           this.deadUntil.set(event.victimId, performance.now() + RESPAWN_MS);
         }
         continue;
@@ -289,7 +302,7 @@ export class Opponents {
     if (!player.alive) {
       if (!view.dead) {
         view.dead = true;
-        this.play(view, "Death", false);
+        this.play(view, "death", false);
       }
       return;
     }
@@ -311,7 +324,7 @@ export class Opponents {
     const speed = Math.hypot(player.movement.velocity.x, player.movement.velocity.z);
     // Clip names come from the licensed pack, whose idle holds the weapon up
     // — exactly right for a fighter, and something my generated rig lacked.
-    const wanted = speed > RUN_SPEED ? "Run" : speed > IDLE_SPEED ? "Walk" : "Idle_Gun";
+    const wanted = speed > RUN_SPEED ? "run" : speed > IDLE_SPEED ? "walk" : "idle";
     if (wanted !== view.current) this.play(view, wanted, true);
   }
 
