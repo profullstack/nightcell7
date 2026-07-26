@@ -39,6 +39,21 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # PowerShell runs on Linux, so the Windows installer is checkable here
+      # rather than trusted on inspection.
+      - name: Install PowerShell
+        run: |
+          URL=$(curl -fsSL https://api.github.com/repos/PowerShell/PowerShell/releases/latest \
+            | grep -o '"browser_download_url": *"[^"]*linux-x64.tar.gz"' | cut -d'"' -f4 | head -1)
+          mkdir -p "$HOME/.pwsh" && curl -fsSL "$URL" | tar -xz -C "$HOME/.pwsh"
+          chmod +x "$HOME/.pwsh/pwsh"
+          echo "$HOME/.pwsh" >> "$GITHUB_PATH"
+
+      - name: Check installers
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y devscripts >/dev/null 2>&1 || true
+          sh tools/release/check-installers.sh
+
   build:
     name: Build all workspaces
     runs-on: ubuntu-latest
