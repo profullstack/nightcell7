@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 4.5.12 LTS",
-  "commit": "fae10c13fb39b93d0d4d66f67a506d9d9078487d",
+  "commit": "f24a07a4ca2a223aed5561a9ab08ce87dea1f262",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
   "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
   "textureSize": 1024,
@@ -67,9 +67,9 @@
     "ui_hover.mp3"
   ],
   "bytes": {
-    "models": 1135736,
+    "models": 1235920,
     "textures": 1971598,
-    "audio": 323166,
-    "total": 3430500
+    "audio": 326680,
+    "total": 3534198
   }
 }

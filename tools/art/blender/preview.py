@@ -120,10 +120,14 @@ def main() -> None:
     cam_data.lens = 60
     cam = bpy.data.objects.new("preview", cam_data)
     angle = math.radians(38)
+    # `--front` puts the camera on -Y. Props are authored facing +Y, but the
+    # character faces -Y, and rendering a character from behind hides every
+    # detail worth reviewing.
+    facing = -1.0 if "--front" in sys.argv else 1.0
     cam.location = centre + Vector(
         (
             math.cos(angle) * radius * 3.1,
-            math.sin(angle) * radius * 3.1 + radius * 1.4,
+            facing * (math.sin(angle) * radius * 3.1 + radius * 1.4),
             radius * 1.35,
         )
     )
