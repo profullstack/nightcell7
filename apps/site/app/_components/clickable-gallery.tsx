@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Lightbox, type LightboxShot } from "./lightbox";
+import { captureSrc } from "./capture-src";
 
 /**
  * The capture gallery, with every frame openable full-screen.
@@ -35,7 +36,7 @@ export function ClickableGallery({
           aria-label={`View full size: ${lead.caption}`}
         >
           <Image
-            src={`/media/yard/${lead.file}`}
+            src={captureSrc(lead.file)}
             alt={lead.caption}
             width={width}
             height={height}
@@ -63,7 +64,7 @@ export function ClickableGallery({
                 aria-label={`View full size: ${shot.caption}`}
               >
                 <Image
-                  src={`/media/yard/${shot.file}`}
+                  src={captureSrc(shot.file)}
                   alt={shot.caption}
                   width={width}
                   height={height}

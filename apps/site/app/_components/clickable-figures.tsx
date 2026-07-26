@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Lightbox, type LightboxShot } from "./lightbox";
+import { captureSrc } from "./capture-src";
 
 /**
  * Clickable variants of the section plate and capture strip.
@@ -40,7 +41,7 @@ export function ClickablePlate({
         aria-label={`View full size: ${shot.caption}`}
       >
         <Image
-          src={`/media/yard/${shot.file}`}
+          src={captureSrc(shot.file)}
           alt={shot.caption}
           width={width}
           height={height}
@@ -83,7 +84,7 @@ export function ClickableStrip({
                 aria-label={`View full size: ${shot.caption}`}
               >
                 <Image
-                  src={`/media/yard/${shot.file}`}
+                  src={captureSrc(shot.file)}
                   alt={shot.caption}
                   width={width}
                   height={height}
