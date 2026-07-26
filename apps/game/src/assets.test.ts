@@ -78,7 +78,7 @@ describe("generated models", () => {
    * apply. Their provenance is a licence recorded in PROVENANCE.md rather than
    * a generator script.
    */
-  const LICENSED = new Set(["fighter_swat", "fighter_adventurer"]);
+  const LICENSED = new Set(["fighter_insurgent", "fighter_soldier"]);
 
   it("only uses material slots the engine can bind", () => {
     // A slot the engine does not know about is not an error at load time: the
