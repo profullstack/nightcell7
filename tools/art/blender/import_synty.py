@@ -18,6 +18,34 @@ and the two rigs do not share rest orientations, so copying them produces a
 figure with its arms through its chest. Constraints resolve in world space and
 the bake writes the result back as ordinary keyframes.
 
+**This script does not yet produce a shippable character**, and the output is
+deliberately not wired into the game. What it does now is run correctly and
+fail visibly, which it did not before. The remaining blocker is measured and
+specific:
+
+  * source rig rest pose:  0.69 m across (arms down), and no clip exceeds 0.72
+  * Synty bind pose:       2.03 m across (T-pose, arms straight out)
+
+Rest-relative retargeting transfers the source's *deviation from its own rest*.
+With rests that far apart the legs transfer correctly and the arms never leave
+the T-pose, which is exactly what the exported clips measure.
+
+Two fixes were tried and rejected, both measured rather than eyeballed:
+
+  * **Copy world orientation outright.** Removes the rest precondition, and
+    discards the bone-axis conventions with it — the figure ends up lying down
+    (2.14 x 0.52 x 0.39 for something 1.79 m tall).
+  * **Re-rest the target into the source's A-pose** by rotating each bone by
+    the minimal arc onto its counterpart's rest direction, then applying that
+    as the rest pose. The corrections come out incoherent — 169 degrees on the
+    left upper arm against 11 on the right, where a mirror pair must be
+    symmetric — so the two rigs' rest frames are not being compared in a common
+    basis, and the applied result is still 2.05 m across.
+
+The more promising route is to stop retargeting altogether: skin the Synty
+*mesh* to our existing rig with automatic weights and keep the clips we already
+have working, rather than moving animation between skeletons at all.
+
 Usage:
   blender --background --factory-startup --python import_synty.py -- \
       --fbx <SK_Chr_...fbx> --anims <source.glb> --atlas <texture.png> \
@@ -32,31 +60,44 @@ import sys
 import bpy
 
 # Our animation rig on the left, the Unreal-standard Synty rig on the right.
-# Fingers, toes, eyes and the IK helper bones are deliberately absent: nothing
-# in our clip set animates them, and constraining them only adds bake cost.
+#
+# Every name here is checked against both armatures at run time and a mismatch
+# is fatal — see `build_pairs`. The first version of this table was written from
+# memory and got the *source* side wrong on almost every bone ("Hips",
+# "LowerArm.L", "Wrist.L" against a rig that actually calls them "hips",
+# "forearm.L", "hand.L"). Because the lookup skipped anything it could not find,
+# the result was zero mapped bones, zero keyframes, five empty actions and a
+# character exported in its bind pose — with no error anywhere. That silence is
+# what the validation below exists to prevent.
+#
+# Fingers, toes, eyes and the IK helper bones are deliberately absent: our clip
+# set does not animate them, and constraining them only adds bake cost.
 BONE_MAP = {
-    "Hips": "Pelvis",
-    "Abdomen": "spine_01",
-    "Torso": "spine_02",
-    "Chest": "spine_03",
-    "Neck": "neck_01",
-    "Head": "head",
-    "Shoulder.L": "clavicle_l",
-    "UpperArm.L": "UpperArm_L",
-    "LowerArm.L": "lowerarm_l",
-    "Wrist.L": "Hand_L",
-    "Shoulder.R": "clavicle_r",
-    "UpperArm.R": "UpperArm_R",
-    "LowerArm.R": "lowerarm_r",
-    "Wrist.R": "Hand_R",
-    "UpperLeg.L": "Thigh_L",
-    "LowerLeg.L": "calf_l",
-    "Foot.L": "Foot_L",
-    "UpperLeg.R": "Thigh_R",
-    "LowerLeg.R": "calf_r",
-    "Foot.R": "Foot_R",
+    "hips": "Pelvis",
+    "spine": "spine_01",
+    "chest": "spine_02",
+    "neck": "neck_01",
+    "head": "head",
+    "shoulder.L": "clavicle_l",
+    "upperarm.L": "UpperArm_L",
+    "forearm.L": "lowerarm_l",
+    "hand.L": "Hand_L",
+    "shoulder.R": "clavicle_r",
+    "upperarm.R": "UpperArm_R",
+    "forearm.R": "lowerarm_r",
+    "hand.R": "Hand_R",
+    "thigh.L": "Thigh_L",
+    "shin.L": "calf_l",
+    "foot.L": "Foot_L",
+    "thigh.R": "Thigh_R",
+    "shin.R": "calf_r",
+    "foot.R": "Foot_R",
 }
 
+# The Synty rig carries a third spine bone our clips have no counterpart for.
+# It is left at rest deliberately: an unmapped bone still follows its parent, so
+# the chain stays continuous, and inventing motion for it would be worse than
+# not moving it.
 
 def arg(name: str, fallback=None):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else fallback
@@ -126,13 +167,32 @@ def main() -> None:
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
     pairs = []
+    missing = []
     for our_name, synty_name in BONE_MAP.items():
         t_bone = target.pose.bones.get(synty_name)
         s_bone = source.pose.bones.get(our_name)
-        if t_bone is None or s_bone is None:
+        if t_bone is None:
+            missing.append(f"target has no {synty_name!r}")
             continue
-        rest_delta = s_bone.bone.matrix_local.inverted() @ t_bone.bone.matrix_local
-        pairs.append((s_bone, t_bone, rest_delta))
+        if s_bone is None:
+            missing.append(f"source has no {our_name!r}")
+            continue
+        pairs.append((s_bone, t_bone, None))
+
+    # Fatal, not skipped.
+    #
+    # Skipping an unmatched bone is what made the first version of this script
+    # produce a silent, plausible-looking failure: the whole map missed, nothing
+    # was keyed, and a bind-posed character shipped. A name that does not
+    # resolve means the table is wrong about a rig, and there is no useful
+    # retarget to be had from the remainder.
+    if missing:
+        raise SystemExit(
+            "import_synty: BONE_MAP does not match these rigs:\n  "
+            + "\n  ".join(missing)
+            + f"\n\nsource bones: {sorted(b.name for b in source.pose.bones)}"
+            + f"\ntarget bones: {sorted(b.name for b in target.pose.bones)}"
+        )
 
     # Parents before children: setting a pose bone's matrix reads its parent's
     # current transform, so a child solved first is immediately invalidated.
@@ -144,6 +204,16 @@ def main() -> None:
         return n
 
     pairs.sort(key=lambda entry: depth(entry[1]))
+
+    pairs = [
+        (
+            s_bone,
+            t_bone,
+            (source.matrix_world @ s_bone.bone.matrix_local).inverted()
+            @ (target.matrix_world @ t_bone.bone.matrix_local),
+        )
+        for s_bone, t_bone, _ in pairs
+    ]
 
     hips_pair = next((p for p in pairs if p[1].name == "Pelvis"), None)
     baked = []
@@ -167,8 +237,17 @@ def main() -> None:
             bpy.context.view_layer.update()
 
             for s_bone, t_bone, rest_delta in pairs:
-                world = source.matrix_world @ s_bone.matrix @ rest_delta
-                t_bone.matrix = target.matrix_world.inverted() @ world
+                # Rest-relative retarget:
+                #
+                #     T_pose = S_pose @ S_rest⁻¹ @ T_rest
+                #
+                # transfers the source's motion away from its own rest onto the
+                # target's rest. This is the standard formula and it is correct
+                # — but only when both skeletons share a reference pose, which
+                # these two do NOT. See the module docstring: the arms come out
+                # stuck in Synty's T-pose, and that is the remaining blocker.
+                s_pose_world = source.matrix_world @ s_bone.matrix
+                t_bone.matrix = target.matrix_world.inverted() @ (s_pose_world @ rest_delta)
                 # Each child reads the parent just written, so flush per bone.
                 bpy.context.view_layer.update()
 
@@ -177,10 +256,27 @@ def main() -> None:
             if hips_pair:
                 hips_pair[1].keyframe_insert("location", frame=frame)
 
+        # An action with no curves is the signature of a retarget that ran
+        # over an empty bone list. It exports as nothing at all, or — with
+        # `export_bake_animation` on — as one anonymous baked clip named after
+        # the object, which is how this last shipped broken.
+        if not action.fcurves:
+            raise SystemExit(
+                f"import_synty: baking {clip.name!r} produced no curves "
+                f"({len(pairs)} bone pairs, frames {start}-{end})"
+            )
+
         source_name = clip.name
         clip.name = f"__src_{source_name}"
         action.name = source_name
         action.use_fake_user = True
+        # Each action needs its own NLA track to survive the export.
+        # `export_animation_mode="ACTIONS"` does not reliably find actions that
+        # are merely present in the file with a fake user; a track makes the
+        # association to this object explicit.
+        track = target.animation_data.nla_tracks.new()
+        track.name = source_name
+        track.strips.new(source_name, int(action.frame_range[0]), action)
         baked.append(action.name)
 
     for obj in [source, *source_meshes]:
@@ -231,7 +327,12 @@ def main() -> None:
         export_skins=True,
         export_animations=True,
         export_animation_mode="ACTIONS",
-        export_bake_animation=True,
+        # OFF. With this on, the exporter emits a single baked animation per
+        # object — named after the object, covering every bone in T/R/S — and
+        # ignores the actions entirely. That is what "all five clips collapsed
+        # into one called target_rig" actually was.
+        export_bake_animation=False,
+        export_nla_strips=True,
         export_cameras=False,
         export_lights=False,
         export_extras=False,
@@ -242,7 +343,10 @@ def main() -> None:
         export_image_format="NONE",
     )
 
-    print(f"SYNTY {os.path.basename(out)} bytes={os.path.getsize(out)} clips={len(baked)}")
+    print(
+        f"SYNTY {os.path.basename(out)} bytes={os.path.getsize(out)} "
+        f"clips={len(baked)} bones={len(pairs)}"
+    )
     print(f"  {', '.join(sorted(baked))}")
 
 

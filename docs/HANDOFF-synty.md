@@ -26,54 +26,74 @@ shipped**, because their animation retarget is broken.
 Source pack is at `~/src/nightcell7-assets/SourceFiles/` (406 MB, outside the
 repo, not committed).
 
-## The one blocking bug
+## The blocking bug
 
 Synty ships SourceFiles without animation — the cycles live in the Unity and
-Unreal packages, which are engine-locked. So our CC0 clips have to be retargeted
-onto Synty's Unreal-standard 55-bone skeleton.
+Unreal packages, which are engine-locked. So our CC0 clips have to be
+retargeted onto Synty's Unreal-standard 55-bone skeleton.
 
-**First attempt (wrong).** Copy-rotation constraints in world space, then
-`nla.bake`. That forces the target bone to adopt the source bone's _absolute_
-orientation, which is only correct if both skeletons share rest poses. They do
-not — Synty uses Unreal's axis convention, our clips another. Every bone sat at
-its rest-pose difference and the error compounded down each limb.
+**The previous diagnosis in this document was wrong.** It said the maths was
+correct and the glTF export was broken. Three separate faults were actually in
+play, and the first two hid the third:
 
-Measured: **1.90 x 2.00 x 2.47 m** for a figure that should be about
-**0.6 x 0.4 x 1.8**. Limbs splayed in every direction.
+1. **`BONE_MAP`'s source side did not match any real bone.** It listed `Hips`,
+   `Abdomen`, `Torso`, `LowerArm.L`, `Wrist.L`, `UpperLeg.L`; the rig actually
+   has `hips`, `spine`, `chest`, `forearm.L`, `hand.L`, `thigh.L`. The lookup
+   _skipped_ anything it could not find, so zero bones mapped, zero keyframes
+   were written and all five actions came out empty — with no error. Now fixed,
+   and a mismatch is fatal rather than skipped.
 
-**Second attempt (maths right, export wrong).** `import_synty.py` now solves
-each bone directly:
+2. **`export_bake_animation=True` overrode the actions.** With it on, the
+   exporter emits one baked animation per object, named after the object and
+   covering all 55 bones in T/R/S. That is precisely the reported symptom, "all
+   five clips collapse into a single animation named `target_rig`" — it was
+   never an action-handling bug. Now off, with each action pushed to its own
+   NLA track.
 
-```
-target.matrix = source.matrix @ (source.rest⁻¹ @ target.rest)
-```
+3. **The "limbs splayed, 1.90 x 2.00 x 2.47 m" measurement was an artefact.**
+   The scene contains a stray 42-vertex `Icosphere` that dominated the bounding
+   box. Measuring the character mesh alone gives 2.03 x 0.32 x 1.79 — correct
+   height, correct depth. Nothing was ever splayed. (That sphere is still in the
+   committed `fighter_*.glb` and should be tracked down separately.)
 
-so what transfers is the source's motion _away from its own rest_, not its raw
-orientation. Parents are solved before children and the view layer is flushed
-between bones, because setting a pose bone's matrix reads its parent's current
-transform.
+With 1 and 2 fixed, all five clips export under their own names and the legs
+animate correctly. What remains is a real, measured rest-pose mismatch:
 
-That runs. What fails is the export: the manually keyed actions do not survive
-`export_scene.gltf` the way `nla.bake`'s did. **All five clips collapse into a
-single animation named `target_rig`** — after the object, not the actions.
+|                 | across | note                                  |
+| --------------- | ------ | ------------------------------------- |
+| our source rig  | 0.69 m | rests arms-down; no clip exceeds 0.72 |
+| Synty bind pose | 2.03 m | T-pose, arms straight out             |
+
+Rest-relative retargeting transfers _deviation from rest_. The source barely
+deviates from its own arms-down rest, so the target barely deviates from its
+T-pose: legs move, arms stay out. Every clip measures 2.02-2.05 m across.
 
 ## Next steps, in order
 
-1. **Fix the export.** The maths is believed correct; only the action handling
-   is wrong. Options worth trying, cheapest first:
-   - Push each baked action to an NLA track before export, rather than relying
-     on `export_animation_mode="ACTIONS"` finding loose actions.
-   - Check `action.id_root` is `"OBJECT"` on the actions created with
-     `bpy.data.actions.new()`.
-   - Keep the rest-relative solve but write the result through `nla.bake`
-     (which demonstrably exported correctly), e.g. by driving the target with
-     `COPY_TRANSFORMS` against a helper armature already offset by the rest
-     delta.
+1. **Stop retargeting. Skin the Synty mesh to our rig instead.**
+   This is the recommended route. Our rig already has all five clips working;
+   the Synty character is, for our purposes, just a 4k-triangle mesh. Parenting
+   it to our existing armature with automatic weights removes the entire
+   skeleton-to-skeleton problem rather than solving it. Risk is weighting
+   quality around the shoulders and hips, which is inspectable in a render.
 
-2. **Verify objectively, not by eye.** Load the exported GLB, set a mid-`walk`
-   frame, and measure the mesh bounding box. It must be near
-   `0.6 x 0.4 x 1.8`. A bind-pose preview looks fine even when the animation is
-   broken — that is exactly how this shipped in the first place.
+   Two approaches that were tried and measured, so they are not repeated:
+   - _Copy world orientation outright_ — removes the rest precondition and the
+     bone-axis conventions with it; the figure lies down (2.14 x 0.52 x 0.39).
+   - _Re-rest the target into the source's A-pose_ by rotating each bone by the
+     minimal arc onto its counterpart's rest direction, then applying that as
+     the rest. The corrections come out incoherent — 169 degrees on the left
+     upper arm against 11 on the right, where a mirror pair must be symmetric —
+     so the two rest frames are not being compared in a common basis. Worth
+     revisiting only with that basis problem understood.
+
+2. **Verify objectively, and measure the right mesh.** Load the exported GLB,
+   assign each action directly (muting or deleting the NLA, or the assigned
+   action masks whichever strip you unmute), step every frame, and measure the
+   _character_ mesh — explicitly excluding the stray `Icosphere`, which is what
+   produced the bogus splay reading above. A walk frame should be near
+   `0.6-0.9 x 0.4 x 1.8`. A bind-pose preview looks fine even when the
+   animation is broken, which is how this shipped in the first place.
 
 3. **Then swap the bots back.** Two lines in `apps/game/src/opponents.ts`,
    marked in a comment there:
