@@ -25,6 +25,19 @@ import { placeAll, placeAnimated, type AssetSet } from "./assets";
 const ENEMY_COUNT = 4;
 const FRIENDLY_COUNT = 3;
 
+export interface OpponentOptions {
+  /**
+   * Roster size. Both default to a full Team Deathmatch.
+   *
+   * Zero on both is a valid, useful configuration rather than a degenerate
+   * one: the Firing Range and Free Roam modes want no bots, but still need the
+   * `MatchSimulation` this class owns, because that is where the player's
+   * grenade count, cooldown and blast live.
+   */
+  readonly enemies?: number;
+  readonly friendlies?: number;
+}
+
 /** Speed above which the run cycle replaces the walk cycle, m/s. */
 const RUN_SPEED = 5.2;
 /** Below this the bot is treated as standing still. */
@@ -107,7 +120,7 @@ export class Opponents {
   private readonly explosions: Explosion[] = [];
   private readonly grenadeModel: AssetContainer | null;
 
-  constructor(_scene: Scene, assets: AssetSet) {
+  constructor(_scene: Scene, assets: AssetSet, options: OpponentOptions = {}) {
     // Back on the generated character.
     //
     // The Synty models are committed and load, but the animation retarget
@@ -166,14 +179,17 @@ export class Opponents {
       preferredTeam: TEAM_IDS.NIGHTCELL,
     });
 
+    const enemyCount = options.enemies ?? ENEMY_COUNT;
+    const friendlyCount = options.friendlies ?? FRIENDLY_COUNT;
+
     const roster = [
-      ...Array.from({ length: ENEMY_COUNT }, (_, i) => ({
+      ...Array.from({ length: enemyCount }, (_, i) => ({
         id: `bot-e${i}`,
         team: TEAM_IDS.DIRECTORATE,
         model: enemyModel,
         name: `Directorate ${i + 1}`,
       })),
-      ...Array.from({ length: FRIENDLY_COUNT }, (_, i) => ({
+      ...Array.from({ length: friendlyCount }, (_, i) => ({
         id: `bot-f${i}`,
         team: TEAM_IDS.NIGHTCELL,
         model: friendlyModel,

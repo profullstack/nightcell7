@@ -67,6 +67,7 @@ commit as the code (CLAUDE.md).
 | §9       | Free demo, either side first, no account required              | `game-core/src/ids.ts` (`DEMO_MISSIONS`), `progress.ts` (`canStartMission`)                    |
 | §10.7    | Complete Truth unlocks only after both sides                   | `progress.ts` (`shouldUnlockCompleteTruth`)                                                    |
 | §12.1    | Movement set and feel                                          | `packages/multiplayer-sim/src/movement.ts`                                                     |
+| §23.1    | Free sandbox scenes need no account                            | `apps/game/src/modes.ts`, `access.ts` (`PLAY_MODE.SANDBOX`)                                    |
 | §12.4    | Health/armour, regen ceiling, no bullet sponges                | `packages/game-core/src/damage.ts`                                                             |
 | §12.6    | Difficulty changes tactics, not enemy health                   | `packages/game-core/src/difficulty.ts`                                                         |
 | §13.1    | Four hero weapons, fictional                                   | `packages/game-core/src/weapons.ts`                                                            |
