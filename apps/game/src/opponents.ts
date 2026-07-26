@@ -11,8 +11,7 @@ import {
   type Vec3,
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
-import { placeAll, placeAnimated, type AssetSet } from "./assets";
-import { brightenCharacter } from "./targets";
+import { placeAnimated, type AssetSet } from "./assets";
 
 /**
  * Live opponents for the single-player sandbox.
@@ -68,9 +67,9 @@ export class Opponents {
   private readonly deadUntil = new Map<string, number>();
 
   constructor(scene: Scene, assets: AssetSet) {
-    const character = assets.models.get("character");
+    const character = assets.models.get("fighter_swat") ?? assets.models.get("character");
     const carbine = assets.models.get("carbine");
-    if (!character) throw new Error("character model not loaded");
+    if (!character) throw new Error("no character model loaded");
 
     this.sim = new MatchSimulation({ matchId: "sandbox", map: ARDAVAN_YARD });
 
@@ -100,17 +99,10 @@ export class Opponents {
         rotationY: 0,
       });
       if (!placed) continue;
-      brightenCharacter(placed.root);
 
-      if (carbine) {
-        const socket = placed.root
-          .getDescendants()
-          .find((node) => node.name.includes("SOCKET_WEAPON")) as TransformNode | undefined;
-        const [weapon] = placeAll(carbine, `${id}_weapon`, [
-          { position: new Vector3(0, 0, 0), rotationY: Math.PI },
-        ]);
-        if (weapon) weapon.parent = socket ?? placed.root;
-      }
+      // The licensed character already carries its own weapon, so ours is
+      // not attached on top of it.
+      void carbine;
 
       this.views.set(id, { id, root: placed.root, clips: placed.clips, current: "", dead: false });
     }
@@ -208,7 +200,7 @@ export class Opponents {
         const view = this.views.get(event.victimId);
         if (view && !view.dead) {
           view.dead = true;
-          this.play(view, "death", false);
+          this.play(view, "Death", false);
           this.deadUntil.set(event.victimId, performance.now() + RESPAWN_MS);
         }
         continue;
@@ -258,7 +250,7 @@ export class Opponents {
     if (!player.alive) {
       if (!view.dead) {
         view.dead = true;
-        this.play(view, "death", false);
+        this.play(view, "Death", false);
       }
       return;
     }
@@ -278,7 +270,9 @@ export class Opponents {
     view.root.rotation.set(0, player.movement.yaw + Math.PI, 0);
 
     const speed = Math.hypot(player.movement.velocity.x, player.movement.velocity.z);
-    const wanted = speed > RUN_SPEED ? "run" : speed > IDLE_SPEED ? "walk" : "idle";
+    // Clip names come from the licensed pack, whose idle holds the weapon up
+    // — exactly right for a fighter, and something my generated rig lacked.
+    const wanted = speed > RUN_SPEED ? "Run" : speed > IDLE_SPEED ? "Walk" : "Idle_Gun";
     if (wanted !== view.current) this.play(view, wanted, true);
   }
 

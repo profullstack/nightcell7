@@ -70,3 +70,31 @@ steel, rust and grating surface in the yard renders pure black.
 Lossy WebP is deliberate. The same set encoded losslessly is 12.5 MB against
 1.9 MB here — it would consume nearly the whole shell budget and force smaller,
 worse textures.
+
+## Licensed third-party assets
+
+Not everything here is generated. These are licensed, and their provenance is
+the licence rather than a generator script.
+
+| File                        | Source                                                                                                             | Licence |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------- |
+| `models/fighter_swat.glb`   | [Quaternius — Ultimate Modular Characters](https://quaternius.com/packs/ultimatemodularcharacters.html) (`Swat`)   | CC0 1.0 |
+| `models/fighter_worker.glb` | [Quaternius — Ultimate Modular Characters](https://quaternius.com/packs/ultimatemodularcharacters.html) (`Worker`) | CC0 1.0 |
+
+**CC0 1.0** (https://creativecommons.org/publicdomain/zero/1.0/) is a public
+domain dedication: unrestricted commercial use, modification and
+redistribution, with no attribution required. The attribution above is
+courtesy, not obligation.
+
+Converted with `tools/art/blender/import_character.py`, which drops the clips
+the game does not play. The source ships 24 animations per character and
+animation data is the bulk of the file, so keeping seven takes a 3 MB character
+under 1 MB — which is what makes them affordable against the 15 MB shell budget
+(PRD §30).
+
+Kept: `Idle_Gun`, `Idle_Gun_Shoot`, `Walk`, `Run`, `Run_Shoot`, `Death`,
+`HitRecieve` (the pack's spelling).
+
+These carry their own rig, materials and animations, so they do not follow the
+material-slot or `COL_` conventions the generated props use;
+`apps/game/src/assets.test.ts` exempts them explicitly.
