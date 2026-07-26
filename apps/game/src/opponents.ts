@@ -1,4 +1,13 @@
-import { Vector3, type AnimationGroup, type Scene, type TransformNode } from "@babylonjs/core";
+import {
+  Color3,
+  PBRMaterial,
+  Vector3,
+  type AnimationGroup,
+  type Material,
+  type Mesh,
+  type Scene,
+  type TransformNode,
+} from "@babylonjs/core";
 import {
   ARDAVAN_YARD,
   rayAabb,
@@ -12,6 +21,63 @@ import {
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
 import { placeAnimated, type AssetSet } from "./assets";
+import { brightenCharacter } from "./targets";
+
+/**
+ * Pull a licensed character back into the yard's exposure range.
+ *
+ * The pack's materials are authored for a neutrally lit scene. This yard runs
+ * ambient at 4.05 and exposure at 2.05 — raised when the environment read as
+ * too dark — so light-toned character materials clip straight to white and the
+ * figures render as glowing blobs. Same trap as the weapon viewmodel: the fix
+ * belongs on the character's own material instances, not on the scene, because
+ * the scene's exposure is correct for the environment.
+ */
+function tameForScene(root: TransformNode, scene: Scene): void {
+  const seen = new Map<Material, Material>();
+
+  for (const mesh of root.getChildMeshes() as Mesh[]) {
+    const source = mesh.material;
+    if (!source) continue;
+    let clone = seen.get(source);
+    if (!clone) {
+      clone = source.clone(`scene_${source.name}`) ?? source;
+
+      // Kill emissive without gating on the material class. The yard runs a
+      // GlowLayer for the sodium lamps and it blooms *any* emissive surface;
+      // if the imported material is not the class we expect, an
+      // `instanceof` guard skips this silently and the character renders as a
+      // glowing white blob with a halo.
+      const anyMaterial = clone as unknown as { emissiveColor?: Color3; emissiveTexture?: unknown };
+      if (anyMaterial.emissiveColor) anyMaterial.emissiveColor = new Color3(0, 0, 0);
+      anyMaterial.emissiveTexture = null;
+
+      if (clone instanceof PBRMaterial) {
+        // 0.18, not 0.42.
+        //
+        // Worked back from the actual budget rather than guessed: the yard's
+        // hemispheric light is intensity 4.05 with a diffuse colour averaging
+        // ~0.45, so ~1.8 effective. At exposure 2.05, staying under the 0.62
+        // bloom threshold needs an albedo near 0.17 — which is also where the
+        // yard's own concrete and steel sit. The pack authors its materials
+        // around 0.8 for a neutrally lit scene, so they need scaling by
+        // roughly a fifth, not a half.
+        clone.albedoColor = clone.albedoColor.scale(0.18);
+        clone.environmentIntensity = 0.3;
+        clone.enableSpecularAntiAliasing = true;
+      }
+      seen.set(source, clone);
+    }
+    mesh.material = clone;
+
+    // Belt and braces: even with emissive cleared, keep characters out of the
+    // glow layer entirely so a future material change cannot reintroduce this.
+    for (const layer of scene.effectLayers) {
+      const glow = layer as unknown as { addExcludedMesh?: (m: Mesh) => void };
+      glow.addExcludedMesh?.(mesh);
+    }
+  }
+}
 
 /**
  * Live opponents for the single-player sandbox.
@@ -32,7 +98,9 @@ import { placeAnimated, type AssetSet } from "./assets";
  * bots therefore chase where the player actually is.
  */
 
-const BOT_COUNT = 5;
+/** Enemies on the Directorate side, and friendlies on the player's. */
+const ENEMY_COUNT = 4;
+const FRIENDLY_COUNT = 3;
 
 /** Speed above which the run cycle replaces the walk cycle, m/s. */
 const RUN_SPEED = 5.2;
@@ -50,6 +118,7 @@ interface BotView {
   readonly clips: Map<string, AnimationGroup>;
   current: string;
   dead: boolean;
+  readonly friendly: boolean;
 }
 
 export interface BotShot {
@@ -67,7 +136,25 @@ export class Opponents {
   private readonly deadUntil = new Map<string, number>();
 
   constructor(scene: Scene, assets: AssetSet) {
-    const character = assets.models.get("fighter_swat") ?? assets.models.get("character");
+    // One model per faction. The Directorate is equipped and uniformed; the
+    // Nightcell side are irregulars in civilian clothing. That difference is
+    // the fastest target ID a player gets, and it is carried by the whole
+    // silhouette rather than by a colour swatch.
+    // Back on the generated character for now.
+    //
+    // The licensed Quaternius models are committed and load fine, but they
+    // render as glowing white figures in this scene and three attempts did not
+    // fix it: scaling albedo to the yard's actual exposure budget (0.42, then
+    // 0.18), clearing emissive unconditionally, and excluding them from the
+    // GlowLayer all left them blown out. Something else in their imported
+    // material setup is driving it and I have not identified what.
+    //
+    // The generated character renders correctly, so the bots use it until the
+    // licensed ones are diagnosed. Swapping back is a one-line change:
+    //   assets.models.get("fighter_swat") / ("fighter_worker")
+    const enemyModel = assets.models.get("character");
+    const friendlyModel = assets.models.get("character");
+    const character = enemyModel;
     const carbine = assets.models.get("carbine");
     if (!character) throw new Error("no character model loaded");
 
@@ -81,34 +168,58 @@ export class Opponents {
       preferredTeam: TEAM_IDS.NIGHTCELL,
     });
 
-    for (let i = 0; i < BOT_COUNT; i += 1) {
-      const id = `bot-${i}`;
+    const roster = [
+      ...Array.from({ length: ENEMY_COUNT }, (_, i) => ({
+        id: `bot-e${i}`,
+        team: TEAM_IDS.DIRECTORATE,
+        model: enemyModel,
+        name: `Directorate ${i + 1}`,
+      })),
+      ...Array.from({ length: FRIENDLY_COUNT }, (_, i) => ({
+        id: `bot-f${i}`,
+        team: TEAM_IDS.NIGHTCELL,
+        model: friendlyModel,
+        name: `Nightcell ${i + 1}`,
+      })),
+    ];
+
+    roster.forEach((entry, i) => {
+      const id = entry.id;
       this.sim.addPlayer({
         id,
         userId: id,
-        displayName: `Directorate ${i + 1}`,
+        displayName: entry.name,
         isBot: true,
-        preferredTeam: TEAM_IDS.DIRECTORATE,
+        preferredTeam: entry.team,
       });
       // Seeded per bot so a session is reproducible and they do not all make
       // the same decision on the same tick.
       this.controllers.push(new BotController(id, 1000 + i * 37));
 
-      const placed = placeAnimated(character, id, {
+      const placed = placeAnimated(entry.model ?? character, id, {
         position: new Vector3(0, -50, 0), // parked until the sim spawns them
         rotationY: 0,
       });
-      if (!placed) continue;
+      if (!placed) return;
 
       // The licensed character already carries its own weapon, so ours is
       // not attached on top of it.
       void carbine;
 
-      this.views.set(id, { id, root: placed.root, clips: placed.clips, current: "", dead: false });
-    }
+      brightenCharacter(placed.root);
+      tameForScene(placed.root, scene);
+
+      this.views.set(id, {
+        id,
+        root: placed.root,
+        clips: placed.clips,
+        current: "",
+        dead: false,
+        friendly: entry.team === TEAM_IDS.NIGHTCELL,
+      });
+    });
 
     this.sim.startNow();
-    void scene;
   }
 
   /**
@@ -127,6 +238,7 @@ export class Opponents {
     for (const [id] of this.views) {
       const player = this.sim.players.get(id);
       if (!player || !player.alive) continue;
+      if (this.views.get(id)?.friendly) continue; // no friendly fire in the sandbox
       const p = player.movement.position;
       const hit = rayAabb(
         origin,
@@ -200,7 +312,7 @@ export class Opponents {
         const view = this.views.get(event.victimId);
         if (view && !view.dead) {
           view.dead = true;
-          this.play(view, "Death", false);
+          this.play(view, "death", false);
           this.deadUntil.set(event.victimId, performance.now() + RESPAWN_MS);
         }
         continue;
@@ -250,7 +362,7 @@ export class Opponents {
     if (!player.alive) {
       if (!view.dead) {
         view.dead = true;
-        this.play(view, "Death", false);
+        this.play(view, "death", false);
       }
       return;
     }
@@ -272,7 +384,7 @@ export class Opponents {
     const speed = Math.hypot(player.movement.velocity.x, player.movement.velocity.z);
     // Clip names come from the licensed pack, whose idle holds the weapon up
     // — exactly right for a fighter, and something my generated rig lacked.
-    const wanted = speed > RUN_SPEED ? "Run" : speed > IDLE_SPEED ? "Walk" : "Idle_Gun";
+    const wanted = speed > RUN_SPEED ? "run" : speed > IDLE_SPEED ? "walk" : "idle";
     if (wanted !== view.current) this.play(view, wanted, true);
   }
 
