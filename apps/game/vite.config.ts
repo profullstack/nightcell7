@@ -43,7 +43,7 @@ export default defineConfig({
             handler: "NetworkOnly",
           },
           {
-            urlPattern: /\.(?:ktx2|glb|webm|mp3|bin)$/,
+            urlPattern: /\.(?:ktx2|glb|webp|webm|mp3|bin)$/,
             handler: "CacheFirst",
             options: {
               cacheName: "nc7-content",

@@ -5,6 +5,7 @@ import { modeLabel, renderGate } from "./gate";
 import { createHud, renderFault } from "./hud";
 import { requestedVantage } from "./photo";
 import { PlayerController } from "./player";
+import { Viewmodel } from "./viewmodel";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
 import "./style.css";
@@ -67,7 +68,7 @@ async function boot(): Promise<void> {
   // Input is owned by PlayerController, which runs the shared authoritative
   // simulation. Attaching Babylon's own controls here would fight it.
 
-  buildWorld(scene, engine, camera, ARDAVAN_YARD);
+  const world = await buildWorld(scene, engine, camera, ARDAVAN_YARD);
 
   // Photo mode: park the camera at a named vantage, leave the UI layer empty,
   // and skip the controller entirely. Used to regenerate marketing captures
@@ -92,6 +93,14 @@ async function boot(): Promise<void> {
     return;
   }
 
+  // The rifle. PRD §40 wants "one enemy and one rifle" to feel good before
+  // anything else; until now the player's hands were empty.
+  //
+  // Created after the photo-mode return on purpose: the vantages in photo.ts
+  // are environment showcases for the marketing site, and a weapon filling the
+  // lower third of frame hides the yard they exist to show.
+  const viewmodel = new Viewmodel(scene, camera, world.assets);
+
   const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
 
   const hud = createHud(ui, {
@@ -112,7 +121,9 @@ async function boot(): Promise<void> {
     // Movement only advances while the pointer is locked; otherwise the start
     // gate is up and the yard should sit still behind it.
     if (player.isLocked) player.update(deltaMs);
-    hud.update(player.status(), engine.getFps());
+    const status = player.status();
+    viewmodel.update(deltaMs, status.speed, camera.rotation.y, camera.rotation.x);
+    hud.update(status, engine.getFps());
     scene.render();
   });
 

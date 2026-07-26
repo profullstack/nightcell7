@@ -2,8 +2,8 @@
   "generator": "tools/art/capture.mjs",
   "source": "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
-  "commit": "9e0d892d8cf55eb61344c2335b65fef73261c127",
-  "capturedAt": "2026-07-26T00:04:21.086Z",
+  "commit": "bf4d13f789386baa436f5e17e69be82763b3e142",
+  "capturedAt": "2026-07-26T09:04:30.282Z",
   "viewport": {
     "width": 1920,
     "height": 1080
