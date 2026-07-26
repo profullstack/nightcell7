@@ -239,12 +239,25 @@ async function loadModel(
     mesh.alwaysSelectAsActiveMesh = false;
   }
 
-  // Materials that came in from the GLB are now unreferenced.
+  // Drop only materials nothing is actually using.
+  //
+  // This used to dispose every material whose name was not one of our
+  // generated slots, on the assumption that a GLB's own materials are always
+  // replaced by the loop above. That holds for the props we generate and is
+  // catastrophically wrong for a licensed model: every Quaternius material
+  // (DarkBrown, Grey, Black, Skin, Swat, Swat_Black, Visor) failed the name
+  // test, all seven were destroyed, and the meshes were left with no material
+  // at all — which Babylon renders as flat white.
+  //
+  // That cost three wrong diagnoses. It looked like an exposure problem, so it
+  // was "fixed" by scaling albedo and clearing emissive, none of which can
+  // help a mesh that has no material to scale. Checking actual usage is both
+  // correct and impossible to get wrong for a model we did not author.
+  const inUse = new Set(container.meshes.map((mesh) => mesh.material).filter(Boolean));
   for (const material of [...container.materials]) {
-    if (!materials.has(material.name)) {
-      container.materials.splice(container.materials.indexOf(material), 1);
-      material.dispose();
-    }
+    if (inUse.has(material)) continue;
+    container.materials.splice(container.materials.indexOf(material), 1);
+    material.dispose();
   }
 
   return container;
