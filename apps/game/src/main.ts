@@ -8,6 +8,7 @@ import { requestedVantage } from "./photo";
 import { PlayerController } from "./player";
 import { Viewmodel } from "./viewmodel";
 import { GameAudio } from "./audio";
+import { WeaponEffects } from "./vfx";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
 import "./style.css";
@@ -120,6 +121,10 @@ async function boot(): Promise<void> {
   const primary = MULTIPLAYER_LOADOUT[0];
   const fireInterval = primary ? fireIntervalMs(getWeapon(primary)) : 100;
 
+  // Muzzle flash, tracers and impacts. Presentation only — the server owns
+  // hit registration; this decides where to draw a spark.
+  const effects = new WeaponEffects(scene, ARDAVAN_YARD);
+
   const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
 
   const hud = createHud(ui, {
@@ -163,8 +168,17 @@ async function boot(): Promise<void> {
       if (status.firing && performance.now() - lastShotAt >= fireInterval) {
         lastShotAt = performance.now();
         audio.fire();
+
+        // The tracer starts at the muzzle so it reads as coming from the gun,
+        // but the trace itself is cast from the eye: the muzzle sits below and
+        // right of the sight line, and tracing from there puts rounds visibly
+        // off the crosshair at close range.
+        const eye = camera.globalPosition;
+        const aim = camera.getDirection(Vector3.Forward());
+        effects.fire(viewmodel.muzzlePosition() ?? eye, eye, aim);
       }
     }
+    effects.update();
     hud.update(status, engine.getFps());
     scene.render();
   });

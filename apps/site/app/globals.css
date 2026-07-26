@@ -1296,13 +1296,18 @@ a {
   flex-direction: column;
   gap: 0.75rem;
   max-width: min(1600px, 96vw);
+  /* Never taller than the space between the bar and the bottom padding, or the
+     figure overflows the viewport and the caption is pushed off-screen. */
+  max-height: calc(100vh - 5.5rem);
   margin: 0;
   cursor: default;
+  min-height: 0;
 }
 
 /* Clips the zoomed image instead of letting it push the dialog around. */
 .lightbox__frame {
   overflow: hidden;
+  min-height: 0;
   border: 1px solid rgb(236 232 223 / 14%);
   background: var(--ink-950);
   line-height: 0;
@@ -1312,17 +1317,26 @@ a {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 78vh;
+  /* Leaves room for the caption beneath. 78vh plus a caption exceeded the
+     viewport on a 1000px-tall window. */
+  max-height: min(72vh, calc(100vh - 12rem));
   object-fit: contain;
   transition: transform var(--motion-component) var(--ease-standard);
   user-select: none;
 }
 
 .lightbox__figure figcaption {
+  /* Explicitly reset the grid the page galleries put on figcaption. The
+     lightbox is portalled out of them now, but stating it here means dropping
+     it back inline could not silently reintroduce the 40px-wide wrap. */
+  display: block;
   font-size: 0.86rem;
   line-height: 1.6;
   color: var(--bone-300);
   max-width: 76ch;
+  margin: 0;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .lightbox__nav {
