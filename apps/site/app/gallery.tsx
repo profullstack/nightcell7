@@ -1,6 +1,6 @@
-import Image from "next/image";
 import manifest from "../public/media/yard/manifest.json";
 import { ClickableGallery } from "./_components/clickable-gallery";
+import { ClickablePlate, ClickableStrip } from "./_components/clickable-figures";
 
 /**
  * In-engine capture gallery.
@@ -61,19 +61,12 @@ export function CapturePlate({ name, label }: { name: string; label: string }) {
   if (!shot) return null;
 
   return (
-    <figure className="plate">
-      <Image
-        src={`/media/yard/${shot.file}`}
-        alt={shot.caption}
-        width={manifest.viewport.width}
-        height={manifest.viewport.height}
-        sizes="(min-width: 1100px) 1100px, 100vw"
-      />
-      <figcaption>
-        <span className="plate__label">{label}</span>
-        {shot.caption}
-      </figcaption>
-    </figure>
+    <ClickablePlate
+      shot={shot}
+      label={label}
+      width={manifest.viewport.width}
+      height={manifest.viewport.height}
+    />
   );
 }
 
@@ -83,22 +76,11 @@ export function CaptureStrip({ names }: { names: readonly string[] }) {
   if (shots.length === 0) return null;
 
   return (
-    <ul className="strip">
-      {shots.map((shot) => (
-        <li key={shot.name}>
-          <figure>
-            <Image
-              src={`/media/yard/${shot.file}`}
-              alt={shot.caption}
-              width={manifest.viewport.width}
-              height={manifest.viewport.height}
-              sizes="(min-width: 900px) 33vw, 100vw"
-            />
-            <figcaption>{shot.caption}</figcaption>
-          </figure>
-        </li>
-      ))}
-    </ul>
+    <ClickableStrip
+      shots={shots}
+      width={manifest.viewport.width}
+      height={manifest.viewport.height}
+    />
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Fullscreen image viewer for the in-engine captures.
@@ -13,6 +14,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * gate), so the overlay is a real modal dialog: focus moves into it, Escape
  * closes it, Tab is trapped, and focus returns to the thumbnail that opened it.
  * A div with an onClick would look identical and be unusable with a keyboard.
+ *
+ * Rendered through a portal onto `document.body`, which is not a detail. Sited
+ * inline it lands inside whichever gallery opened it and inherits that
+ * container's rules — `.gallery figcaption` is a two-column grid with a 2.5rem
+ * index column, so the caption wrapped one word per line down a 40px strip. A
+ * modal has no business inheriting layout from the thing that opened it, and a
+ * portal also puts it above every stacking context on the page.
  */
 
 export interface LightboxShot {
@@ -133,7 +141,7 @@ export function Lightbox({ shots, index, onClose, onNavigate }: Props) {
     setZoom((current) => Math.min(MAX_ZOOM, Math.max(1, current - event.deltaY * 0.002)));
   }
 
-  return (
+  return createPortal(
     <div
       className="lightbox"
       role="dialog"
@@ -196,6 +204,7 @@ export function Lightbox({ shots, index, onClose, onNavigate }: Props) {
       >
         &rsaquo;
       </button>
-    </div>
+    </div>,
+    document.body,
   );
 }
