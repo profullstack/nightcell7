@@ -28,10 +28,8 @@ mac:
   artifactName: "nightcell7-${version}-mac-${arch}.${ext}"
   category: public.app-category.action-games
   target:
-    - target: dmg
-      arch: [x64, arm64]
-    - target: zip
-      arch: [x64, arm64]
+    - dmg
+    - zip
   # Hardened runtime is required for notarization. Signing only happens when
   # the release workflow supplies credentials; local builds stay unsigned.
   hardenedRuntime: true
@@ -42,8 +40,7 @@ mac:
 win:
   artifactName: "nightcell7-${version}-win-${arch}.${ext}"
   target:
-    - target: nsis
-      arch: [x64, arm64]
+    - nsis
 
 nsis:
   oneClick: false
@@ -53,12 +50,9 @@ nsis:
 
 linux:
   target:
-    - target: AppImage
-      arch: [x64, arm64]
-    - target: deb
-      arch: [x64, arm64]
-    - target: rpm
-      arch: [x64, arm64]
+    - AppImage
+    - deb
+    - rpm
   category: Game
   maintainer: Profullstack, Inc.
   synopsis: Two operatives. Two countries. One manufactured war.
