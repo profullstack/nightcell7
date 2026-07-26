@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { MULTIPLAYER_MAP, TDM_RULES } from "@nightcell7/game-core";
+import { CaptureStrip, CapturePlate, GreyboxNotice } from "../gallery";
 
 export const metadata: Metadata = {
   title: "Multiplayer Alpha",
@@ -35,6 +36,8 @@ export default async function MultiplayerPage() {
           6v6 Team Deathmatch on Ardavan Yard, built from Episode 1 architecture. Free to any
           verified account &mdash; you do not need to own an episode to play it.
         </p>
+
+        <CapturePlate name="west-catwalk" label="Ardavan Yard" />
 
         <dl className="status-grid">
           <div className="status-cell">
@@ -80,6 +83,14 @@ export default async function MultiplayerPage() {
             Community Guidelines
           </a>
         </div>
+
+        <h3 style={{ marginTop: "4rem" }}>The map</h3>
+        <p className="lede">
+          Three lanes with cross-links, two vertical routes, and protected spawns at either end.
+          Every frame below is the geometry the server actually simulates.
+        </p>
+        <CaptureStrip names={["tank-row", "central-hardpoint", "north-gate"]} />
+        <GreyboxNotice />
 
         <h3 style={{ marginTop: "4rem" }}>How it works</h3>
         <ul className="includes">

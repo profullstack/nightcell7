@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { MISSION_SPECS, SIDE } from "@nightcell7/game-core";
 import { CATALOG, formatPrice } from "@nightcell7/entitlements";
+import { CaptureStrip, CapturePlate, GreyboxNotice } from "../../gallery";
 
 export const metadata: Metadata = {
   title: "Episode 1 — False Dawn",
@@ -23,6 +24,8 @@ export default function EpisodePage() {
           work of the other side. Two operatives, hunting each other on false evidence, have one
           night to stop them.
         </p>
+
+        <CapturePlate name="north-gate" label="Ardavan Coastal Works" />
 
         <div className="price-block">
           <span className="price">{formatPrice(episode.unitAmount)}</span>
@@ -63,6 +66,14 @@ export default function EpisodePage() {
             ))}
           </article>
         </div>
+
+        <h3 style={{ marginTop: "4rem" }}>The theater</h3>
+        <p className="lede">
+          Three shared locations, six mission variants. Both campaigns run through the same hours
+          and reinterpret each other.
+        </p>
+        <CaptureStrip names={["yard-approach", "central-hardpoint", "gantry-overlook"]} />
+        <GreyboxNotice />
 
         <h3 style={{ marginTop: "4rem" }}>Content notes</h3>
         <ul className="includes">

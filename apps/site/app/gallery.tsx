@@ -75,3 +75,74 @@ export function CaptureGallery() {
 export function heroCapture(): Shot | undefined {
   return SHOTS.find((s) => s.name === "west-catwalk") ?? SHOTS[0];
 }
+
+export function captureByName(name: string): Shot | undefined {
+  return SHOTS.find((s) => s.name === name);
+}
+
+/**
+ * A single wide capture used as a section plate.
+ *
+ * `label` states what the reader is actually looking at. These are greybox
+ * frames from the multiplayer map, so a page that implies they are campaign
+ * art would be lying — and PRD §21.12 gates launch on exactly that.
+ */
+export function CapturePlate({ name, label }: { name: string; label: string }) {
+  const shot = captureByName(name);
+  if (!shot) return null;
+
+  return (
+    <figure className="plate">
+      <Image
+        src={`/media/yard/${shot.file}`}
+        alt={shot.caption}
+        width={manifest.viewport.width}
+        height={manifest.viewport.height}
+        sizes="(min-width: 1100px) 1100px, 100vw"
+      />
+      <figcaption>
+        <span className="plate__label">{label}</span>
+        {shot.caption}
+      </figcaption>
+    </figure>
+  );
+}
+
+/** A horizontal strip of named captures. */
+export function CaptureStrip({ names }: { names: readonly string[] }) {
+  const shots = names.map(captureByName).filter((s): s is Shot => s !== undefined);
+  if (shots.length === 0) return null;
+
+  return (
+    <ul className="strip">
+      {shots.map((shot) => (
+        <li key={shot.name}>
+          <figure>
+            <Image
+              src={`/media/yard/${shot.file}`}
+              alt={shot.caption}
+              width={manifest.viewport.width}
+              height={manifest.viewport.height}
+              sizes="(min-width: 900px) 33vw, 100vw"
+            />
+            <figcaption>{shot.caption}</figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * Shared honesty notice. Any page showing these frames must carry it, so the
+ * disclaimer cannot drift out of sync between pages.
+ */
+export function GreyboxNotice() {
+  return (
+    <p className="gallery__note">
+      In-engine capture of Ardavan Yard &mdash; the 6v6 map built from Episode 1&rsquo;s refinery
+      architecture. Still a greybox: this is the collision geometry the multiplayer server enforces,
+      not final art. Campaign locations are not yet photographable.
+    </p>
+  );
+}
