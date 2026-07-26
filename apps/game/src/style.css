@@ -369,6 +369,10 @@ body {
 
 .modes__option {
   cursor: pointer;
+  /* Belt and braces with the `data-interactive` attribute the markup sets:
+     `#ui` disables pointer events wholesale, and a label is not one of the
+     elements the global rule re-enables. */
+  pointer-events: auto;
 }
 
 .modes__option input {
