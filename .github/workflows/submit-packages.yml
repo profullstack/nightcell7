@@ -1,0 +1,133 @@
+name: Submit to Package Managers
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to submit (without leading v)"
+        required: true
+      managers:
+        description: "Comma-separated: homebrew,scoop,winget,aur,nix — or all"
+        required: false
+        default: "all"
+      dry_run:
+        description: "Generate manifests but do not push anywhere"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            V="${{ github.event.inputs.version }}"
+          else
+            V="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${V#v}" >> "$GITHUB_OUTPUT"
+
+      # Manifests are derived from the release's own SHA256SUMS.txt, so this
+      # step fails loudly if the release is incomplete rather than publishing a
+      # manifest that points at a missing or mismatched binary.
+      - name: Generate
+        run: |
+          node tools/release/package-managers.mjs \
+            --version "${{ steps.version.outputs.version }}" \
+            --manager "${{ github.event.inputs.managers || 'all' }}" \
+            --out dist/packaging
+
+      - name: Show what was generated
+        run: find dist/packaging -type f -print -exec echo '---' \; -exec cat {} \;
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-manifests-${{ steps.version.outputs.version }}
+          path: dist/packaging
+
+  submit:
+    name: Submit
+    needs: generate
+    runs-on: ubuntu-latest
+    # Dry run by default. Publishing to a tap or the AUR is irreversible for
+    # users who pull immediately, so it takes an explicit opt-out.
+    if: github.event.inputs.dry_run == 'false'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-manifests-*
+          merge-multiple: true
+          path: dist/packaging
+
+      - name: Homebrew tap
+        if: env.TAP_TOKEN != ''
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/profullstack/homebrew-tap.git" tap
+          mkdir -p tap/Casks
+          cp dist/packaging/homebrew/nightcell7.rb tap/Casks/
+          cd tap
+          git config user.name "nightcell7-release"
+          git config user.email "support@nightcell7.com"
+          git add Casks/nightcell7.rb
+          git diff --staged --quiet || git commit -m "nightcell7: update cask"
+          git push
+
+      - name: Scoop bucket
+        if: env.TAP_TOKEN != ''
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/profullstack/scoop-bucket.git" bucket
+          mkdir -p bucket/bucket
+          cp dist/packaging/scoop/nightcell7.json bucket/bucket/
+          cd bucket
+          git config user.name "nightcell7-release"
+          git config user.email "support@nightcell7.com"
+          git add bucket/nightcell7.json
+          git diff --staged --quiet || git commit -m "nightcell7: update manifest"
+          git push
+
+      - name: AUR
+        if: env.AUR_SSH_KEY != ''
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AUR_SSH_KEY" | base64 -d > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
+          printf 'Host aur.archlinux.org\n  IdentityFile ~/.ssh/aur\n  User aur\n' >> ~/.ssh/config
+          git clone ssh://aur@aur.archlinux.org/nightcell7-bin.git aur
+          cp dist/packaging/aur/PKGBUILD dist/packaging/aur/.SRCINFO aur/
+          cd aur
+          git config user.name "nightcell7-release"
+          git config user.email "support@nightcell7.com"
+          git add PKGBUILD .SRCINFO
+          git diff --staged --quiet || git commit -m "nightcell7-bin: update"
+          git push
+
+      # winget requires a PR to microsoft/winget-pkgs, which is a review
+      # process rather than a push. The manifests are attached to the run for a
+      # human to submit with wingetcreate.
+      - name: WinGet note
+        run: |
+          echo "WinGet manifests are in the run artifacts."
+          echo "Submit with: wingetcreate submit dist/packaging/winget"

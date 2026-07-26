@@ -872,6 +872,43 @@ a {
   margin: 0 0 0.4rem;
 }
 
+/* --------------------------------------------------------- install command */
+
+.command {
+  margin: 1.25rem 0;
+}
+
+.command__label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--dust-gold);
+  margin: 0 0 0.4rem;
+}
+
+.command pre {
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  background: var(--ink-900);
+  border: 1px solid color-mix(in srgb, var(--bone-300) 16%, transparent);
+  border-left: 3px solid var(--signal-cyan);
+  overflow-x: auto;
+}
+
+.command code,
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  color: var(--bone-100);
+}
+
+.prose code {
+  padding: 0.1rem 0.35rem;
+  background: var(--ink-800);
+  border-radius: var(--radius-sharp);
+}
+
 /* ---------------------------------------------------------------- footer */
 
 .footer {

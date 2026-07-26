@@ -17,8 +17,9 @@ coverage/
 .env.*
 !.env.example
 
-# Electron Forge output
+# electron-builder output and generated packaging manifests
 apps/desktop/out/
+dist/packaging/
 
 # Generated content packs and previews
 public/assets/generated/

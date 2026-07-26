@@ -1,0 +1,178 @@
+name: Desktop Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (without leading v)"
+        required: false
+
+permissions:
+  contents: write
+
+# Artifacts are uploaded straight to the GitHub Release rather than round-tripped
+# through the Actions artifact store. On pairux.com that round trip repeatedly
+# corrupted large binaries — AppImage squashfs, .deb lzma, .rpm payload — with
+# hashes that matched on upload and failed on download. Do not reintroduce it.
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+            arch: x64
+          - os: macos-latest
+            platform: mac
+            arch: arm64
+          - os: windows-latest
+            platform: win
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Linux packaging tools
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools rpm squashfs-tools
+
+      - name: Build
+        shell: bash
+        run: pnpm --filter @nightcell7/desktop build
+
+      - name: Package
+        shell: bash
+        env:
+          # Signing only happens when credentials are present; forks and
+          # untrusted PRs produce unsigned builds rather than failing.
+          CSC_LINK: ${{ secrets.MAC_CERT_P12 }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd apps/desktop
+          npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
+
+      # A corrupt AppImage installs fine and fails at launch with "Failed to
+      # extract AppImage", so the only reliable gate is extracting it here.
+      - name: Verify AppImage integrity
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          imgs=(apps/desktop/out/*.AppImage)
+          if [ ${#imgs[@]} -eq 0 ]; then
+            echo "::error::No AppImage was produced"
+            exit 1
+          fi
+          for img in "${imgs[@]}"; do
+            echo "Checking $(basename "$img")"
+            # unsquashfs works on any arch's AppImage; running it does not.
+            offset=$(./"$img" --appimage-offset 2>/dev/null || echo "")
+            if [ -z "$offset" ]; then
+              # arm64 image on an x64 runner cannot self-report; find the
+              # squashfs magic instead.
+              offset=$(grep -abo 'hsqs' "$img" | head -1 | cut -d: -f1)
+            fi
+            if [ -z "$offset" ]; then
+              echo "::error::Could not locate squashfs in $(basename "$img")"
+              exit 1
+            fi
+            rm -rf /tmp/squash-check
+            if ! unsquashfs -q -o "$offset" -d /tmp/squash-check "$img" >/dev/null 2>&1; then
+              echo "::error::Corrupt squashfs in $(basename "$img")"
+              exit 1
+            fi
+            echo "  ok"
+          done
+
+      - name: Checksums
+        shell: bash
+        run: |
+          cd apps/desktop/out
+          shopt -s nullglob
+          files=(*.dmg *.zip *.exe *.AppImage *.deb *.rpm)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No installable artifacts were produced"
+            exit 1
+          fi
+          for f in "${files[@]}"; do
+            if command -v sha256sum >/dev/null; then sha256sum "$f"; else shasum -a 256 "$f"; fi
+          done | tee "SHA256SUMS-${{ matrix.platform }}-${{ matrix.arch }}.txt"
+
+      - name: Determine tag
+        id: tag
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "tag=v${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd apps/desktop/out
+          shopt -s nullglob
+          gh release create "${{ steps.tag.outputs.tag }}" \
+            --title "NIGHTCELL 7 ${{ steps.tag.outputs.tag }}" \
+            --notes "Desktop builds. Verify downloads against SHA256SUMS.txt." \
+            --draft 2>/dev/null || true
+          gh release upload "${{ steps.tag.outputs.tag }}" \
+            *.dmg *.zip *.exe *.AppImage *.deb *.rpm \
+            "SHA256SUMS-${{ matrix.platform }}-${{ matrix.arch }}.txt" \
+            --clobber
+
+  checksums:
+    name: Combine checksums
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "tag=v${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The installers fetch a single SHA256SUMS.txt, so the per-platform files
+      # are merged into one after every platform has uploaded.
+      - name: Merge into SHA256SUMS.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p sums && cd sums
+          gh release download "${{ steps.tag.outputs.tag }}" \
+            --pattern 'SHA256SUMS-*.txt' --clobber
+          cat SHA256SUMS-*.txt | sort -k2 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          gh release upload "${{ steps.tag.outputs.tag }}" SHA256SUMS.txt --clobber

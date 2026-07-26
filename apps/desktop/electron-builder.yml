@@ -1,0 +1,86 @@
+# NIGHTCELL 7 desktop packaging.
+#
+# electron-builder rather than Forge, matching the pattern proven on
+# pairux.com: it produces the package formats the OS package managers actually
+# want (dmg/zip, nsis, AppImage/deb/rpm) from one config.
+#
+# The app is a thin wrapper around the same web build, so packages stay small
+# and there is no per-platform game content to bundle.
+appId: com.nightcell7.game
+productName: NIGHTCELL 7
+copyright: Copyright 2026 Profullstack, Inc.
+
+directories:
+  output: out
+  buildResources: resources
+
+icon: resources/icon.png
+
+files:
+  - dist/**/*
+  - resources/**/*
+  - "!**/*.map"
+  - "!**/node_modules/**/{CHANGELOG.md,README.md,LICENSE*}"
+
+asar: true
+
+mac:
+  category: public.app-category.action-games
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  # Hardened runtime is required for notarization. Signing only happens when
+  # the release workflow supplies credentials; local builds stay unsigned.
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+
+win:
+  target:
+    - target: nsis
+      arch: [x64, arm64]
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: NIGHTCELL 7
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64, arm64]
+    - target: deb
+      arch: [x64, arm64]
+    - target: rpm
+      arch: [x64, arm64]
+  category: Game
+  maintainer: Profullstack, Inc.
+  synopsis: Two operatives. Two countries. One manufactured war.
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  executableName: nightcell7
+  desktop:
+    entry:
+      Categories: Game;ActionGame;
+      Keywords: fps;shooter;nightcell;
+
+deb:
+  packageName: nightcell7
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+
+rpm:
+  packageName: nightcell7
+
+publish:
+  provider: github
+  owner: profullstack
+  repo: nightcell7
