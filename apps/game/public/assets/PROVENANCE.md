@@ -101,11 +101,11 @@ material-slot or `COL_` conventions the generated props use;
 
 ## Synty POLYGON Military
 
-| File | Source | Licence |
-| --- | --- | --- |
-| `models/fighter_insurgent.glb` | Synty POLYGON Military — `SK_Chr_Insurgent_Male_01` | Synty Store licence (purchased) |
-| `models/fighter_soldier.glb` | Synty POLYGON Military — `SK_Chr_Soldier_Male_01` | Synty Store licence (purchased) |
-| `textures/synty_atlas.webp` | Synty POLYGON Military — `PolygonMilitary_Texture_01_A` | Synty Store licence (purchased) |
+| File                           | Source                                                  | Licence                         |
+| ------------------------------ | ------------------------------------------------------- | ------------------------------- |
+| `models/fighter_insurgent.glb` | Synty POLYGON Military — `SK_Chr_Insurgent_Male_01`     | Synty Store licence (purchased) |
+| `models/fighter_soldier.glb`   | Synty POLYGON Military — `SK_Chr_Soldier_Male_01`       | Synty Store licence (purchased) |
+| `textures/synty_atlas.webp`    | Synty POLYGON Military — `PolygonMilitary_Texture_01_A` | Synty Store licence (purchased) |
 
 Purchased from https://syntystore.com. The licence grants perpetual,
 royalty-free commercial use in unlimited titles and permits modification; it
