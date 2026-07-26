@@ -59,7 +59,7 @@ export const MODELS = [
   // animations and materials, so they bypass the material-slot convention the
   // generated props follow — see apps/game/public/assets/PROVENANCE.md.
   "fighter_swat",
-  "fighter_worker",
+  "fighter_adventurer",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];

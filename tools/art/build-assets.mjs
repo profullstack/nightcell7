@@ -132,8 +132,9 @@ function toWebp(pngDir, outDir) {
  */
 function directoryBytes(dir, skip) {
   if (!existsSync(dir)) return 0;
+  const drop = typeof skip === "function" ? skip : (f) => Boolean(skip?.test(f));
   return readdirSync(dir)
-    .filter((f) => !skip || !skip.test(f))
+    .filter((f) => !skip || !drop(f))
     .reduce((sum, f) => sum + statSync(join(dir, f)).size, 0);
 }
 
@@ -267,10 +268,15 @@ function main() {
   const modelBytes = directoryBytes(MODELS_OUT);
   const textureBytes = directoryBytes(TEXTURES_OUT);
   // Skip streamed music and any video the directory happens to hold.
-  const audioBytesTotal = directoryBytes(AUDIO_OUT, /^music_|\.mp4$/);
+  // Allowlist the generated effects rather than trying to pattern-match the
+  // music. Tracks arrive with whatever names they were given, so an exclusion
+  // pattern silently under-counts the moment one does not match — which is how
+  // 22 MB of songs ended up inside a 6 MB budget guard.
+  const SFX = /^(fire_|step_|impact_|reload\.|ui_|ambience_yard\.)/;
+  const audioBytesTotal = directoryBytes(AUDIO_OUT, (f) => !SFX.test(f));
   const audio = existsSync(AUDIO_OUT)
     ? readdirSync(AUDIO_OUT)
-        .filter((f) => f.endsWith(".mp3") && !f.startsWith("music_"))
+        .filter((f) => f.endsWith(".mp3") && SFX.test(f))
         .sort()
     : [];
 
@@ -301,7 +307,7 @@ function main() {
         // Streamed on demand, so outside the shell budget entirely.
         music: existsSync(AUDIO_OUT)
           ? readdirSync(AUDIO_OUT)
-              .filter((f) => f.startsWith("music_") && f.endsWith(".mp3"))
+              .filter((f) => f.endsWith(".mp3") && !SFX.test(f))
               .sort()
           : [],
         bytes: {

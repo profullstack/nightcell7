@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 4.5.12 LTS",
-  "commit": "bfc24e463e97c8c28389df2ba795a458561313d5",
+  "commit": "ad926825e31ded8e6197881e6d68cf00f368ed65",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
   "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
   "textureSize": 1024,
@@ -11,8 +11,8 @@
     "character.glb",
     "container.glb",
     "deck.glb",
+    "fighter_adventurer.glb",
     "fighter_swat.glb",
-    "fighter_worker.glb",
     "hardpoint.glb",
     "lamp_mast.glb",
     "pipe_rack.glb",
@@ -72,12 +72,14 @@
     "music_frost-on-the-oar.mp3",
     "music_ironwood-oath.mp3",
     "music_runes-on-ice.mp3",
-    "music_storm-crown-oath.mp3"
+    "music_storm-crown-oath.mp3",
+    "music_the-wolf-called-want-part-2.mp3",
+    "music_the-wolf-called-want.mp3"
   ],
   "bytes": {
-    "models": 3668192,
+    "models": 4206012,
     "textures": 1971598,
-    "audio": 326680,
-    "total": 5966470
+    "audio": 323166,
+    "total": 6500776
   }
 }
