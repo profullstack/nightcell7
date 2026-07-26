@@ -25,6 +25,7 @@ files:
 asar: true
 
 mac:
+  artifactName: "nightcell7-${version}-mac-${arch}.${ext}"
   category: public.app-category.action-games
   target:
     - target: dmg
@@ -39,6 +40,7 @@ mac:
   entitlementsInherit: resources/entitlements.mac.plist
 
 win:
+  artifactName: "nightcell7-${version}-win-${arch}.${ext}"
   target:
     - target: nsis
       arch: [x64, arm64]
@@ -60,7 +62,7 @@ linux:
   category: Game
   maintainer: Profullstack, Inc.
   synopsis: Two operatives. Two countries. One manufactured war.
-  artifactName: "${productName}-${version}-${arch}.${ext}"
+  artifactName: "nightcell7-${version}-linux-${arch}.${ext}"
   executableName: nightcell7
   desktop:
     entry:

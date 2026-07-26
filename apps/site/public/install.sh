@@ -97,15 +97,37 @@ verify_checksum() {
   success "Checksum verified"
 }
 
+# Find a release asset by regular expression.
+#
+# Asset names are decided by the packaging tool, not by us, so the installer
+# discovers them from the release rather than reconstructing a filename. That
+# removes an entire class of "works until the packager renames something" bugs.
+find_asset() {
+  version="$1"; pattern="$2"
+  api="https://api.github.com/repos/${REPO}/releases/tags/v${version}"
+  fetch "$api" - 2>/dev/null \
+    | grep -o '"browser_download_url": *"[^"]*"' \
+    | cut -d'"' -f4 \
+    | grep -iE "$pattern" \
+    | head -1
+}
+
 install_mac() {
   version="$1"
-  name="NIGHTCELL 7-${version}-${ARCH}.dmg"
-  url="https://github.com/${REPO}/releases/download/v${version}/$(printf '%s' "$name" | sed 's/ /%20/g')"
+  case "$ARCH" in
+    arm64) pattern='mac-arm64\.dmg$' ;;
+    *)     pattern='mac-x64\.dmg$' ;;
+  esac
+
+  url=$(find_asset "$version" "$pattern")
+  [ -n "$url" ] || fail "No macOS ${ARCH} build in v${version}. See https://nightcell7.com/downloads"
+  name=$(basename "$url")
+
   tmp=$(mktemp -d)
   trap 'rm -rf "$tmp"' EXIT
 
   info "Downloading ${name}"
-  fetch "$url" "$tmp/app.dmg" || fail "Download failed. Is v${version} published for ${ARCH}?"
+  fetch "$url" "$tmp/app.dmg" || fail "Download failed."
   verify_checksum "$tmp/app.dmg" "$name" "$version"
 
   info "Mounting disk image"
@@ -122,18 +144,26 @@ install_mac() {
 
   success "Installed to /Applications/$(basename "$app")"
   printf '%s\n' "  Launch it from Spotlight, or: open -a \"$(basename "$app" .app)\""
+  warn "This build is unsigned. macOS may refuse the first launch — right-click the app and choose Open."
 }
 
 install_linux() {
   version="$1"
-  name="NIGHTCELL 7-${version}-${ARCH}.AppImage"
-  url="https://github.com/${REPO}/releases/download/v${version}/$(printf '%s' "$name" | sed 's/ /%20/g')"
+  # electron-builder names linux artifacts x86_64/arm64, not x64.
+  case "$ARCH" in
+    arm64) pattern='linux-(arm64|aarch64)\.AppImage$' ;;
+    *)     pattern='linux-(x86_64|x64|amd64)\.AppImage$' ;;
+  esac
+
+  url=$(find_asset "$version" "$pattern")
+  [ -n "$url" ] || fail "No Linux ${ARCH} AppImage in v${version}. See https://nightcell7.com/downloads"
+  name=$(basename "$url")
 
   mkdir -p "$INSTALL_DIR" "$BIN_DIR"
   target="${INSTALL_DIR}/NIGHTCELL7.AppImage"
 
   info "Downloading ${name}"
-  fetch "$url" "${target}.part" || fail "Download failed. Is v${version} published for ${ARCH}?"
+  fetch "$url" "${target}.part" || fail "Download failed."
   verify_checksum "${target}.part" "$name" "$version"
   mv -f "${target}.part" "$target"
   chmod +x "$target"
@@ -156,7 +186,6 @@ fi
 LAUNCHER
   chmod +x "${BIN_DIR}/nightcell7"
 
-  # Desktop entry so it appears in the applications menu.
   apps_dir="$HOME/.local/share/applications"
   mkdir -p "$apps_dir"
   cat > "${apps_dir}/nightcell7.desktop" <<DESKTOP

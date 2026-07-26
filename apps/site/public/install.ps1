@@ -39,16 +39,32 @@ if (-not $version) {
 $version = $version -replace '^v', ''
 Write-Info "Installing NIGHTCELL 7 v$version for windows-$arch"
 
-# --- download --------------------------------------------------------------
-$name = "NIGHTCELL 7 Setup $version.exe"
-$url  = "https://github.com/$Repo/releases/download/v$version/" + [uri]::EscapeDataString($name)
+# --- locate the asset ------------------------------------------------------
+# Asset names are decided by the packaging tool, so discover them from the
+# release rather than reconstructing a filename.
+try {
+  $rel = Invoke-RestMethod "https://api.github.com/repos/$Repo/releases/tags/v$version"
+} catch {
+  Write-Failure "Release v$version not found."
+}
+
+$assetPattern = if ($arch -eq 'arm64') { 'win-arm64\.exe$' } else { 'win-x64\.exe$' }
+$assetItem = $rel.assets | Where-Object { $_.name -match $assetPattern } | Select-Object -First 1
+if (-not $assetItem) {
+  # Fall back to any .exe, so a naming change degrades rather than breaks.
+  $assetItem = $rel.assets | Where-Object { $_.name -like '*.exe' } | Select-Object -First 1
+}
+if (-not $assetItem) { Write-Failure "No Windows installer in v$version. See https://nightcell7.com/downloads" }
+
+$name = $assetItem.name
+$url  = $assetItem.browser_download_url
 $dest = Join-Path $env:TEMP $name
 
 Write-Info "Downloading $name"
 try {
   Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
 } catch {
-  Write-Failure "Download failed. Is v$version published for $arch?"
+  Write-Failure "Download failed."
 }
 
 # --- verify ----------------------------------------------------------------
@@ -79,6 +95,7 @@ Remove-Item $dest -Force -ErrorAction SilentlyContinue
 
 Write-Host ''
 Write-Ok 'Done.'
+Write-Warned 'This build is unsigned. Windows SmartScreen may warn on first run.'
 Write-Host '  The demo and multiplayer alpha are free. No account needed to play the demo.' -ForegroundColor DarkGray
 Write-Host '  Prefer a package manager? https://nightcell7.com/downloads' -ForegroundColor DarkGray
 Write-Host ''
