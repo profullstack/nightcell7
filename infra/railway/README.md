@@ -3,6 +3,43 @@
 All deployable application services run on Railway from **this one repository**
 (PRD §17.5, §22.1). No alternative application host is permitted for V1.
 
+## Current shape: one service, not seven
+
+Production today runs the **whole stack in a single Railway service**
+(`nightcell7`) from the root `Dockerfile`. `tools/release/start-all.mjs`
+supervises the processes and the gateway binds `$PORT`, proxying to the site,
+game, API and multiplayer on localhost.
+
+The per-service matrix below is the target topology and the files for it exist
+(`infra/docker/<service>.Dockerfile`, `services/*/railway.json`). Splitting is
+four environment variables — the gateway's upstream URLs — not a rewrite.
+
+Trade-offs accepted for now: a multiplayer redeploy also restarts the site, and
+match servers cannot scale independently. Revisit before real player load.
+
+## Deploy trigger
+
+Pushes to `main` **do** auto-deploy via the GitHub connection.
+
+Two traps that made this look broken:
+
+1. **Watch paths silently skip.** Railway reported `no changes detected in
+watch paths, build will skip` and marked deployments `SKIPPED`, not
+   `FAILED`. Nothing warns you; the service just never updates.
+   `railway.json` now sets `watchPatterns: ["**"]`.
+2. **`railway up` supersedes a webhook build.** A manual upload started
+   seconds after a push will mark the GitHub-triggered deployment `REMOVED`.
+   That is not the webhook failing — check timestamps before concluding it is.
+
+Prefer letting the push deploy. Use `railway up` only to deploy uncommitted
+work.
+
+## Railpack does not work here
+
+`railpack` cannot detect a start command in a 20-package pnpm workspace and
+fails with "No start command detected". Every service is Dockerfile-built;
+`RAILWAY_DOCKERFILE_PATH` selects which one.
+
 Every service below points at the same Git repo with a service-specific root
 directory, build command and watch path. A protocol change therefore rebuilds
 the client, the API and the match service from one commit.
