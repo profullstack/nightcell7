@@ -177,8 +177,27 @@ install_linux() {
   mv -f "${target}.part" "$target"
   chmod +x "$target"
 
-  # AppImages need FUSE. Where it is missing, --appimage-extract-and-run still
-  # works, so the launcher falls back instead of failing.
+  write_linux_launcher "$target"
+
+  success "Installed to ${target}"
+  case ":${PATH}:" in
+    *":${BIN_DIR}:"*) printf '%s\n' "  Run: nightcell7" ;;
+    *) warn "${BIN_DIR} is not on your PATH."
+       printf '%s\n' "  Add it:  export PATH=\"${BIN_DIR}:\$PATH\""
+       printf '%s\n' "  Or run:  ${BIN_DIR}/nightcell7" ;;
+  esac
+}
+
+# Writing the launcher is separate from downloading the app.
+#
+# The launcher carries real logic — FUSE fallback, Chromium sandbox detection —
+# and that logic gets fixed independently of the game's version. `update` on an
+# already-current version must still refresh it, or a launcher bug is
+# unfixable for anyone already installed.
+write_linux_launcher() {
+  target="$1"
+  mkdir -p "$BIN_DIR"
+
   cat > "${BIN_DIR}/nightcell7" <<LAUNCHER
 #!/bin/sh
 # Managed by the NIGHTCELL 7 installer. Edits will be overwritten.
@@ -205,10 +224,59 @@ if [ ! -x "\$APP" ]; then
   echo "NIGHTCELL 7 is not installed. Reinstall: curl -fsSL https://nightcell7.com/install.sh | sh" >&2
   exit 1
 fi
+
+# Chromium's sandbox.
+#
+# Electron sandboxes renderers with unprivileged user namespaces. Ubuntu 23.10
+# and later restrict those by default, and Chromium then falls back to its SUID
+# helper — which must be root-owned and mode 4755. An AppImage is mounted in
+# /tmp as the invoking user, so that can never hold, and Chromium aborts:
+#
+#   FATAL:setuid_sandbox_host.cc(163)] The SUID sandbox helper binary was
+#   found, but is not configured correctly.
+#
+# Detect the restriction rather than always passing --no-sandbox: dropping the
+# sandbox unconditionally would weaken every machine, including the majority
+# where it works fine.
+userns_restricted() {
+  for f in /proc/sys/kernel/apparmor_restrict_unprivileged_userns \
+           /proc/sys/user/max_user_namespaces \
+           /proc/sys/kernel/unprivileged_userns_clone; do
+    [ -r "\$f" ] || continue
+    v=\$(cat "\$f" 2>/dev/null || echo "")
+    case "\$f" in
+      */apparmor_restrict_unprivileged_userns) [ "\$v" = "1" ] && return 0 ;;
+      */max_user_namespaces)                   [ "\$v" = "0" ] && return 0 ;;
+      */unprivileged_userns_clone)             [ "\$v" = "0" ] && return 0 ;;
+    esac
+  done
+  return 1
+}
+
+SANDBOX_FLAG=""
+if [ "\${NIGHTCELL7_NO_SANDBOX-}" = "1" ] || userns_restricted; then
+  SANDBOX_FLAG="--no-sandbox"
+  # Say so once rather than on every launch, but never silently.
+  NOTICE="\$(dirname "\$APP")/.sandbox-notice"
+  if [ ! -f "\$NOTICE" ]; then
+    {
+      echo "NIGHTCELL 7: this kernel restricts unprivileged user namespaces,"
+      echo "so Chromium's sandbox cannot start from an AppImage. Running with"
+      echo "--no-sandbox. To restore it:"
+      echo "  sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0"
+      echo "  # persist: echo 'kernel.apparmor_restrict_unprivileged_userns=0' |"
+      echo "  #          sudo tee /etc/sysctl.d/60-nightcell7.conf"
+    } >&2
+    touch "\$NOTICE" 2>/dev/null || true
+  fi
+fi
+
+# AppImages need FUSE. Where it is missing, --appimage-extract-and-run still
+# works, so fall back rather than fail.
 if "\$APP" --appimage-version >/dev/null 2>&1; then
-  exec "\$APP" "\$@"
+  exec "\$APP" \$SANDBOX_FLAG "\$@"
 else
-  exec "\$APP" --appimage-extract-and-run "\$@"
+  exec "\$APP" --appimage-extract-and-run \$SANDBOX_FLAG "\$@"
 fi
 LAUNCHER
   chmod +x "${BIN_DIR}/nightcell7"
@@ -225,14 +293,6 @@ Type=Application
 Categories=Game;ActionGame;
 DESKTOP
   update-desktop-database "$apps_dir" >/dev/null 2>&1 || true
-
-  success "Installed to ${target}"
-  case ":${PATH}:" in
-    *":${BIN_DIR}:"*) printf '%s\n' "  Run: nightcell7" ;;
-    *) warn "${BIN_DIR} is not on your PATH."
-       printf '%s\n' "  Add it:  export PATH=\"${BIN_DIR}:\$PATH\""
-       printf '%s\n' "  Or run:  ${BIN_DIR}/nightcell7" ;;
-  esac
 }
 
 # Records what is installed so `update` can tell you it is already current
@@ -262,6 +322,13 @@ do_install() {
 
   if [ "$1" = "update" ] && [ -n "$current" ] && [ "$current" = "$version" ]; then
     success "Already on the latest version (v${version})."
+    # Refresh the launcher anyway. It is fixed independently of the app, so
+    # skipping it here would leave a launcher bug permanently unfixable for
+    # anyone already on the current version.
+    if [ "$OS" = "linux" ] && [ -x "${INSTALL_DIR}/NIGHTCELL7.AppImage" ]; then
+      write_linux_launcher "${INSTALL_DIR}/NIGHTCELL7.AppImage"
+      printf '%s\n' "  ${DIM}Launcher refreshed.${NC}"
+    fi
     return 0
   fi
 
