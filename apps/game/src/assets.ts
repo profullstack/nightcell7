@@ -58,8 +58,8 @@ export const MODELS = [
   // Licensed CC0 characters (Quaternius). These carry their own rig,
   // animations and materials, so they bypass the material-slot convention the
   // generated props follow — see apps/game/public/assets/PROVENANCE.md.
-  "fighter_swat",
-  "fighter_adventurer",
+  "fighter_insurgent",
+  "fighter_soldier",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];
@@ -130,6 +130,23 @@ export function createMaterials(scene: Scene): Map<string, PBRMaterial | Standar
 
     materials.set(name, material);
   }
+
+  // Synty characters share one 4096 atlas across every model in the pack, so
+  // it is bound once here rather than embedded in each GLB.
+  const synty = new PBRMaterial("synty_atlas", scene);
+  synty.albedoTexture = loadTexture(scene, "synty_atlas.webp", true);
+  synty.metallic = 0;
+  synty.roughness = 0.9;
+  // `albedoColor` multiplies the atlas. Synty authors for neutral lighting at
+  // roughly 0.5 mid-tone; this yard runs hemispheric 4.05 at exposure 2.05, so
+  // the unscaled atlas clips past the 0.62 bloom threshold and the characters
+  // render white. 0.36 lands them near 0.18 effective, which is where the
+  // yard's own concrete and steel sit.
+  synty.albedoColor = new Color3(0.36, 0.36, 0.36);
+  // Authored for neutral lighting; this yard runs a hot ambient, so the
+  // contribution is trimmed the same way the weapon viewmodel's is.
+  synty.environmentIntensity = 0.35;
+  materials.set("synty_atlas", synty);
 
   // Lamp lenses are the one unlit surface: they are a light source, and
   // shading them would make the fitting darker than the pool of light it casts.

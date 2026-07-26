@@ -1,13 +1,4 @@
-import {
-  Color3,
-  PBRMaterial,
-  Vector3,
-  type AnimationGroup,
-  type Material,
-  type Mesh,
-  type Scene,
-  type TransformNode,
-} from "@babylonjs/core";
+import { Vector3, type AnimationGroup, type Scene, type TransformNode } from "@babylonjs/core";
 import {
   ARDAVAN_YARD,
   rayAabb,
@@ -21,82 +12,6 @@ import {
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
 import { placeAnimated, type AssetSet } from "./assets";
-
-/**
- * Pull a licensed character back into the yard's exposure range.
- *
- * The pack's materials are authored for a neutrally lit scene. This yard runs
- * ambient at 4.05 and exposure at 2.05 — raised when the environment read as
- * too dark — so light-toned character materials clip straight to white and the
- * figures render as glowing blobs. Same trap as the weapon viewmodel: the fix
- * belongs on the character's own material instances, not on the scene, because
- * the scene's exposure is correct for the environment.
- */
-function tameForScene(root: TransformNode, scene: Scene): void {
-  const seen = new Map<Material, Material>();
-
-  const meshes = root.getChildMeshes() as Mesh[];
-  for (const mesh of meshes) {
-    const source = mesh.material;
-    if (!source) continue;
-    let clone = seen.get(source);
-    if (!clone) {
-      clone = source.clone(`scene_${source.name}`) ?? source;
-
-      // Kill emissive without gating on the material class. The yard runs a
-      // GlowLayer for the sodium lamps and it blooms *any* emissive surface;
-      // if the imported material is not the class we expect, an
-      // `instanceof` guard skips this silently and the character renders as a
-      // glowing white blob with a halo.
-      const anyMaterial = clone as unknown as { emissiveColor?: Color3; emissiveTexture?: unknown };
-      if (anyMaterial.emissiveColor) anyMaterial.emissiveColor = new Color3(0, 0, 0);
-      anyMaterial.emissiveTexture = null;
-
-      if (clone instanceof PBRMaterial) {
-        // 0.18, not 0.42.
-        //
-        // Worked back from the actual budget rather than guessed: the yard's
-        // hemispheric light is intensity 4.05 with a diffuse colour averaging
-        // ~0.45, so ~1.8 effective. At exposure 2.05, staying under the 0.62
-        // bloom threshold needs an albedo near 0.17 — which is also where the
-        // yard's own concrete and steel sit. The pack authors its materials
-        // around 0.8 for a neutrally lit scene, so they need scaling by
-        // roughly a fifth, not a half.
-        clone.albedoColor = clone.albedoColor.scale(0.18);
-        clone.environmentIntensity = 0.3;
-        clone.enableSpecularAntiAliasing = true;
-      }
-      seen.set(source, clone);
-    }
-    mesh.material = clone;
-
-    // Belt and braces: even with emissive cleared, keep characters out of the
-    // glow layer entirely so a future material change cannot reintroduce this.
-    for (const layer of scene.effectLayers) {
-      const glow = layer as unknown as { addExcludedMesh?: (m: Mesh) => void };
-      glow.addExcludedMesh?.(mesh);
-    }
-  }
-}
-
-/**
- * Live opponents for the single-player sandbox.
- *
- * These are not scripted dummies. They run the real `MatchSimulation` from
- * `@nightcell7/multiplayer-sim` with the real `BotController`, which produces
- * `InputFrame`s and hands them to the same movement, fire-cadence, ammunition
- * and hitscan code the authoritative server runs. A bot here cannot do anything
- * a client could not, and its behaviour is the behaviour you will meet in a
- * match — that is the whole reason to reuse the simulation rather than write
- * "sandbox AI" that would immediately drift from it.
- *
- * The simulation is **local and presentational**. Nothing it decides is
- * reported anywhere, nothing is scored, and in a real match the server owns all
- * of it. The one deliberate cheat is the local player: rather than replaying
- * their input through the sim and getting a second, diverging body, their real
- * camera position is written straight into their sim player each tick. The
- * bots therefore chase where the player actually is.
- */
 
 /** Enemies on the Directorate side, and friendlies on the player's. */
 const ENEMY_COUNT = 4;
@@ -135,7 +50,7 @@ export class Opponents {
   private readonly shots: BotShot[] = [];
   private readonly deadUntil = new Map<string, number>();
 
-  constructor(scene: Scene, assets: AssetSet) {
+  constructor(_scene: Scene, assets: AssetSet) {
     // One model per faction.
     //
     // Nightcell are irregulars: olive drab, boots, a pack — someone fighting
@@ -154,9 +69,9 @@ export class Opponents {
     //
     // The generated character renders correctly, so the bots use it until the
     // licensed ones are diagnosed. Swapping back is a one-line change:
-    //   assets.models.get("fighter_swat") / ("fighter_worker")
-    const enemyModel = assets.models.get("fighter_swat") ?? assets.models.get("character");
-    const friendlyModel = assets.models.get("fighter_adventurer") ?? assets.models.get("character");
+    //   assets.models.get("fighter_soldier") / ("fighter_worker")
+    const enemyModel = assets.models.get("fighter_soldier") ?? assets.models.get("character");
+    const friendlyModel = assets.models.get("fighter_insurgent") ?? assets.models.get("character");
     const character = enemyModel;
     const carbine = assets.models.get("carbine");
     if (!character) throw new Error("no character model loaded");
@@ -220,8 +135,6 @@ export class Opponents {
       // The licensed character already carries its own weapon, so ours is
       // not attached on top of it.
       void carbine;
-
-      tameForScene(placed.root, scene);
 
       this.views.set(id, {
         id,

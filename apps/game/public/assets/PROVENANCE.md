@@ -98,3 +98,36 @@ Kept: `Idle_Gun`, `Idle_Gun_Shoot`, `Walk`, `Run`, `Run_Shoot`, `Death`,
 These carry their own rig, materials and animations, so they do not follow the
 material-slot or `COL_` conventions the generated props use;
 `apps/game/src/assets.test.ts` exempts them explicitly.
+
+## Synty POLYGON Military
+
+| File | Source | Licence |
+| --- | --- | --- |
+| `models/fighter_insurgent.glb` | Synty POLYGON Military — `SK_Chr_Insurgent_Male_01` | Synty Store licence (purchased) |
+| `models/fighter_soldier.glb` | Synty POLYGON Military — `SK_Chr_Soldier_Male_01` | Synty Store licence (purchased) |
+| `textures/synty_atlas.webp` | Synty POLYGON Military — `PolygonMilitary_Texture_01_A` | Synty Store licence (purchased) |
+
+Purchased from https://syntystore.com. The licence grants perpetual,
+royalty-free commercial use in unlimited titles and permits modification; it
+does **not** permit reselling the assets as assets. Not copyright ownership,
+which only a work-for-hire commission gives.
+
+Source files are **not** committed — the pack is 406 MB unpacked and lives
+outside the repo. Only the converted GLBs and the one shared atlas ship.
+
+Converted with `tools/art/blender/import_synty.py`, which does two things the
+plain glTF path cannot:
+
+- **Retargets animation.** Synty's SourceFiles carry a bind pose and nothing
+  else; the walk and run cycles are in the Unity and Unreal packages, which are
+  engine-locked. The script maps our CC0 clip set onto Synty's Unreal-standard
+  55-bone skeleton with copy-rotation constraints and bakes the result. Copying
+  f-curves directly does not work — curves live in each bone's rest space and
+  the two rigs do not share rest orientations, so the result is a figure with
+  its arms through its chest.
+- **Shares the atlas.** Synty puts every model in the pack on one 4096 texture.
+  Embedding it per character cost 2.48 MB each; binding it once by material
+  name costs 357 KB total and takes each character to ~650 KB.
+
+Kept clips: `Idle_Gun`, `Idle_Gun_Shoot`, `Walk`, `Run`, `Run_Shoot`, `Death`,
+`HitRecieve`.
