@@ -12,13 +12,16 @@ oversight.
 The Synty characters are committed, load fine, are textured, and are **not
 shipped**, because their animation retarget is broken.
 
-| Thing                                                 | State                                       |
-| ----------------------------------------------------- | ------------------------------------------- |
-| `models/fighter_insurgent.glb`, `fighter_soldier.glb` | committed, load, textured, animation wrong  |
-| `textures/synty_atlas.webp`                           | working, 357 KB, shared by both             |
-| `tools/art/blender/import_synty.py`                   | converter; maths fixed, export broken       |
-| Vehicles, weapons, props                              | **none integrated** — 2 of 1,954 files used |
-| Shell budget                                          | 5.13 MB against a 9 MB guard                |
+| Thing                                                 | State                                           |
+| ----------------------------------------------------- | ----------------------------------------------- |
+| `models/fighter_insurgent.glb`, `fighter_soldier.glb` | committed, load, textured, animation wrong      |
+| `textures/synty_atlas.webp`                           | working, 357 KB, shared by characters + props   |
+| `tools/art/blender/import_synty.py`                   | character converter; maths fixed, export broken |
+| `tools/art/blender/import_synty_prop.py`              | static-mesh converter; **working, shipped**     |
+| 2 vehicles + 5 props (`veh_*`, `prop_*`)              | **integrated** — converted, textured, placed    |
+| `textures/synty_vehicles.webp`                        | working, 76 KB, shared by all vehicles          |
+| Weapons                                               | **none integrated** — still the next win        |
+| Shell budget                                          | 6.33 MB against a 9 MB guard                    |
 
 Source pack is at `~/src/nightcell7-assets/SourceFiles/` (406 MB, outside the
 repo, not committed).
@@ -78,15 +81,29 @@ single animation named `target_rig`** — after the object, not the actions.
    names change from lowercase (`walk`/`run`/`idle`/`death`) to Synty's
    (`Walk`/`Run`/`Idle_Gun`/`Death`).
 
-4. **Then vehicles and props.** `SM_Veh_*` and `SM_Prop_*` are **static
-   meshes** — no retargeting, so far easier than the characters and a bigger
-   visual win. Good candidates: `SM_Veh_Pickup_Technical_01`,
-   `SM_Veh_Truck_01_Tanker`, `SM_Veh_Light_Armored_Car_01`,
-   `SM_Veh_Helicopter_Attack_02`. Textures come from
-   `PolygonMilitary_Land_Vehicles_*` and `Veh_Heli_*`.
+4. ~~**Then vehicles and props.**~~ **Done.** `import_synty_prop.py` converts
+   the static `SM_Veh_*` / `SM_Prop_*` meshes: no retarget, just unit apply,
+   recentre-to-ground, per-mesh material naming, weld and (for vehicles)
+   decimate. Shipped: `veh_armored_car`, `veh_technical` and five props
+   (`prop_barrel`, `prop_barrel_stack`, `prop_ammo_box`, `prop_barrier`,
+   `prop_water_tank`). Two lessons for weapons next:
+   - **The FBX is already metres and uses one placeholder material.** No 0.01
+     scale (that was the _skeletal_ path); split body vs glass by mesh name.
+   - **Land_Vehicles_NN are one UV layout in ten recolours,** so one variant
+     (`03`, desert) is bound to every vehicle as `synty_vehicles`. Props reuse
+     `synty_atlas` (Texture_01_A) and cost no new texture at all.
+   - **Vehicles decimate hard without visible loss** (car 24k→~10k tris,
+     1.5 MB→0.5 MB). Verified by preview render, not by eye.
+
+   Placement is cosmetic set-dressing in the spawn zones and back corners
+   (`world.ts`, "cosmetic set-dressing" block) — deliberately non-colliding and
+   kept out of the three lanes, so rule 1 still holds for the play space.
+   Promoting any to real cover is a `map.ts` collision + checksum change.
 
 5. **Then weapons.** `SM_Wep_*` with the `PolygonMilitary_Weapons_*` atlases,
-   replacing the generated carbine.
+   replacing the generated carbine. `import_synty_prop.py` is the right starting
+   point, but a weapon needs a `SOCKET_MUZZLE` node and is exempt from the
+   `COL_` rule — see how `assets.test.ts` handles the carbine.
 
 ## Traps already hit — do not repeat
 
@@ -103,7 +120,10 @@ single animation named `target_rig`** — after the object, not the actions.
 - **Blender appends `.001`** if an action name is taken, and the engine looks
   clips up by exact name. Rename the source out of the way first, then delete
   the renamed sources before export or they ship alongside and double the file.
-- **Synty FBX is centimetres**; scale by 0.01 on import.
+- **The _skeletal_ (`SK_Chr_*`) FBX imports at centimetres**; scale by 0.01.
+  The **static** (`SM_*`) FBX does not — Blender reads its unit metadata and
+  lands it at metres already (`import_synty_prop.py` only _applies_ the
+  importer's transform, and range-checks the result). Do not blanket-scale.
 - **Budget accounting counts flat `.mp3` files in the audio root only.** Music
   lives in `audio/music/<artist>/` and is streamed, deliberately outside the
   shell budget.

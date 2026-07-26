@@ -60,6 +60,17 @@ export const MODELS = [
   // generated props follow — see apps/game/public/assets/PROVENANCE.md.
   "fighter_insurgent",
   "fighter_soldier",
+  // Licensed Synty POLYGON Military static meshes. Vehicles bind the shared
+  // `synty_vehicles` atlas; props reuse the character atlas (`synty_atlas`),
+  // since both were authored against Synty's Texture_01_A. No new texture ships
+  // for the props at all — see apps/game/public/assets/PROVENANCE.md.
+  "veh_armored_car",
+  "veh_technical",
+  "prop_barrel",
+  "prop_barrel_stack",
+  "prop_ammo_box",
+  "prop_barrier",
+  "prop_water_tank",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];
@@ -147,6 +158,22 @@ export function createMaterials(scene: Scene): Map<string, PBRMaterial | Standar
   // contribution is trimmed the same way the weapon viewmodel's is.
   synty.environmentIntensity = 0.35;
   materials.set("synty_atlas", synty);
+
+  // Synty vehicles share one Land_Vehicles atlas (a desert recolour that fits
+  // the Kaviran setting), bound once here the same way the character atlas is.
+  // The pack's vehicle glass was authored against Texture_01_A, so those meshes
+  // are bound to `synty_atlas` at convert time rather than here.
+  const vehicles = new PBRMaterial("synty_vehicles", scene);
+  vehicles.albedoTexture = loadTexture(scene, "synty_vehicles.webp", true);
+  // Painted sheet metal: matte, barely metallic. The camo reads as diffuse.
+  vehicles.metallic = 0.05;
+  vehicles.roughness = 0.8;
+  // Same hot-yard correction as the character atlas: the unscaled tan would
+  // clip past the 0.62 bloom threshold under hemispheric 4.05 / exposure 2.05.
+  vehicles.albedoColor = new Color3(0.36, 0.36, 0.36);
+  vehicles.environmentIntensity = 0.35;
+  vehicles.maxSimultaneousLights = 6;
+  materials.set("synty_vehicles", vehicles);
 
   // Lamp lenses are the one unlit surface: they are a light source, and
   // shading them would make the fitting darker than the pool of light it casts.
