@@ -787,14 +787,22 @@ a {
   margin-bottom: 0.5rem;
 }
 
-.prose a {
+/* `:not(.button)` matters: .prose a (0,1,1) outranks .button--primary (0,1,0),
+   so without it a primary button inside prose rendered cyan-on-cream at a
+   1.81:1 contrast ratio — well under the 4.5 WCAG AA needs. */
+.prose a:not(.button):not(.gate__button) {
   color: var(--signal-cyan);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 
-.prose a:hover {
+.prose a:not(.button):not(.gate__button):hover {
   color: var(--bone-100);
+}
+
+/* Buttons keep their own colours wherever they appear. */
+.prose a.button {
+  text-decoration: none;
 }
 
 /* A plate rather than a tinted box: coloured callout panels are the SaaS

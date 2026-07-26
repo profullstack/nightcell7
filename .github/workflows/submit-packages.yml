@@ -69,7 +69,11 @@ jobs:
     # visible to anyone who pulls.
     if: github.event_name == 'release' || github.event.inputs.dry_run == 'false'
     env:
-      TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+      # Per-repository deploy keys rather than one personal access token: each
+      # is write-scoped to a single repo and revocable on its own, so a leak
+      # cannot reach anything else in the org.
+      TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
+      BUCKET_DEPLOY_KEY: ${{ secrets.BUCKET_DEPLOY_KEY }}
       AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
     steps:
       - uses: actions/checkout@v5
@@ -80,9 +84,13 @@ jobs:
           path: dist/packaging
 
       - name: Homebrew tap
-        if: env.TAP_TOKEN != ''
+        if: env.TAP_DEPLOY_KEY != ''
         run: |
-          git clone "https://x-access-token:${TAP_TOKEN}@github.com/profullstack/homebrew-tap.git" tap
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$TAP_DEPLOY_KEY" > ~/.ssh/tap && chmod 600 ~/.ssh/tap
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/tap -o IdentitiesOnly=yes" \
+            git clone git@github.com:profullstack/homebrew-tap.git tap
           mkdir -p tap/Casks
           cp dist/packaging/homebrew/nightcell7.rb tap/Casks/
           cd tap
@@ -90,12 +98,16 @@ jobs:
           git config user.email "support@nightcell7.com"
           git add Casks/nightcell7.rb
           git diff --staged --quiet || git commit -m "nightcell7: update cask"
-          git push
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/tap -o IdentitiesOnly=yes" git push
 
       - name: Scoop bucket
-        if: env.TAP_TOKEN != ''
+        if: env.BUCKET_DEPLOY_KEY != ''
         run: |
-          git clone "https://x-access-token:${TAP_TOKEN}@github.com/profullstack/scoop-bucket.git" bucket
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$BUCKET_DEPLOY_KEY" > ~/.ssh/bucket && chmod 600 ~/.ssh/bucket
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/bucket -o IdentitiesOnly=yes" \
+            git clone git@github.com:profullstack/scoop-bucket.git bucket
           mkdir -p bucket/bucket
           cp dist/packaging/scoop/nightcell7.json bucket/bucket/
           cd bucket
@@ -103,7 +115,7 @@ jobs:
           git config user.email "support@nightcell7.com"
           git add bucket/nightcell7.json
           git diff --staged --quiet || git commit -m "nightcell7: update manifest"
-          git push
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/bucket -o IdentitiesOnly=yes" git push
 
       - name: AUR
         if: env.AUR_SSH_KEY != ''

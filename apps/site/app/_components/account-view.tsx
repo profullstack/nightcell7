@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ResendVerification } from "./resend-verification";
 
 /**
  * Client-side account and library views.
@@ -110,6 +111,14 @@ export function AccountView() {
           </tr>
         </tbody>
       </table>
+
+      {me.verified ? null : (
+        <>
+          <h3>Verify your email</h3>
+          <p>Multiplayer stays locked until you do. Did not get the message? Send another:</p>
+          <ResendVerification />
+        </>
+      )}
 
       <h3>Devices</h3>
       <p>

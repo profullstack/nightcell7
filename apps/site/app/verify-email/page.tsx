@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "../_components/page-shell";
+import { ResendVerification } from "../_components/resend-verification";
 
 export const metadata: Metadata = { title: "Verify your email" };
 
@@ -23,11 +24,11 @@ export default function VerifyEmailPage() {
       </p>
 
       <h3>Nothing arrived</h3>
+      <p>Send yourself another one:</p>
+      <ResendVerification />
       <ul>
-        <li>Check spam — a new domain often lands there first.</li>
-        <li>
-          The link expires after 24 hours. If yours has, sign in and we will send a fresh one.
-        </li>
+        <li>Check spam — a new sending domain often lands there first.</li>
+        <li>Links expire after 24 hours; a new one replaces the old.</li>
         <li>
           Still nothing? <a href="/support">Contact support</a> and we will verify you by hand.
         </li>
