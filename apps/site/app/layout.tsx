@@ -184,6 +184,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <a href="/credits">Credits</a>
                 </li>
                 <li>
+                  <a href="/careers">Careers</a>
+                </li>
+                <li>
                   <a href="https://profullstack.com" target="_blank" rel="noopener noreferrer">
                     Profullstack, Inc.
                   </a>
