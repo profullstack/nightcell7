@@ -48,6 +48,8 @@ const MUSIC = [
   "music_ironwood-oath",
   "music_runes-on-ice",
   "music_storm-crown-oath",
+  "music_the-wolf-called-want",
+  "music_the-wolf-called-want-part-2",
 ] as const;
 
 type VariedName = keyof typeof VARIED;

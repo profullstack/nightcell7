@@ -28,10 +28,18 @@ const TEXTURES_DIR = join(ASSETS, "textures");
  *
  * The hard limit is the 15 MB shell download budget (PRD §30,
  * `DOWNLOAD_BUDGET_BYTES`), which also has to fit the engine, the code and the
- * fonts. 6 MB leaves room for all of that and is roughly double what the
- * current set uses, so it catches a runaway without failing on every addition.
+ * fonts.
+ *
+ * Raised from 6 MB to 9 MB when the two licensed characters landed: they are
+ * 2.8 MB between them and pushed the set to 6.2 MB legitimately, rather than
+ * through any runaway. 9 MB still leaves real headroom under the hard limit
+ * and would catch a genuine mistake — an uncompressed texture set or a
+ * forgotten master would blow straight past it.
+ *
+ * Streamed music is deliberately outside this: it is fetched on demand and the
+ * game is playable before a note arrives.
  */
-const ASSET_BUDGET_BYTES = 6 * 1024 * 1024;
+const ASSET_BUDGET_BYTES = 9 * 1024 * 1024;
 
 /** Read the JSON chunk out of a GLB container. */
 function glbJson(file: string): {
@@ -70,7 +78,7 @@ describe("generated models", () => {
    * apply. Their provenance is a licence recorded in PROVENANCE.md rather than
    * a generator script.
    */
-  const LICENSED = new Set(["fighter_swat", "fighter_worker"]);
+  const LICENSED = new Set(["fighter_swat", "fighter_adventurer"]);
 
   it("only uses material slots the engine can bind", () => {
     // A slot the engine does not know about is not an error at load time: the

@@ -136,8 +136,11 @@ export class Opponents {
   private readonly deadUntil = new Map<string, number>();
 
   constructor(scene: Scene, assets: AssetSet) {
-    // One model per faction. The Directorate is equipped and uniformed; the
-    // Nightcell side are irregulars in civilian clothing. That difference is
+    // One model per faction.
+    //
+    // Nightcell are irregulars: olive drab, boots, a pack — someone fighting
+    // with what they own. The first attempt used the pack's `Worker`, which is
+    // a hi-vis construction labourer and read exactly like one. That difference is
     // the fastest target ID a player gets, and it is carried by the whole
     // silhouette rather than by a colour swatch.
     // Back on the generated character for now.
@@ -153,7 +156,7 @@ export class Opponents {
     // licensed ones are diagnosed. Swapping back is a one-line change:
     //   assets.models.get("fighter_swat") / ("fighter_worker")
     const enemyModel = assets.models.get("fighter_swat") ?? assets.models.get("character");
-    const friendlyModel = assets.models.get("fighter_worker") ?? assets.models.get("character");
+    const friendlyModel = assets.models.get("fighter_adventurer") ?? assets.models.get("character");
     const character = enemyModel;
     const carbine = assets.models.get("carbine");
     if (!character) throw new Error("no character model loaded");

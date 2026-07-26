@@ -76,10 +76,10 @@ worse textures.
 Not everything here is generated. These are licensed, and their provenance is
 the licence rather than a generator script.
 
-| File                        | Source                                                                                                             | Licence |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `models/fighter_swat.glb`   | [Quaternius — Ultimate Modular Characters](https://quaternius.com/packs/ultimatemodularcharacters.html) (`Swat`)   | CC0 1.0 |
-| `models/fighter_worker.glb` | [Quaternius — Ultimate Modular Characters](https://quaternius.com/packs/ultimatemodularcharacters.html) (`Worker`) | CC0 1.0 |
+| File                            | Source                                                                                                                 | Licence |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------- |
+| `models/fighter_swat.glb`       | [Quaternius — Ultimate Modular Characters](https://quaternius.com/packs/ultimatemodularcharacters.html) (`Swat`)       | CC0 1.0 |
+| `models/fighter_adventurer.glb` | [Quaternius — Ultimate Modular Characters](https://quaternius.com/packs/ultimatemodularcharacters.html) (`Adventurer`) | CC0 1.0 |
 
 **CC0 1.0** (https://creativecommons.org/publicdomain/zero/1.0/) is a public
 domain dedication: unrestricted commercial use, modification and
