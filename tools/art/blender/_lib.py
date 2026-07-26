@@ -401,3 +401,102 @@ def output_path(filename: str) -> str:
     else:
         base = os.path.join(os.path.dirname(__file__), "..", "..", "..", "build", "models")
     return os.path.abspath(os.path.join(base, filename))
+
+
+# ------------------------------------------------------------------ lofting
+
+def ring(
+    centre: tuple[float, float, float],
+    rx: float,
+    ry: float,
+    segments: int = 12,
+    squash: float = 0.0,
+    rotation: float = 0.0,
+) -> list[Vector]:
+    """
+    One cross-section: an ellipse, optionally squared off toward a rectangle.
+
+    `squash` blends from a true ellipse (0) toward a rounded rectangle (1).
+    Bodies are not circular in section — a chest is broad and flat, a forearm
+    is nearly round — and that difference is most of what separates a lofted
+    figure from a stack of cylinders.
+    """
+    points: list[Vector] = []
+    for i in range(segments):
+        a = rotation + (i / segments) * math.tau
+        c, s = math.cos(a), math.sin(a)
+        # Superellipse-ish: push the point outward toward the bounding box.
+        if squash > 0.0:
+            m = max(abs(c), abs(s))
+            c = c * (1 - squash) + (c / m) * squash
+            s = s * (1 - squash) + (s / m) * squash
+        points.append(Vector((centre[0] + c * rx, centre[1] + s * ry, centre[2])))
+    return points
+
+
+def loft(bm: bmesh.types.BMesh, rings: list[list[Vector]], cap: bool = True) -> None:
+    """
+    Bridge a sequence of equal-length rings into a tube.
+
+    This is the core of the character work. Stacking primitives gives a figure
+    made of visible blocks no amount of texturing hides; lofting a profile that
+    changes along its length gives limbs that taper and a torso that actually
+    has a waist.
+    """
+    if len(rings) < 2:
+        return
+
+    verts = [[bm.verts.new(p) for p in r] for r in rings]
+
+    for a, b in zip(verts, verts[1:]):
+        n = len(a)
+        for i in range(n):
+            j = (i + 1) % n
+            try:
+                bm.faces.new((a[i], a[j], b[j], b[i]))
+            except ValueError:
+                # Duplicate face where two rings coincide; harmless.
+                pass
+
+    if cap:
+        for end in (verts[0], verts[-1]):
+            try:
+                bm.faces.new(end)
+            except ValueError:
+                pass
+
+    bm.verts.index_update()
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+
+
+def limb(
+    bm: bmesh.types.BMesh,
+    joints: list[tuple[tuple[float, float, float], float, float]],
+    segments: int = 10,
+    squash: float = 0.0,
+) -> None:
+    """
+    Loft a limb through `(centre, rx, ry)` joints.
+
+    Rings are oriented in the XY plane and stacked in Z, which suits a figure
+    modelled standing in a neutral pose — every limb here runs broadly
+    vertically, and the rig bends them later.
+    """
+    loft(bm, [ring(c, rx, ry, segments, squash) for c, rx, ry in joints])
+
+
+def subdivide_smooth(bm: bmesh.types.BMesh, cuts: int = 1) -> None:
+    """
+    Catmull-Clark-ish smoothing pass.
+
+    Applied to the body only. Gear stays faceted: hard surfaces should read as
+    hard, and smoothing a plate carrier makes it look inflated.
+    """
+    for _ in range(cuts):
+        bmesh.ops.subdivide_edges(
+            bm,
+            edges=bm.edges[:],
+            cuts=1,
+            use_grid_fill=True,
+            smooth=1.0,
+        )

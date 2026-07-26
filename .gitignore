@@ -30,3 +30,7 @@ assets-source/**/raw/*
 !assets-source/**/raw/.gitkeep
 
 .DS_Store
+
+# Python bytecode from the Blender asset generators.
+__pycache__/
+*.pyc
