@@ -141,6 +141,13 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
 
   for (const mode of GAME_MODES) {
     const label = el("label", "modes__option");
+    // `#ui` sets `pointer-events: none` so the HUD never eats a click meant for
+    // the canvas, and re-enables it only for `button`, `a` and
+    // `[data-interactive]`. A label is none of those, so without this the whole
+    // picker is inert — it renders, highlights nothing and swallows every
+    // click, which reads exactly like two disabled options. It shipped that
+    // way; see the guard in hud.test.ts.
+    label.dataset.interactive = "";
     const input = document.createElement("input");
     input.type = "radio";
     input.name = "nc7-mode";

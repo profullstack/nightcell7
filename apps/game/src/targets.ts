@@ -75,7 +75,35 @@ export interface TargetHit {
  * band read at range. This is a readability decision, not a fidelity one — an
  * enemy you cannot resolve is a broken game, not a moody one.
  */
-export function brightenCharacter(root: TransformNode): void {
+/**
+ * Team colours.
+ *
+ * Two axes, not one, because a single hue on a small band is not readable at
+ * the ranges this yard plays at. The cloth carries a warm/cool split that reads
+ * as a silhouette at 40 m, and the band carries the saturated hue that confirms
+ * it up close. One or the other alone was not enough: the bots previously
+ * differed only by which weapon they held, which is invisible from the front.
+ */
+export interface TeamPalette {
+  /** Webbing and plate — the small, saturated identifier. */
+  readonly band: Color3;
+  /** Uniform cloth — the large, desaturated one. */
+  readonly cloth: Color3;
+}
+
+export const TEAM_PALETTE: { readonly friendly: TeamPalette; readonly enemy: TeamPalette } = {
+  // Nightcell: cool, grey-green, signal cyan. Matches the HUD's own cyan, which
+  // is already the colour of "yours" everywhere else in the interface.
+  friendly: { band: new Color3(0.16, 0.62, 0.74), cloth: new Color3(0.5, 0.58, 0.58) },
+  // Directorate: warm khaki and red, which is the palette the yard's own
+  // containers and hazard paint already use for "theirs".
+  enemy: { band: new Color3(0.86, 0.26, 0.2), cloth: new Color3(0.78, 0.68, 0.52) },
+};
+
+export function brightenCharacter(root: TransformNode, palette?: TeamPalette): void {
+  // Local to this call. The cache exists to share one clone across the meshes
+  // of a single figure; making it module-level would hand the second team the
+  // first team's colours, because the *source* material is shared by both.
   const localised = new Map<Material, Material>();
 
   for (const mesh of root.getChildMeshes() as Mesh[]) {
@@ -104,7 +132,8 @@ export function brightenCharacter(root: TransformNode): void {
         // exposure 2.05 and produced a featureless pale figure. The characters
         // stopped needing any lift the moment the scene got brighter; what
         // they need is colour.
-        clone.albedoColor = isTeam ? new Color3(0.86, 0.3, 0.26) : new Color3(0.78, 0.68, 0.52);
+        const team = palette ?? TEAM_PALETTE.enemy;
+        clone.albedoColor = isTeam ? team.band : team.cloth;
 
         // Metallic and roughness are left to the ORM texture. Overriding them
         // to flat values was the other half of the plastic look: it removed
@@ -117,7 +146,9 @@ export function brightenCharacter(root: TransformNode): void {
         // No self-illumination on cloth — it is lit plenty. Only the team band
         // gets a trace, and only enough to survive the bloom threshold rather
         // than glow through it.
-        clone.emissiveColor = isTeam ? new Color3(0.05, 0.008, 0.008) : new Color3(0, 0, 0);
+        // Scaled from the band colour rather than hard-coded red, so a cyan
+        // team gets a cyan trace instead of a red one on a blue-grey figure.
+        clone.emissiveColor = isTeam ? team.band.scale(0.06) : new Color3(0, 0, 0);
       }
       localised.set(source, clone);
     }

@@ -20,6 +20,7 @@ import {
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
+import { TEAM_PALETTE, brightenCharacter } from "./targets";
 
 /** Enemies on the Directorate side, and friendlies on the player's. */
 const ENEMY_COUNT = 4;
@@ -165,7 +166,7 @@ export class Opponents {
     // They fought empty-handed until now, which read as unfinished from any
     // distance. Two silhouettes rather than one: the Directorate carries the
     // rifle, Nightcell the SMG, so which side a figure is on is legible before
-    // the team tint on its marker resolves.
+    // the tint confirms it.
     const weaponFor = (team: number) =>
       assets.models.get(team === TEAM_IDS.DIRECTORATE ? "wep_rifle" : "wep_smg") ?? null;
 
@@ -227,6 +228,16 @@ export class Opponents {
         rotationY: 0,
       });
       if (!placed) return;
+
+      // Colour the figure by side.
+      //
+      // Without this both teams are the *same model with the same materials*,
+      // so the only difference between a friendly and an enemy is which weapon
+      // it holds — invisible from the front, and at any range that matters.
+      brightenCharacter(
+        placed.root,
+        entry.team === TEAM_IDS.NIGHTCELL ? TEAM_PALETTE.friendly : TEAM_PALETTE.enemy,
+      );
 
       attachWeapon(placed.root, weaponFor(entry.team), id);
 
