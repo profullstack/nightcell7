@@ -107,7 +107,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     el(
       "p",
       "gate__hint",
-      "Greybox build. Movement runs the same authoritative simulation as multiplayer, so what you feel here is what the server enforces.",
+      "Alpha build. Movement runs the same authoritative simulation as multiplayer, so what you feel here is what the server enforces.",
     ),
   );
 

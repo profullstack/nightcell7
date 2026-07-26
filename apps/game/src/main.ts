@@ -13,11 +13,11 @@ import "./style.css";
 /**
  * Game entry point.
  *
- * Milestone 2 greybox: boots the renderer, dresses the Ardavan Yard collision
- * volumes, and proves the movement feel loop before any authored art exists.
+ * Boots the renderer, dresses the Ardavan Yard collision volumes with the
+ * generated art set, and proves the movement feel loop.
  * "A grey room, one enemy, and one rifle must already feel good" (PRD §40) —
- * the room is no longer grey, but every solid in it is still the collision
- * data, so feel and geometry cannot drift apart.
+ * the room is no longer grey and the rifle is in frame, but every solid in it
+ * is still the collision data, so feel and geometry cannot drift apart.
  */
 
 async function boot(): Promise<void> {
@@ -57,7 +57,7 @@ async function boot(): Promise<void> {
   const scene = new Scene(engine);
 
   // Enter at a real Nightcell spawn rather than an arbitrary camera position,
-  // so the greybox is entered the way a match would be.
+  // so the yard is entered the way a match would be.
   const spawn = spawnsForTeam(ARDAVAN_YARD, TEAM_IDS.NIGHTCELL)[0];
   if (!spawn) throw new Error("map has no Nightcell spawn");
 
