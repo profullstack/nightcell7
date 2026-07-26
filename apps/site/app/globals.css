@@ -757,6 +757,121 @@ a {
   }
 }
 
+/* ------------------------------------------------------------ text pages */
+
+.prose {
+  max-width: 74ch;
+  margin-top: 2rem;
+  color: var(--bone-300);
+}
+
+.prose h3 {
+  margin-top: 2.75rem;
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.15rem, 2.5vw, 1.5rem);
+  color: var(--bone-100);
+  letter-spacing: 0.08em;
+}
+
+.prose p {
+  margin: 0 0 1rem;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0 0 1.25rem;
+  padding-left: 1.25rem;
+}
+
+.prose li {
+  margin-bottom: 0.5rem;
+}
+
+.prose a {
+  color: var(--signal-cyan);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.prose a:hover {
+  color: var(--bone-100);
+}
+
+/* A plate rather than a tinted box: coloured callout panels are the SaaS
+   tell this design explicitly avoids (PRD §21.10). */
+.notice {
+  margin: 1.75rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
+  border-left-width: 3px;
+  background: color-mix(in srgb, var(--warning) 7%, transparent);
+  color: var(--bone-100);
+  font-size: 0.92rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+  /* Wide content scrolls in its own container rather than the page body. */
+  display: block;
+  overflow-x: auto;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--bone-300) 14%, transparent);
+  vertical-align: top;
+}
+
+.table th {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dust-gold);
+  white-space: nowrap;
+}
+
+.faq {
+  margin: 1.5rem 0 0;
+}
+
+.faq div {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--bone-300) 12%, transparent);
+}
+
+.faq dt {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bone-100);
+  margin-bottom: 0.5rem;
+}
+
+.faq dd {
+  margin: 0;
+}
+
+.entry {
+  padding: 1.75rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--bone-300) 12%, transparent);
+}
+
+.entry__date {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--dust-gold);
+  margin: 0 0 0.4rem;
+}
+
 /* ---------------------------------------------------------------- footer */
 
 .footer {
