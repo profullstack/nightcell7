@@ -78,7 +78,21 @@ describe("generated models", () => {
    * apply. Their provenance is a licence recorded in PROVENANCE.md rather than
    * a generator script.
    */
-  const LICENSED = new Set(["fighter_insurgent", "fighter_soldier"]);
+  const LICENSED = new Set([
+    "fighter_insurgent",
+    "fighter_soldier",
+    // Synty POLYGON Military static meshes: licensed, and bound by their own
+    // atlas slots (`synty_vehicles` / `synty_atlas`) rather than the generated
+    // material set. Their provenance is the Synty licence in PROVENANCE.md, and
+    // they are cosmetic set-dressing that never collides, so no COL_ proxy.
+    "veh_armored_car",
+    "veh_technical",
+    "prop_barrel",
+    "prop_barrel_stack",
+    "prop_ammo_box",
+    "prop_barrier",
+    "prop_water_tank",
+  ]);
 
   it("only uses material slots the engine can bind", () => {
     // A slot the engine does not know about is not an error at load time: the

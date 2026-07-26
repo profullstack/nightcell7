@@ -506,6 +506,59 @@ export async function buildWorld(
     lamp.falloffType = PointLight.FALLOFF_PHYSICAL;
   });
 
+  // ------------------------------------------------- cosmetic set-dressing
+  //
+  // Licensed Synty vehicles and props, staged in the two spawn zones and the
+  // back corners against the perimeter — the band beyond the outermost
+  // collision volumes (|x| > 32, |z| > 44) and inside the walls.
+  //
+  // These are the one deliberate exception to rule 1 at the top of this file:
+  // they are NOT generated from collision data and carry no collider, so a
+  // player can walk through them. That is why they are confined to the
+  // protected spawn ends and never to the three combat lanes — nothing here can
+  // become fake cover in a firefight. Promoting any of them to real cover is a
+  // deliberate change to the server map (`packages/multiplayer-sim/src/map.ts`)
+  // and its checksum, not something to smuggle in as art. One vehicle sits at
+  // each end so the two factions read as having staged the yard from opposite
+  // sides.
+  put("veh_armored_car", "veh_car", [{ position: new Vector3(-31, 0, -52), rotationY: 0.6 }]);
+  put("veh_technical", "veh_tech", [{ position: new Vector3(31, 0, 52), rotationY: -2.4 }]);
+
+  // Supply depots flanking each vehicle, plus a checkpoint line of T-wall
+  // barriers along each back wall behind the spawns.
+  put("prop_barrel_stack", "barrels_n", [
+    { position: new Vector3(-34.5, 0, -49.5), rotationY: 0.3 },
+  ]);
+  put("prop_barrel_stack", "barrels_s", [
+    { position: new Vector3(34.5, 0, 49.5), rotationY: -2.9 },
+  ]);
+  put("prop_barrel", "barrel", [
+    { position: new Vector3(-30, 0, -54), rotationY: 1.1 },
+    { position: new Vector3(-28.5, 0, -52.5), rotationY: -0.4 },
+    { position: new Vector3(29, 0, 54), rotationY: 2.2 },
+    { position: new Vector3(27.5, 0, 52.5), rotationY: 0.7 },
+  ]);
+  put("prop_ammo_box", "ammo", [
+    { position: new Vector3(-33, 0, -53), rotationY: 0.5 },
+    { position: new Vector3(-35, 0, -46), rotationY: -0.8 },
+    { position: new Vector3(33, 0, 53), rotationY: -2.4 },
+    { position: new Vector3(35, 0, 46), rotationY: 2.5 },
+  ]);
+  put("prop_water_tank", "watertank", [
+    { position: new Vector3(35, 0, -52), rotationY: -2.2 },
+    { position: new Vector3(-35, 0, 52), rotationY: 0.9 },
+  ]);
+  put("prop_barrier", "barrier", [
+    { position: new Vector3(-6, 0, -56), rotationY: 0 },
+    { position: new Vector3(-2, 0, -56), rotationY: 0 },
+    { position: new Vector3(2, 0, -56), rotationY: 0 },
+    { position: new Vector3(6, 0, -56), rotationY: 0 },
+    { position: new Vector3(-6, 0, 56), rotationY: Math.PI },
+    { position: new Vector3(-2, 0, 56), rotationY: Math.PI },
+    { position: new Vector3(2, 0, 56), rotationY: Math.PI },
+    { position: new Vector3(6, 0, 56), rotationY: Math.PI },
+  ]);
+
   // Two cold accent lights mark the opposing spawn ends, echoing the split
   // palette the whole product is built on.
   const southMark = new PointLight("mark-south", new Vector3(0, 5, 50), scene);

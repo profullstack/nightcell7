@@ -101,11 +101,19 @@ material-slot or `COL_` conventions the generated props use;
 
 ## Synty POLYGON Military
 
-| File                           | Source                                                  | Licence                         |
-| ------------------------------ | ------------------------------------------------------- | ------------------------------- |
-| `models/fighter_insurgent.glb` | Synty POLYGON Military — `SK_Chr_Insurgent_Male_01`     | Synty Store licence (purchased) |
-| `models/fighter_soldier.glb`   | Synty POLYGON Military — `SK_Chr_Soldier_Male_01`       | Synty Store licence (purchased) |
-| `textures/synty_atlas.webp`    | Synty POLYGON Military — `PolygonMilitary_Texture_01_A` | Synty Store licence (purchased) |
+| File                           | Source                                                      | Licence                         |
+| ------------------------------ | ----------------------------------------------------------- | ------------------------------- |
+| `models/fighter_insurgent.glb` | Synty POLYGON Military — `SK_Chr_Insurgent_Male_01`         | Synty Store licence (purchased) |
+| `models/fighter_soldier.glb`   | Synty POLYGON Military — `SK_Chr_Soldier_Male_01`           | Synty Store licence (purchased) |
+| `models/veh_armored_car.glb`   | Synty POLYGON Military — `SM_Veh_Light_Armored_Car_01`      | Synty Store licence (purchased) |
+| `models/veh_technical.glb`     | Synty POLYGON Military — `SM_Veh_Pickup_Technical_01`       | Synty Store licence (purchased) |
+| `models/prop_barrel.glb`       | Synty POLYGON Military — `SM_Prop_Barrel_01`                | Synty Store licence (purchased) |
+| `models/prop_barrel_stack.glb` | Synty POLYGON Military — `SM_Prop_Barrel_Stack_01`          | Synty Store licence (purchased) |
+| `models/prop_ammo_box.glb`     | Synty POLYGON Military — `SM_Prop_AmmoBox_01`               | Synty Store licence (purchased) |
+| `models/prop_barrier.glb`      | Synty POLYGON Military — `SM_Prop_Barrier_Tall_01`          | Synty Store licence (purchased) |
+| `models/prop_water_tank.glb`   | Synty POLYGON Military — `SM_Prop_WaterTank_02`             | Synty Store licence (purchased) |
+| `textures/synty_atlas.webp`    | Synty POLYGON Military — `PolygonMilitary_Texture_01_A`     | Synty Store licence (purchased) |
+| `textures/synty_vehicles.webp` | Synty POLYGON Military — `PolygonMilitary_Land_Vehicles_03` | Synty Store licence (purchased) |
 
 Purchased from https://syntystore.com. The licence grants perpetual,
 royalty-free commercial use in unlimited titles and permits modification; it
@@ -131,3 +139,31 @@ plain glTF path cannot:
 
 Kept clips: `Idle_Gun`, `Idle_Gun_Shoot`, `Walk`, `Run`, `Run_Shoot`, `Death`,
 `HitRecieve`.
+
+### Vehicles and props (static meshes)
+
+The vehicles and props carry no rig, so none of the character retarget applies.
+They are converted with `tools/art/blender/import_synty_prop.py`, which is the
+easy path the characters could not take:
+
+- **Shared atlases, so props cost no texture at all.** Every prop was authored
+  against `PolygonMilitary_Texture_01_A`, which already ships as
+  `synty_atlas.webp` for the characters, so the props reuse it and add only
+  geometry. The vehicles use Synty's Land_Vehicles atlas; the pack ships ten
+  recolour variants over one shared UV layout, so **one** desert variant
+  (`Land_Vehicles_03`) is shipped as `synty_vehicles.webp` (76 KB) and bound to
+  every vehicle mesh, rather than a separate 2 MB texture per vehicle. Glass was
+  authored against Texture_01_A, so glass meshes are routed to `synty_atlas` by
+  mesh name at convert time.
+- **Decimated to fit the shell budget.** Synty's vehicle FBX is far denser than
+  the game needs for set-dressing — the armoured car imports at 24k triangles /
+  1.5 MB uncompressed. The two vehicles are decimated (car 0.4, pickup 0.5) to
+  land near 0.5 MB and 0.4 MB, verified by preview render to be indistinguishable
+  at gameplay distance. Props ship undecimated; they are already 12–143 KB.
+- **No embedded textures**, exactly like the characters and generated props: the
+  GLB names its material slot and the engine binds the atlas by that name.
+
+These are licensed static meshes, so — like the characters — they do not follow
+the generated props' material-slot or `COL_` conventions;
+`apps/game/src/assets.test.ts` exempts them explicitly. They are cosmetic
+set-dressing and carry no collision proxy.
