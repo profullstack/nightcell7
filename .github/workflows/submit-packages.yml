@@ -55,7 +55,7 @@ jobs:
       - name: Show what was generated
         run: find dist/packaging -type f -print -exec echo '---' \; -exec cat {} \;
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: package-manifests-${{ steps.version.outputs.version }}
           path: dist/packaging
@@ -64,12 +64,16 @@ jobs:
     name: Submit
     needs: generate
     runs-on: ubuntu-latest
-    # Dry run by default. Publishing to a tap or the AUR is irreversible for
-    # users who pull immediately, so it takes an explicit opt-out.
-    if: github.event.inputs.dry_run == 'false'
+    # A published release submits. A manual run is a dry run unless explicitly
+    # told otherwise, because publishing to a tap or the AUR is immediately
+    # visible to anyone who pulls.
+    if: github.event_name == 'release' || github.event.inputs.dry_run == 'false'
+    env:
+      TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+      AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           pattern: package-manifests-*
           merge-multiple: true
@@ -77,8 +81,6 @@ jobs:
 
       - name: Homebrew tap
         if: env.TAP_TOKEN != ''
-        env:
-          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
         run: |
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/profullstack/homebrew-tap.git" tap
           mkdir -p tap/Casks
@@ -92,8 +94,6 @@ jobs:
 
       - name: Scoop bucket
         if: env.TAP_TOKEN != ''
-        env:
-          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
         run: |
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/profullstack/scoop-bucket.git" bucket
           mkdir -p bucket/bucket
@@ -107,8 +107,6 @@ jobs:
 
       - name: AUR
         if: env.AUR_SSH_KEY != ''
-        env:
-          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
           echo "$AUR_SSH_KEY" | base64 -d > ~/.ssh/aur

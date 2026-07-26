@@ -45,11 +45,29 @@ export default function PrivacyPage() {
         <li>Coarse network metadata, kept only as long as abuse and reliability work requires</li>
       </ul>
 
-      <h3>Optional, only with consent</h3>
+      <h3>Website analytics</h3>
       <p>
-        Performance and funnel analytics — renderer and preset, boot errors, mission start and
-        completion, session duration, queue time, match completion and disconnect rates. Declining
-        changes nothing about how the game plays.
+        This website (nightcell7.com) uses CrawlProof for basic traffic analytics. It records page
+        views and referrers so we can tell whether anyone is reading this. It does not use cookies
+        for tracking, does not build a cross-site profile of you, and does not follow you to other
+        websites.
+      </p>
+      <p>
+        This applies to the marketing site only.{" "}
+        <strong>The game itself does not phone home.</strong> Launching, playing the demo or playing
+        a mission sends no analytics.
+      </p>
+      <p>
+        Blocking it changes nothing about how the site or the game works. Any content blocker, or a
+        browser Do Not Track setting, will stop it.
+      </p>
+
+      <h3>In-game analytics — only with consent</h3>
+      <p>
+        Performance and funnel analytics inside the game — renderer and preset, boot errors, mission
+        start and completion, session duration, queue time, match completion and disconnect rates —
+        are opt-in and off until you say otherwise. Declining changes nothing about how the game
+        plays.
       </p>
 
       <h3>Payments</h3>
