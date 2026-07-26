@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import Script from "next/script";
 
 /**
  * Canonical origin.
@@ -202,6 +203,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             reduction enabled. Payments are processed by CoinPayPortal.
           </p>
         </footer>
+              <Script data-site="af9ab953-caa6-4a2b-a306-42fb4eac4630" src="https://crawlproof.com/stats.js" strategy="afterInteractive" />
       </body>
     </html>
   );
