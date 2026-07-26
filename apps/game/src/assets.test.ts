@@ -62,12 +62,23 @@ describe("generated models", () => {
     }
   });
 
+  /**
+   * Licensed third-party models.
+   *
+   * They ship their own rig, materials and animations, so the conventions the
+   * generated props follow — our material slot names, a COL_ proxy — do not
+   * apply. Their provenance is a licence recorded in PROVENANCE.md rather than
+   * a generator script.
+   */
+  const LICENSED = new Set(["fighter_swat", "fighter_worker"]);
+
   it("only uses material slots the engine can bind", () => {
     // A slot the engine does not know about is not an error at load time: the
     // mesh simply keeps its untextured placeholder material and renders flat.
     const known = new Set<string>([...MATERIALS, "lamp_glass"]);
 
     for (const model of MODELS) {
+      if (LICENSED.has(model)) continue;
       for (const material of names(glbJson(join(MODELS_DIR, `${model}.glb`)).materials)) {
         expect(known, `${model}.glb uses unknown material slot "${material}"`).toContain(material);
       }
@@ -78,7 +89,7 @@ describe("generated models", () => {
     // The carbine is exempt: it is a viewmodel held at the camera and a world
     // model on a character's back. It never collides with anything, so a
     // COL_ hull on it would be geometry that exists only to satisfy a rule.
-    const NO_COLLIDER = new Set(["carbine"]);
+    const NO_COLLIDER = new Set(["carbine", ...LICENSED]);
 
     for (const model of MODELS) {
       if (NO_COLLIDER.has(model)) continue;

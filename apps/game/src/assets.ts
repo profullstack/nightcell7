@@ -55,6 +55,11 @@ export const MODELS = [
   "lamp_mast",
   "character",
   "carbine",
+  // Licensed CC0 characters (Quaternius). These carry their own rig,
+  // animations and materials, so they bypass the material-slot convention the
+  // generated props follow — see apps/game/public/assets/PROVENANCE.md.
+  "fighter_swat",
+  "fighter_worker",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];
