@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { captureSrc } from "./capture-src";
 
 /**
  * Fullscreen image viewer for the in-engine captures.
@@ -173,7 +174,7 @@ export function Lightbox({ shots, index, onClose, onNavigate }: Props) {
               arbitrary zoom crop, and at full-screen it would hand back the
               original file anyway. */}
           <img
-            src={`/media/yard/${shot.file}`}
+            src={captureSrc(shot.file)}
             alt={shot.caption}
             onClick={toggleZoom}
             onWheel={onWheel}

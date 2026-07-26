@@ -125,6 +125,9 @@ async function boot(): Promise<void> {
   // hit registration; this decides where to draw a spark.
   const effects = new WeaponEffects(scene, ARDAVAN_YARD);
 
+  // The flash lights the yard, not the gun held in front of it.
+  effects.excludeFromFlash(viewmodel.meshes());
+
   const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
 
   const hud = createHud(ui, {

@@ -4,6 +4,7 @@ import { CATALOG, formatPrice } from "@nightcell7/entitlements";
 import { HeroPlot, LeilaSigil, RookSigil, SignalCell } from "./art";
 import { CopyCommand } from "./_components/copy-command";
 import { CaptureGallery, heroCapture } from "./gallery";
+import { captureSrc } from "./_components/capture-src";
 
 /**
  * Home page (PRD §20.3).
@@ -23,7 +24,7 @@ export default function HomePage() {
         {hero ? (
           <div className="hero__plate" aria-hidden="true">
             <Image
-              src={`/media/yard/${hero.file}`}
+              src={captureSrc(hero.file)}
               alt=""
               fill
               priority

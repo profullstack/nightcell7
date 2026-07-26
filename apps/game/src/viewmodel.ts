@@ -1,5 +1,13 @@
 import type { Scene, TransformNode } from "@babylonjs/core";
-import { Color3, HemisphericLight, Vector3, type Camera, type Mesh } from "@babylonjs/core";
+import {
+  Color3,
+  HemisphericLight,
+  PBRMaterial,
+  Vector3,
+  type Camera,
+  type Material,
+  type Mesh,
+} from "@babylonjs/core";
 import { placeAll, type AssetSet } from "./assets";
 
 /**
@@ -85,6 +93,31 @@ export class Viewmodel {
     this.root.parent = camera;
     this.root.rotation = new Vector3(0, BASE_YAW, 0);
 
+    // Give the weapon its own material instances with a much weaker
+    // environment contribution.
+    //
+    // `environmentIntensity` is 2.9 scene-wide, which the yard needs — but a
+    // near-polished metal held 30 cm from the camera reflects that straight
+    // into the bloom threshold, and the receiver, rail and optic rendered as a
+    // solid white blob whenever the weapon was on screen. It is per-material,
+    // so the fix is local to the viewmodel and leaves the world untouched.
+    const localised = new Map<Material, Material>();
+    for (const mesh of this.root.getChildMeshes() as Mesh[]) {
+      const source = mesh.material;
+      if (!source) continue;
+      let clone = localised.get(source);
+      if (!clone) {
+        clone = source.clone(`viewmodel_${source.name}`) ?? source;
+        if (clone instanceof PBRMaterial) {
+          clone.environmentIntensity = 0.5;
+          // Close-range metal shimmers badly under a moving camera otherwise.
+          clone.enableSpecularAntiAliasing = true;
+        }
+        localised.set(source, clone);
+      }
+      mesh.material = clone;
+    }
+
     for (const mesh of this.root.getChildMeshes() as Mesh[]) {
       // Drawn after the world, over a cleared depth buffer, so it can never
       // intersect level geometry.
@@ -106,10 +139,13 @@ export class Viewmodel {
     // `includedOnlyMeshes` keeps it strictly off the world, so it cannot
     // brighten level geometry or give away a player's position.
     const fill = new HemisphericLight("viewmodel-fill", new Vector3(-0.3, 1, -0.6), scene);
-    fill.intensity = 1.9;
-    fill.diffuse = new Color3(0.72, 0.76, 0.88);
+    // Tuned against the scene's exposure, not in isolation. When the yard's
+    // exposure went from 1.62 to 2.05 this stayed at 1.9 and the weapon
+    // rendered as a solid white blob — it is lit by this *and* the scene.
+    fill.intensity = 0.62;
+    fill.diffuse = new Color3(0.62, 0.66, 0.78);
     fill.groundColor = new Color3(0.2, 0.17, 0.14);
-    fill.specular = new Color3(0.5, 0.52, 0.58);
+    fill.specular = new Color3(0.3, 0.32, 0.38);
     fill.includedOnlyMeshes = this.root.getChildMeshes();
     fill.parent = camera;
 
@@ -120,6 +156,11 @@ export class Viewmodel {
     const rotation = (camera as unknown as { rotation?: Vector3 }).rotation;
     this.lastYaw = rotation?.y ?? 0;
     this.lastPitch = rotation?.x ?? 0;
+  }
+
+  /** Every mesh belonging to the weapon, for light exclusion. */
+  meshes(): Mesh[] {
+    return this.root.getChildMeshes() as Mesh[];
   }
 
   /** World-space muzzle position, for flash and tracer origins. */
