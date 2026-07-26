@@ -9,18 +9,25 @@ import {
   ImageProcessingConfiguration,
   Mesh,
   MeshBuilder,
-  PBRMetallicRoughnessMaterial,
   PointLight,
   Scene,
   ShadowGenerator,
   StandardMaterial,
-  Texture,
   Vector3,
   type AbstractEngine,
   type Camera,
 } from "@babylonjs/core";
 import { ARDAVAN_YARD, type CollisionMap } from "@nightcell7/multiplayer-sim";
 import type { Aabb } from "@nightcell7/multiplayer-sim";
+import {
+  createTiledMaterial,
+  loadAssets,
+  meshesUnder,
+  placeAll,
+  type AssetSet,
+  type ModelName,
+  type Placement,
+} from "./assets";
 
 /**
  * Visual dressing for ARDAVAN YARD.
@@ -37,9 +44,12 @@ import type { Aabb } from "@nightcell7/multiplayer-sim";
  *     The collision map is checksum-verified and will be edited; a positional
  *     lookup would silently mis-skin the yard the first time a box moves.
  *
- * All textures are generated procedurally at runtime. That is a deliberate
- * choice, not a placeholder: CLAUDE.md forbids shipping any asset without
- * provenance, and a canvas we draw ourselves has trivially clean provenance.
+ * The yard used to be skinned with one `MeshBuilder` box per collision volume
+ * and canvas-generated noise textures — a greybox. It is now built from the
+ * generated model set in `apps/game/public/assets` (see `tools/art`), placed to
+ * fill exactly the same volumes. Rule 1 is unchanged and is what keeps the art
+ * honest: a prop is tiled or scaled to its volume rather than the volume being
+ * adjusted to suit a prop.
  */
 
 /** Palette, mirrored from the site's DIVIDED SIGNAL tokens. */
@@ -57,6 +67,7 @@ const PALETTE = {
 export interface WorldHandles {
   readonly shadows: ShadowGenerator;
   readonly pipeline: DefaultRenderingPipeline;
+  readonly assets: AssetSet;
 }
 
 interface Volume {
@@ -78,7 +89,16 @@ function volumeOf(box: Aabb): Volume {
  * Semantic class of a collision volume, derived from its shape and position.
  * Keeps the skinning stable across map edits.
  */
-type VolumeKind = "ground" | "perimeter" | "deck" | "tank" | "container" | "block";
+type VolumeKind =
+  | "ground"
+  | "perimeter"
+  | "deck"
+  | "tank"
+  | "hardpoint"
+  | "pipe_rack"
+  | "stair"
+  | "container"
+  | "block";
 
 function classify(v: Volume, map: CollisionMap): VolumeKind {
   const { size, centre } = v;
@@ -101,69 +121,21 @@ function classify(v: Volume, map: CollisionMap): VolumeKind {
   // Storage tanks: tall footprint blocks on the east lane.
   if (size.y >= 6 && footprint >= 60) return "tank";
 
-  // Shipping containers: the classic 6 x 3 x 6-ish yard blocks.
+  // Ramp steps: the only 1.5 m-tall volumes in the map.
+  if (size.y <= 1.6) return "stair";
+
+  // The pipe rack is the one long, mid-height run.
+  if (size.y >= 3.5 && Math.max(size.x, size.z) >= 40) return "pipe_rack";
+
+  // The central objective is wide, low and much larger in plan than a
+  // container stack. Checked before `container` because it also falls inside
+  // that height band.
+  if (size.y <= 3.0 && footprint >= 80) return "hardpoint";
+
+  // Shipping containers: the classic yard blocks, and the cross-link stacks.
   if (size.y >= 2 && size.y <= 3.2 && footprint >= 25) return "container";
 
   return "block";
-}
-
-// ---------------------------------------------------------------- textures
-
-/**
- * Procedural noise texture used to break up flat PBR surfaces.
- * `tint` biases the speckle so concrete, steel and rust each read differently.
- */
-function noiseTexture(
-  scene: Scene,
-  name: string,
-  tint: Color3,
-  opts: {
-    size?: number;
-    density?: number;
-    streaks?: boolean;
-    uScale?: number;
-    vScale?: number;
-  } = {},
-): DynamicTexture {
-  const size = opts.size ?? 512;
-  const density = opts.density ?? 0.55;
-  const texture = new DynamicTexture(name, { width: size, height: size }, scene, false);
-  const ctx = texture.getContext() as unknown as CanvasRenderingContext2D;
-
-  const base = tint.scale(255);
-  ctx.fillStyle = `rgb(${base.r | 0}, ${base.g | 0}, ${base.b | 0})`;
-  ctx.fillRect(0, 0, size, size);
-
-  // Speckle: fine grit that survives mipmapping at yard scale.
-  const grains = Math.floor(size * size * density * 0.02);
-  for (let i = 0; i < grains; i += 1) {
-    const x = Math.random() * size;
-    const y = Math.random() * size;
-    const shade = (Math.random() - 0.5) * 60;
-    const r = Math.min(255, Math.max(0, base.r + shade));
-    const g = Math.min(255, Math.max(0, base.g + shade));
-    const b = Math.min(255, Math.max(0, base.b + shade));
-    ctx.fillStyle = `rgba(${r | 0}, ${g | 0}, ${b | 0}, 0.55)`;
-    ctx.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 2);
-  }
-
-  // Vertical streaking reads as weathering / runoff on tanks and containers.
-  if (opts.streaks) {
-    for (let i = 0; i < size / 8; i += 1) {
-      const x = Math.random() * size;
-      const w = 1 + Math.random() * 3;
-      const h = size * (0.2 + Math.random() * 0.7);
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.04 + Math.random() * 0.07})`;
-      ctx.fillRect(x, Math.random() * size * 0.3, w, h);
-    }
-  }
-
-  texture.update(false);
-  texture.wrapU = Texture.WRAP_ADDRESSMODE;
-  texture.wrapV = Texture.WRAP_ADDRESSMODE;
-  texture.uScale = opts.uScale ?? 1;
-  texture.vScale = opts.vScale ?? 1;
-  return texture;
 }
 
 /**
@@ -258,12 +230,55 @@ function skyTexture(scene: Scene): DynamicTexture {
 
 // ------------------------------------------------------------------ build
 
-export function buildWorld(
+/**
+ * Tile a model along one horizontal axis to fill a volume exactly.
+ *
+ * The count is rounded to the nearest whole section and the remainder is taken
+ * up by scaling, so a 68 m catwalk built from 4 m decks has no gap at the end
+ * and no section hanging over the edge. The scale correction is always within a
+ * few percent, which is invisible, whereas a gap in a walkway is not.
+ */
+function tileAlong(
+  axis: "x" | "z",
+  v: Volume,
+  sectionLength: number,
+  baseY?: number,
+): { placements: Placement[]; scale: number } {
+  const span = axis === "x" ? v.size.x : v.size.z;
+  const count = Math.max(1, Math.round(span / sectionLength));
+  const scale = span / (count * sectionLength);
+  const y = baseY ?? v.box.min.y;
+
+  const placements: Placement[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const offset = -span / 2 + (i + 0.5) * (span / count);
+    placements.push({
+      position:
+        axis === "x"
+          ? new Vector3(v.centre.x + offset, y, v.centre.z)
+          : new Vector3(v.centre.x, y, v.centre.z + offset),
+      rotationY: axis === "x" ? Math.PI / 2 : 0,
+      scaling: axis === "x" ? new Vector3(1, 1, scale) : new Vector3(1, 1, scale),
+    });
+  }
+  return { placements, scale };
+}
+
+/** Native footprint of each tiled model, in metres. Must match `tools/art`. */
+const SECTION = {
+  wall: 6.0, // wall.glb spans 6 m along its length
+  deck: 4.0,
+  pipe_rack: 5.0,
+  containerWidth: 2.9,
+  containerLength: 6.0,
+} as const;
+
+export async function buildWorld(
   scene: Scene,
   engine: AbstractEngine,
   camera: Camera,
   map: CollisionMap = ARDAVAN_YARD,
-): WorldHandles {
+): Promise<WorldHandles> {
   scene.clearColor = new Color4(PALETTE.ink.r, PALETTE.ink.g, PALETTE.ink.b, 1);
   scene.ambientColor = new Color3(0.08, 0.1, 0.14);
 
@@ -274,6 +289,8 @@ export function buildWorld(
   // Slightly warm and lifted: distance should read as haze catching the yard's
   // sodium light, not as a black void the far perimeter falls into.
   scene.fogColor = new Color3(0.085, 0.09, 0.115);
+
+  const assets = await loadAssets(scene);
 
   // ------------------------------------------------------------------ sky
   const sky = MeshBuilder.CreateSphere(
@@ -295,8 +312,12 @@ export function buildWorld(
   // Cool fill from the sky, warm bounce from sodium-lit ground. This carries
   // most of the shadow detail — with a near-black palette the fill is what
   // separates "moody" from "an unlit scene".
+  // Carries most of the image. The yard is played looking north into the
+  // dawn, which means the camera almost always sees the *shadowed* face of
+  // every container and wall; without a strong fill those faces are black
+  // silhouettes and the lanes stop reading as space you can move through.
   const ambient = new HemisphericLight("ambient", new Vector3(0.1, 1, 0.05), scene);
-  ambient.intensity = 1.15;
+  ambient.intensity = 2.15;
   ambient.diffuse = new Color3(0.34, 0.45, 0.66);
   ambient.groundColor = new Color3(0.22, 0.16, 0.12);
   ambient.specular = new Color3(0.16, 0.2, 0.26);
@@ -305,7 +326,7 @@ export function buildWorld(
   // what produces the long shadows the yard reads by.
   const key = new DirectionalLight("false-dawn", new Vector3(0.12, -0.2, 1), scene);
   key.position = new Vector3(-10, 26, -95);
-  key.intensity = 3.4;
+  key.intensity = 4.2;
   key.diffuse = PALETTE.dustGold;
   key.specular = new Color3(0.9, 0.75, 0.5);
 
@@ -313,7 +334,7 @@ export function buildWorld(
   // instead of dissolving into it.
   const rim = new DirectionalLight("rim", new Vector3(-0.25, -0.35, -1), scene);
   rim.position = new Vector3(20, 30, 90);
-  rim.intensity = 0.9;
+  rim.intensity = 1.35;
   rim.diffuse = new Color3(0.4, 0.58, 0.78);
   rim.specular = new Color3(0.5, 0.68, 0.85);
 
@@ -329,135 +350,128 @@ export function buildWorld(
   const glow = new GlowLayer("glow", scene, { blurKernelSize: 48 });
   glow.intensity = 0.85;
 
-  // ------------------------------------------------------------ materials
-
-  const groundMat = new PBRMetallicRoughnessMaterial("mat-ground", scene);
-  groundMat.baseTexture = noiseTexture(scene, "tex-ground", PALETTE.concrete, {
-    density: 0.8,
-    uScale: 26,
-    vScale: 38,
-  });
-  groundMat.metallic = 0.08;
-  groundMat.roughness = 0.86;
-
-  const wallMat = new PBRMetallicRoughnessMaterial("mat-wall", scene);
-  // Kept dark: the perimeter is a boundary, not a feature. Lit any brighter it
-  // becomes a bright slab that pulls the eye away from the lanes.
-  wallMat.baseTexture = noiseTexture(scene, "tex-wall", PALETTE.concrete.scale(0.4), {
-    density: 0.6,
-    streaks: true,
-    uScale: 14,
-    vScale: 3,
-  });
-  wallMat.metallic = 0.05;
-  wallMat.roughness = 0.92;
-
-  const steelMat = new PBRMetallicRoughnessMaterial("mat-steel", scene);
-  steelMat.baseTexture = noiseTexture(scene, "tex-steel", PALETTE.steel, { density: 0.4 });
-  steelMat.metallic = 0.78;
-  steelMat.roughness = 0.42;
-
-  const tankMat = new PBRMetallicRoughnessMaterial("mat-tank", scene);
-  tankMat.baseTexture = noiseTexture(scene, "tex-tank", PALETTE.rust.scale(0.9), {
-    density: 0.5,
-    streaks: true,
-    uScale: 3,
-    vScale: 2,
-  });
-  tankMat.metallic = 0.62;
-  tankMat.roughness = 0.62;
-
-  // Containers carry the only saturated colour in the yard. Team sides read at
-  // a glance without a minimap: red toward Nightcell (south), cyan toward the
-  // Directorate (north).
-  const containerSouth = new PBRMetallicRoughnessMaterial("mat-container-s", scene);
-  containerSouth.baseTexture = noiseTexture(scene, "tex-cs", PALETTE.signalRed.scale(0.85), {
-    density: 0.45,
-    streaks: true,
-  });
-  containerSouth.metallic = 0.25;
-  containerSouth.roughness = 0.68;
-
-  const containerNorth = new PBRMetallicRoughnessMaterial("mat-container-n", scene);
-  containerNorth.baseTexture = noiseTexture(scene, "tex-cn", PALETTE.signalCyan.scale(0.7), {
-    density: 0.45,
-    streaks: true,
-  });
-  containerNorth.metallic = 0.25;
-  containerNorth.roughness = 0.68;
-
-  const blockMat = new PBRMetallicRoughnessMaterial("mat-block", scene);
-  blockMat.baseTexture = noiseTexture(scene, "tex-block", PALETTE.steel.scale(0.8), {
-    density: 0.5,
-  });
-  blockMat.metallic = 0.5;
-  blockMat.roughness = 0.55;
-
   // ------------------------------------------------------------- geometry
+
+  const casters: Mesh[] = [];
+  const model = (name: ModelName) => {
+    const container = assets.models.get(name);
+    if (!container) throw new Error(`model not loaded: ${name}`);
+    return container;
+  };
+
+  /** Place a model and register everything it produced as a shadow caster. */
+  const put = (name: ModelName, label: string, placements: readonly Placement[]) => {
+    if (placements.length === 0) return;
+    casters.push(...meshesUnder(placeAll(model(name), label, placements)));
+  };
 
   map.boxes.forEach((box, index) => {
     const v = volumeOf(box);
     const kind = classify(v, map);
 
-    const mesh = MeshBuilder.CreateBox(
-      `${kind}_${index}`,
-      { width: v.size.x, height: v.size.y, depth: v.size.z },
-      scene,
-    );
-    mesh.position = v.centre;
-    mesh.checkCollisions = false;
-    mesh.isPickable = false;
-
     switch (kind) {
-      case "ground":
-        mesh.material = groundMat;
-        mesh.receiveShadows = true;
+      case "ground": {
+        // The one surface still built as a primitive: it is a flat slab, and a
+        // tiled model would only add draw calls and seams.
+        const ground = MeshBuilder.CreateBox(
+          "ground",
+          { width: v.size.x, height: v.size.y, depth: v.size.z },
+          scene,
+        );
+        ground.position = v.centre;
+        ground.isPickable = false;
+        ground.receiveShadows = true;
+        ground.material = createTiledMaterial(scene, "concrete", v.size.x / 4, v.size.z / 4);
+        ground.freezeWorldMatrix();
         break;
-      case "perimeter":
-        mesh.material = wallMat;
-        mesh.receiveShadows = true;
-        break;
-      case "deck":
-        mesh.material = steelMat;
-        mesh.receiveShadows = true;
-        shadows.addShadowCaster(mesh);
-        break;
-      case "tank":
-        mesh.material = tankMat;
-        mesh.receiveShadows = true;
-        shadows.addShadowCaster(mesh);
-        break;
-      case "container":
-        mesh.material = v.centre.z > 0 ? containerSouth : containerNorth;
-        mesh.receiveShadows = true;
-        shadows.addShadowCaster(mesh);
-        break;
-      default:
-        mesh.material = blockMat;
-        mesh.receiveShadows = true;
-        shadows.addShadowCaster(mesh);
-        break;
-    }
+      }
 
-    // Static geometry: freezing the world matrix and the material removes the
-    // per-frame transform and shader rebind cost for ~30 meshes.
-    mesh.freezeWorldMatrix();
+      case "perimeter": {
+        // Walls run along whichever horizontal axis is longer.
+        const axis = v.size.x >= v.size.z ? "x" : "z";
+        put("wall", `wall_${index}`, tileAlong(axis, v, SECTION.wall).placements);
+        break;
+      }
+
+      case "deck": {
+        const axis = v.size.x >= v.size.z ? "x" : "z";
+        put("deck", `deck_${index}`, tileAlong(axis, v, SECTION.deck).placements);
+        break;
+      }
+
+      case "pipe_rack": {
+        const axis = v.size.x >= v.size.z ? "x" : "z";
+        put("pipe_rack", `pipes_${index}`, tileAlong(axis, v, SECTION.pipe_rack).placements);
+        break;
+      }
+
+      case "tank": {
+        put("tank", `tank_${index}`, [
+          { position: new Vector3(v.centre.x, v.box.min.y, v.centre.z) },
+        ]);
+        break;
+      }
+
+      case "hardpoint": {
+        put("hardpoint", `hardpoint_${index}`, [
+          { position: new Vector3(v.centre.x, v.box.min.y, v.centre.z) },
+        ]);
+        break;
+      }
+
+      case "stair": {
+        // The stair model climbs toward -z. The west ramp (z > 0) climbs that
+        // way already; the east ramp climbs the other way and is turned round.
+        // This is map-specific on purpose — deriving the direction would need
+        // the neighbouring steps, and the collision map is the thing that
+        // defines "up" here.
+        put("stair", `stair_${index}`, [
+          {
+            position: new Vector3(v.centre.x, v.box.min.y, v.centre.z),
+            rotationY: v.centre.z > 0 ? 0 : Math.PI,
+          },
+        ]);
+        break;
+      }
+
+      case "container":
+      case "block": {
+        // Fill the volume with a grid of container-sized units, so a 6 x 6
+        // volume gets two side by side and a 4 x 12 cross-link gets two
+        // end to end.
+        const nx = Math.max(1, Math.round(v.size.x / SECTION.containerWidth));
+        const nz = Math.max(1, Math.round(v.size.z / SECTION.containerLength));
+        const placements: Placement[] = [];
+        for (let ix = 0; ix < nx; ix += 1) {
+          for (let iz = 0; iz < nz; iz += 1) {
+            placements.push({
+              position: new Vector3(
+                v.centre.x - v.size.x / 2 + (ix + 0.5) * (v.size.x / nx),
+                v.box.min.y,
+                v.centre.z - v.size.z / 2 + (iz + 0.5) * (v.size.z / nz),
+              ),
+              // Alternate the door end so a row of containers is not a
+              // repeating stamp.
+              rotationY: (ix + iz) % 2 === 0 ? 0 : Math.PI,
+              scaling: new Vector3(
+                v.size.x / nx / SECTION.containerWidth,
+                v.size.y / 3.0,
+                v.size.z / nz / SECTION.containerLength,
+              ),
+            });
+          }
+        }
+        put("container", `container_${index}`, placements);
+        break;
+      }
+    }
   });
 
   // --------------------------------------------------------- sodium lamps
 
-  // Lamp masts along the three lanes. These are the yard's practical lights:
-  // each one is an emissive head (picked up by the glow layer) plus a real
-  // point light with a tight radius so the pools of light stay readable.
-  const lampMat = new StandardMaterial("mat-lamp", scene);
-  lampMat.disableLighting = true;
-  lampMat.emissiveColor = PALETTE.sodium;
-
-  const mastMat = new PBRMetallicRoughnessMaterial("mat-mast", scene);
-  mastMat.baseColor = PALETTE.steel.scale(0.5);
-  mastMat.metallic = 0.8;
-  mastMat.roughness = 0.5;
-
+  // Lamp masts along the three lanes. Each is the generated mast model plus a
+  // real point light at the head, so the fitting and the pool of light it
+  // casts cannot drift apart.
   const lampSpots: Array<[number, number]> = [
     [-28, -24],
     [-28, 8],
@@ -472,39 +486,24 @@ export function buildWorld(
     [14, 44],
   ];
 
+  put(
+    "lamp_mast",
+    "lamp",
+    lampSpots.map(([x, z]) => ({ position: new Vector3(x, 0, z) })),
+  );
+
   lampSpots.forEach(([x, z], i) => {
-    const mast = MeshBuilder.CreateCylinder(
-      `mast_${i}`,
-      { height: 9, diameter: 0.28, tessellation: 8 },
-      scene,
-    );
-    mast.position = new Vector3(x, 4.5, z);
-    mast.material = mastMat;
-    mast.isPickable = false;
-    mast.freezeWorldMatrix();
-    shadows.addShadowCaster(mast);
-
-    const head = MeshBuilder.CreateBox(
-      `lamp_${i}`,
-      { width: 0.9, height: 0.22, depth: 0.5 },
-      scene,
-    );
-    head.position = new Vector3(x, 9.05, z);
-    head.material = lampMat;
-    head.isPickable = false;
-    head.freezeWorldMatrix();
-
-    // Only a subset get real point lights — eleven dynamic lights would cost
-    // more than they add, and Babylon's per-mesh light cap would start
-    // dropping them unpredictably.
-    if (i % 2 === 0) {
-      const lamp = new PointLight(`lamp-light_${i}`, new Vector3(x, 8.6, z), scene);
-      lamp.diffuse = PALETTE.sodium;
-      lamp.specular = PALETTE.sodium;
-      lamp.intensity = 260;
-      lamp.range = 34;
-      lamp.falloffType = PointLight.FALLOFF_PHYSICAL;
-    }
+    // Every mast is lit. Lighting only half of them left long unlit stretches
+    // between pools, and the masts without a light read as broken fittings.
+    // Babylon's per-mesh light cap is raised below to keep them all active.
+    // Matches SOCKET_LAMP on lamp_mast.glb: 0.86 m out on the bracket arm,
+    // 8.5 m up.
+    const lamp = new PointLight(`lamp-light_${i}`, new Vector3(x + 0.86, 8.5, z), scene);
+    lamp.diffuse = PALETTE.sodium;
+    lamp.specular = PALETTE.sodium;
+    lamp.intensity = 210;
+    lamp.range = 40;
+    lamp.falloffType = PointLight.FALLOFF_PHYSICAL;
   });
 
   // Two cold accent lights mark the opposing spawn ends, echoing the split
@@ -520,6 +519,13 @@ export function buildWorld(
   northMark.specular = PALETTE.signalCyan;
   northMark.intensity = 420;
   northMark.range = 40;
+
+  // Registering the source meshes is enough: Babylon renders their instances
+  // into the shadow map with them.
+  for (const mesh of casters) {
+    shadows.addShadowCaster(mesh);
+    mesh.receiveShadows = true;
+  }
 
   // ------------------------------------------------------- post-processing
 
@@ -540,7 +546,7 @@ export function buildWorld(
   pipeline.imageProcessingEnabled = true;
   pipeline.imageProcessing.toneMappingEnabled = true;
   pipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-  pipeline.imageProcessing.exposure = 1.45;
+  pipeline.imageProcessing.exposure = 1.62;
   pipeline.imageProcessing.contrast = 1.25;
   pipeline.imageProcessing.vignetteEnabled = true;
   pipeline.imageProcessing.vignetteWeight = 2.4;
@@ -565,5 +571,5 @@ export function buildWorld(
   pipeline.depthOfFieldEnabled = false;
 
   void engine;
-  return { shadows, pipeline };
+  return { shadows, pipeline, assets };
 }
