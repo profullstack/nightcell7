@@ -13,7 +13,7 @@ import { placeAll, type AssetSet } from "./assets";
 /**
  * First-person weapon viewmodel.
  *
- * The carbine occupies the lower third of the screen for every frame of every
+ * The weapon occupies the lower third of the screen for every frame of every
  * match, so it is the single most-viewed object in the game — and until now the
  * player's hands were empty, which is a large part of why the build read as
  * unfinished. PRD §40: "a grey room, one enemy, and one rifle must already feel
@@ -34,13 +34,26 @@ import { placeAll, type AssetSet } from "./assets";
  * from this node, so a tampered viewmodel cannot move where bullets come from.
  */
 
-/** Resting offset from the camera: right, down, forward, in metres. */
-const REST = new Vector3(0.21, -0.17, 0.34);
+/**
+ * Resting offset from the camera: right, down, forward, in metres.
+ *
+ * The forward offset is derived, not guessed: the carbine's framing was the
+ * version that looked right, so the Synty rifle is placed so its muzzle sits
+ * the same 0.645 m in front of the eye, given that the rifle is 1.03 m to the
+ * carbine's 0.81 m and its origin sits further back. Keeping the old offset
+ * would have pushed the barrel through the middle of the screen.
+ *
+ * The height is the one value tuned against a screenshot rather than derived.
+ * Matching the muzzle exactly (-0.214) put the receiver off the bottom edge,
+ * because the rifle carries more body below its bore than the carbine did.
+ */
+const REST = new Vector3(0.21, -0.185, 0.293);
 
 /**
  * Base yaw of the viewmodel.
  *
- * The carbine is modelled with its barrel along Blender -Y, which the glTF
+ * The weapons are modelled with their barrel along Blender -Y — the generated
+ * carbine and the converted Synty ones alike — which the glTF
  * exporter maps to +Z. Babylon's glTF loader then wraps the import in a
  * `__root__` node scaled (1, 1, -1) to convert right-handed glTF into its own
  * left-handed space — so the barrel ends up pointing along -Z, straight back at
@@ -57,11 +70,22 @@ const BASE_YAW = Math.PI;
  *
  * Real games render the weapon through a second, narrower camera so a
  * true-scale rifle does not swallow the screen. This build has one camera at a
- * 90° field of view, where a 0.74 m carbine held at arm's length covers most of
- * the frame — which is exactly how it first looked. Scaling the mesh is the
+ * 90° field of view, where a full-size rifle held at arm's length covers most
+ * of the frame — which is exactly how it first looked. Scaling the mesh is the
  * cheap equivalent and is indistinguishable in the result.
+ *
+ * 0.488 is the value that gives the 1.03 m Synty rifle the same apparent length
+ * the 0.81 m carbine had at 0.62, so the framing carries over unchanged.
  */
-const VIEW_SCALE = 0.62;
+const VIEW_SCALE = 0.488;
+
+/**
+ * The weapon the player holds.
+ *
+ * The generated `carbine` it replaced is still built and still ships, as a
+ * fallback that does not depend on a licensed pack being present.
+ */
+const WEAPON = "wep_rifle" as const;
 
 /** How far the weapon may trail the view, in radians of camera rotation. */
 const SWAY_LIMIT = 0.045;
@@ -81,13 +105,18 @@ export class Viewmodel {
   private lastPitch: number;
 
   constructor(scene: Scene, camera: Camera, assets: AssetSet) {
-    const container = assets.models.get("carbine");
-    if (!container) throw new Error("carbine model not loaded");
+    const container = assets.models.get(WEAPON);
+    if (!container) throw new Error(`${WEAPON} model not loaded`);
 
-    const [root] = placeAll(container, "viewmodel", [
-      { position: REST.clone(), scaling: new Vector3(VIEW_SCALE, VIEW_SCALE, VIEW_SCALE) },
-    ]);
-    if (!root) throw new Error("carbine produced no root node");
+    // `unique` because the materials below are per-viewmodel: an instanced
+    // mesh shares its source's material and ignores assignment to it.
+    const [root] = placeAll(
+      container,
+      "viewmodel",
+      [{ position: REST.clone(), scaling: new Vector3(VIEW_SCALE, VIEW_SCALE, VIEW_SCALE) }],
+      { unique: true },
+    );
+    if (!root) throw new Error(`${WEAPON} produced no root node`);
 
     this.root = root;
     this.root.parent = camera;
@@ -101,6 +130,11 @@ export class Viewmodel {
     // into the bloom threshold, and the receiver, rail and optic rendered as a
     // solid white blob whenever the weapon was on screen. It is per-material,
     // so the fix is local to the viewmodel and leaves the world untouched.
+    //
+    // This whole block is why `placeAll` above is asked for `unique` meshes.
+    // Assigning to an `InstancedMesh`'s material is a silent no-op, so every
+    // value set here was landing on nothing — forcing the weapon bright red as
+    // a test changed precisely one thing on screen: nothing.
     const localised = new Map<Material, Material>();
     for (const mesh of this.root.getChildMeshes() as Mesh[]) {
       const source = mesh.material;
@@ -112,6 +146,15 @@ export class Viewmodel {
           clone.environmentIntensity = 0.5;
           // Close-range metal shimmers badly under a moving camera otherwise.
           clone.enableSpecularAntiAliasing = true;
+          // Relax the atlas's world-object dimming.
+          //
+          // `synty_weapons` scales albedo to 0.36 so a weapon lying out in the
+          // yard does not clip past the bloom threshold under hemispheric 4.05.
+          // The viewmodel is the opposite case: held below the eye-line, away
+          // from the lamps, inside the strongest part of the vignette, and lit
+          // mostly by its own rig light. 0.62 reads as gunmetal there; 0.36
+          // reads as a black cut-out and 1.0 as pale blue plastic.
+          clone.albedoColor = new Color3(0.62, 0.62, 0.62);
         }
         localised.set(source, clone);
       }
@@ -139,11 +182,14 @@ export class Viewmodel {
     // `includedOnlyMeshes` keeps it strictly off the world, so it cannot
     // brighten level geometry or give away a player's position.
     const fill = new HemisphericLight("viewmodel-fill", new Vector3(-0.3, 1, -0.6), scene);
-    // Tuned against the scene's exposure, not in isolation. When the yard's
-    // exposure went from 1.62 to 2.05 this stayed at 1.9 and the weapon
-    // rendered as a solid white blob — it is lit by this *and* the scene.
-    fill.intensity = 0.62;
-    fill.diffuse = new Color3(0.62, 0.66, 0.78);
+    // Tuned against the scene's exposure, not in isolation: the weapon is lit
+    // by this *and* the scene. The Synty atlas is darker than the generated
+    // carbine's steel, so this sits a little above the 0.62 that suited the
+    // old model. The tint is near-neutral — the strongly blue value it used to
+    // carry turned the grey rifle into pale blue plastic once the material
+    // changes above actually started applying.
+    fill.intensity = 0.78;
+    fill.diffuse = new Color3(0.72, 0.73, 0.78);
     fill.groundColor = new Color3(0.2, 0.17, 0.14);
     fill.specular = new Color3(0.3, 0.32, 0.38);
     fill.includedOnlyMeshes = this.root.getChildMeshes();

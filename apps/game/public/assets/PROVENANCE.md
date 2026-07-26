@@ -114,6 +114,10 @@ material-slot or `COL_` conventions the generated props use;
 | `models/prop_water_tank.glb`   | Synty POLYGON Military — `SM_Prop_WaterTank_02`             | Synty Store licence (purchased) |
 | `textures/synty_atlas.webp`    | Synty POLYGON Military — `PolygonMilitary_Texture_01_A`     | Synty Store licence (purchased) |
 | `textures/synty_vehicles.webp` | Synty POLYGON Military — `PolygonMilitary_Land_Vehicles_03` | Synty Store licence (purchased) |
+| `models/wep_rifle.glb`         | Synty POLYGON Military — `SM_Wep_Preset_A_Rifle_01*`        | Synty Store licence (purchased) |
+| `models/wep_smg.glb`           | Synty POLYGON Military — `SM_Wep_Preset_A_SMG_01*`          | Synty Store licence (purchased) |
+| `models/wep_sniper.glb`        | Synty POLYGON Military — `SM_Wep_Preset_B_Sniper_01*`       | Synty Store licence (purchased) |
+| `textures/synty_weapons.webp`  | Synty POLYGON Military — `PolygonMilitary_Weapons_01`       | Synty Store licence (purchased) |
 
 Purchased from https://syntystore.com. The licence grants perpetual,
 royalty-free commercial use in unlimited titles and permits modification; it
@@ -121,7 +125,13 @@ does **not** permit reselling the assets as assets. Not copyright ownership,
 which only a work-for-hire commission gives.
 
 Source files are **not** committed — the pack is 406 MB unpacked and lives
-outside the repo. Only the converted GLBs and the one shared atlas ship.
+outside the repo. Only the converted GLBs and the shared atlases ship.
+
+Every row above is reproduced by `node tools/art/import-synty.mjs`, which holds
+the source file, material slot, decimation ratio and atlas for each asset. It is
+not part of `pnpm assets:build`: that runs in CI, and this needs the purchased
+pack. Re-running it against the same pack version reproduces the committed
+files byte for byte.
 
 Converted with `tools/art/blender/import_synty.py`, which does two things the
 plain glTF path cannot:
@@ -167,3 +177,30 @@ These are licensed static meshes, so — like the characters — they do not fol
 the generated props' material-slot or `COL_` conventions;
 `apps/game/src/assets.test.ts` exempts them explicitly. They are cosmetic
 set-dressing and carry no collision proxy.
+
+### Weapons
+
+`wep_rifle`, `wep_smg` and `wep_sniper` come from `import_synty_weapon.py`,
+which differs from the prop converter in two ways.
+
+- **They are assembled, not converted.** Synty ships a weapon modular: the
+  preset is a receiver, and the magazine, sight, trigger, slide and charging
+  handle are separate FBX files sharing its origin. That suits a kit where a
+  player swaps attachments and would cost six files and six draw calls per
+  rifle here, so the parts are imported together, joined and welded. Bipods and
+  fold-out foregrips are skipped — they hang below the barrel and read as
+  damage at viewmodel distance.
+- **`SOCKET_MUZZLE` is placed by measurement.** CLAUDE.md requires one on every
+  weapon, and the pack is not consistent about which way a weapon faces. The
+  longest axis is the barrel; which _end_ is the muzzle is decided by the pistol
+  grip, which is the lowest part of a firearm and always sits behind the barrel.
+  The first attempt used "the muzzle end is the thinner end" instead, which is
+  true of the rifle and the sniper and false of the SMG, whose folding stock is
+  a thin rod — its socket ended up on the stock. Rendering a marker at the
+  socket is what caught it; the coordinates alone looked reasonable for all
+  three. `assets.test.ts` now guards the position of each.
+
+The whole armoury costs 2 KB of texture: Synty colour these by UV region
+against a 512px atlas rather than by detail, and `Weapons_01` is the neutral
+gunmetal — the other nine are camo and tiger-stripe finishes that would tie
+every weapon to one faction.
