@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell, DraftNotice } from "../_components/page-shell";
+import { CopyCommand } from "../_components/copy-command";
 import { CapturePlate } from "../gallery";
 
 export const metadata: Metadata = {
@@ -18,15 +19,13 @@ const REPO = "https://github.com/profullstack/nightcell7";
  */
 const HAS_RELEASE = true;
 
+/**
+ * Every command on this page is meant to be run, so every one of them is
+ * copyable. Routing them all through the one component is what makes that
+ * true by construction rather than by remembering.
+ */
 function Command({ label, children }: { label?: string; children: string }) {
-  return (
-    <div className="command">
-      {label ? <p className="command__label">{label}</p> : null}
-      <pre>
-        <code>{children}</code>
-      </pre>
-    </div>
-  );
+  return <CopyCommand label={label} command={children} />;
 }
 
 interface Manager {

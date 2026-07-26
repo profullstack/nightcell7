@@ -917,6 +917,66 @@ a {
   border-radius: var(--radius-sharp);
 }
 
+/* The frame, not the <pre>, is the positioning context: the pre scrolls
+   horizontally on a long command and the button must not scroll away with it. */
+.command__frame {
+  position: relative;
+}
+
+/* Reserve the button's corner so it never sits on top of the command text. */
+.command__frame pre {
+  padding-right: 5.25rem;
+}
+
+.command__copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-100);
+  background: rgb(7 9 12 / 78%);
+  border: 1px solid rgb(236 232 223 / 22%);
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+  line-height: 1.4;
+  transition:
+    color var(--motion-micro) var(--ease-standard),
+    border-color var(--motion-micro) var(--ease-standard);
+}
+
+.command__copy:hover {
+  color: var(--signal-cyan);
+  border-color: color-mix(in srgb, var(--signal-cyan) 55%, transparent);
+}
+
+.command__copy[data-state="copied"] {
+  color: var(--signal-cyan);
+  border-color: var(--signal-cyan);
+}
+
+.command__copy[data-state="failed"] {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 60%, transparent);
+}
+
+/* Announced to assistive technology, invisible on screen. Not `display: none`,
+   which would remove it from the accessibility tree along with the message. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ------------------------------------------------------------- auth forms */
 
 .auth-form {
@@ -1098,6 +1158,12 @@ a {
 .hero__install {
   margin-top: 2.5rem;
   max-width: 44rem;
+}
+
+/* The hero block already spaces itself; the shared command wrapper must not
+   add a second margin on top of it. */
+.hero__install .command {
+  margin: 0;
 }
 
 .hero__install pre {

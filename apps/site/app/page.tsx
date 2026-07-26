@@ -2,6 +2,7 @@ import Image from "next/image";
 import { SHARED_TIMELINE, SIDE } from "@nightcell7/game-core";
 import { CATALOG, formatPrice } from "@nightcell7/entitlements";
 import { HeroPlot, LeilaSigil, RookSigil, SignalCell } from "./art";
+import { CopyCommand } from "./_components/copy-command";
 import { CaptureGallery, heroCapture } from "./gallery";
 
 /**
@@ -57,10 +58,11 @@ export default function HomePage() {
           </div>
 
           <div className="hero__install">
-            <p className="command__label">Or install the desktop client</p>
-            <pre>
-              <code>curl -fsSL https://nightcell7.com/install.sh | sh</code>
-            </pre>
+            <CopyCommand
+              label="Or install the desktop client"
+              name="desktop install"
+              command="curl -fsSL https://nightcell7.com/install.sh | sh"
+            />
             <p className="price-note">
               macOS and Linux · <a href="/downloads">Windows and package managers</a>
             </p>
