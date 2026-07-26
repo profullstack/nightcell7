@@ -56,9 +56,10 @@ const coinpay = new CoinpayClient({
 
 /** R2 is optional: unset credentials degrade to an obvious placeholder. */
 const r2Config =
-  env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY
+  (env.R2_ACCOUNT_ID || env.S3_ENDPOINT) && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY
     ? {
         accountId: env.R2_ACCOUNT_ID,
+        endpoint: env.S3_ENDPOINT,
         accessKeyId: env.R2_ACCESS_KEY_ID,
         secretAccessKey: env.R2_SECRET_ACCESS_KEY,
         bucket: env.R2_BUCKET,

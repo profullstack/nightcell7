@@ -27,6 +27,8 @@ export const apiEnvSchema = baseEnvSchema.extend({
   // R2 is optional at boot so local development and CI do not need object
   // storage; the content routes degrade to an obvious placeholder instead.
   R2_ACCOUNT_ID: z.string().optional(),
+  /** Set to use any S3-compatible provider instead of Cloudflare R2. */
+  S3_ENDPOINT: z.string().url().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET: z.string().default("nightcell7-content"),

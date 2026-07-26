@@ -4,7 +4,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { ObjectSigner } from "@nightcell7/content-schema";
 
 /**
- * Cloudflare R2 access (PRD §26.4).
+ * Object storage for episode content (PRD §26.4).
  *
  * Only short-lived presigned GETs for specific objects leave this module.
  * No R2 credential ever reaches a client, and there is deliberately no
@@ -13,16 +13,30 @@ import type { ObjectSigner } from "@nightcell7/content-schema";
  */
 
 export interface R2Config {
-  accountId: string;
+  /** Cloudflare account id. Ignored when an explicit endpoint is given. */
+  accountId?: string;
+  /**
+   * Full S3 endpoint. Set this to use any S3-compatible provider — Supabase
+   * Storage, Backblaze B2, MinIO — instead of R2. The rest of the delivery
+   * path is provider-agnostic, so the choice is one environment variable.
+   */
+  endpoint?: string;
   accessKeyId: string;
   secretAccessKey: string;
   bucket: string;
 }
 
+function resolveEndpoint(config: R2Config): string {
+  if (config.endpoint) return config.endpoint;
+  if (config.accountId) return `https://${config.accountId}.r2.cloudflarestorage.com`;
+  throw new Error("storage needs either S3_ENDPOINT or R2_ACCOUNT_ID");
+}
+
 export function createR2Signer(config: R2Config): ObjectSigner {
   const client = new S3Client({
     region: "auto",
-    endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+    endpoint: resolveEndpoint(config),
+    forcePathStyle: Boolean(config.endpoint),
     credentials: {
       accessKeyId: config.accessKeyId,
       secretAccessKey: config.secretAccessKey,
@@ -45,7 +59,8 @@ export function createR2Signer(config: R2Config): ObjectSigner {
 export function createR2ManifestLoader(config: R2Config) {
   const client = new S3Client({
     region: "auto",
-    endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+    endpoint: resolveEndpoint(config),
+    forcePathStyle: Boolean(config.endpoint),
     credentials: {
       accessKeyId: config.accessKeyId,
       secretAccessKey: config.secretAccessKey,
