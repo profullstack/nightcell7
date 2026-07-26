@@ -4,6 +4,15 @@
 #
 #   curl -fsSL https://nightcell7.com/install.sh | sh
 #
+# Subcommands (note the `-s --` needed to pass arguments through a pipe):
+#   curl -fsSL https://nightcell7.com/install.sh | sh -s -- update
+#   curl -fsSL https://nightcell7.com/install.sh | sh -s -- uninstall
+#   curl -fsSL https://nightcell7.com/install.sh | sh -s -- version
+#
+# Once installed, the launcher forwards the same subcommands:
+#   nightcell7 update
+#   nightcell7 uninstall
+#
 # Installs the desktop client on macOS and Linux. POSIX sh, no bashisms, so it
 # works on Alpine and minimal containers as well as the usual distros.
 #
@@ -174,6 +183,24 @@ install_linux() {
 #!/bin/sh
 # Managed by the NIGHTCELL 7 installer. Edits will be overwritten.
 APP="${target}"
+
+# Management subcommands are delegated back to the installer so there is one
+# implementation of update and uninstall rather than two that drift.
+case "\${1-}" in
+  update|upgrade)
+    exec sh -c "curl -fsSL https://nightcell7.com/install.sh | sh -s -- update"
+    ;;
+  uninstall|remove)
+    exec sh -c "curl -fsSL https://nightcell7.com/install.sh | sh -s -- uninstall"
+    ;;
+  login|signin)
+    exec sh -c "curl -fsSL https://nightcell7.com/install.sh | sh -s -- login"
+    ;;
+  version|--version)
+    exec sh -c "curl -fsSL https://nightcell7.com/install.sh | sh -s -- version"
+    ;;
+esac
+
 if [ ! -x "\$APP" ]; then
   echo "NIGHTCELL 7 is not installed. Reinstall: curl -fsSL https://nightcell7.com/install.sh | sh" >&2
   exit 1
@@ -208,22 +235,161 @@ DESKTOP
   esac
 }
 
-main() {
-  banner
+# Records what is installed so `update` can tell you it is already current
+# instead of re-downloading a hundred megabytes to no effect.
+VERSION_FILE="${INSTALL_DIR}/version"
+
+installed_version() {
+  if [ -f "$VERSION_FILE" ]; then
+    cat "$VERSION_FILE"
+  elif [ -d "/Applications/NIGHTCELL 7.app" ]; then
+    # Installed before version tracking, or installed by hand.
+    echo "unknown"
+  else
+    echo ""
+  fi
+}
+
+record_version() {
+  mkdir -p "$INSTALL_DIR"
+  printf '%s' "$1" > "$VERSION_FILE"
+}
+
+do_install() {
   detect_platform
   version=$(latest_version)
-  info "Installing NIGHTCELL 7 v${version} for ${OS}-${ARCH}"
+  current=$(installed_version)
+
+  if [ "$1" = "update" ] && [ -n "$current" ] && [ "$current" = "$version" ]; then
+    success "Already on the latest version (v${version})."
+    return 0
+  fi
+
+  if [ -n "$current" ] && [ "$current" != "$version" ]; then
+    info "Updating NIGHTCELL 7 v${current} → v${version} (${OS}-${ARCH})"
+  else
+    info "Installing NIGHTCELL 7 v${version} for ${OS}-${ARCH}"
+  fi
 
   case "$OS" in
     mac)   install_mac "$version" ;;
     linux) install_linux "$version" ;;
   esac
+  record_version "$version"
 
   printf '%s\n' ""
   success "Done."
   printf '%s\n' "  ${DIM}The demo and multiplayer alpha are free. No account needed to play the demo.${NC}"
-  printf '%s\n' "  ${DIM}Prefer a package manager? https://nightcell7.com/downloads${NC}"
+  printf '%s\n' "  ${DIM}Update later with: nightcell7 update${NC}"
   printf '%s\n' ""
+}
+
+do_uninstall() {
+  detect_platform
+  removed=0
+
+  if [ "$OS" = "mac" ]; then
+    for app in "/Applications/NIGHTCELL 7.app" "/Applications/nightcell7.app"; do
+      if [ -d "$app" ]; then
+        info "Removing $app"
+        rm -rf "$app" && removed=1
+      fi
+    done
+  fi
+
+  if [ -d "$INSTALL_DIR" ]; then
+    info "Removing $INSTALL_DIR"
+    rm -rf "$INSTALL_DIR" && removed=1
+  fi
+
+  if [ -f "${BIN_DIR}/nightcell7" ]; then
+    info "Removing ${BIN_DIR}/nightcell7"
+    rm -f "${BIN_DIR}/nightcell7" && removed=1
+  fi
+
+  desktop="$HOME/.local/share/applications/nightcell7.desktop"
+  if [ -f "$desktop" ]; then
+    info "Removing desktop entry"
+    rm -f "$desktop" && removed=1
+    update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+  fi
+
+  if [ "$removed" -eq 1 ]; then
+    success "NIGHTCELL 7 removed."
+    # Saves and settings live in browser/Electron storage, so say where rather
+    # than deleting data the user did not ask us to touch.
+    printf '%s\n' "  ${DIM}Local saves and settings were left alone.${NC}"
+    printf '%s\n' "  ${DIM}macOS: ~/Library/Application Support/NIGHTCELL 7${NC}"
+    printf '%s\n' "  ${DIM}Linux: ~/.config/NIGHTCELL 7${NC}"
+  else
+    warn "NIGHTCELL 7 does not appear to be installed."
+  fi
+}
+
+# Opens the browser to sign in. Authentication is a browser-session concern —
+# the desktop client deliberately has no privileged path to credentials
+# (PRD §28.2), so there is nothing to type into a terminal here.
+do_login() {
+  url="https://nightcell7.com/login?from=cli"
+  info "Opening $url"
+  if command -v xdg-open >/dev/null 2>&1; then xdg-open "$url" >/dev/null 2>&1 &
+  elif command -v open >/dev/null 2>&1; then open "$url" >/dev/null 2>&1 &
+  else
+    warn "Could not open a browser automatically."
+    printf '%s\n' "  Sign in at: $url"
+    return 0
+  fi
+  success "Sign in in your browser, then launch the game."
+}
+
+do_version() {
+  current=$(installed_version)
+  if [ -z "$current" ]; then
+    printf '%s\n' "NIGHTCELL 7 is not installed."
+    return 1
+  fi
+  printf '%s\n' "installed: v${current}"
+  latest=$(latest_version 2>/dev/null || echo "")
+  if [ -n "$latest" ]; then
+    printf '%s\n' "latest:    v${latest}"
+    [ "$latest" != "$current" ] && printf '%s\n' "Run 'nightcell7 update' to upgrade."
+  fi
+  return 0
+}
+
+usage() {
+  cat <<USAGE
+NIGHTCELL 7 installer
+
+Usage:
+  curl -fsSL https://nightcell7.com/install.sh | sh
+  curl -fsSL https://nightcell7.com/install.sh | sh -s -- <command>
+
+Commands:
+  install            Install the latest version (default)
+  update, upgrade    Update to the latest version
+  uninstall, remove  Remove the app, launcher and desktop entry
+  login              Open the browser to sign in
+  version            Show installed and latest versions
+  help               Show this message
+
+Environment:
+  NIGHTCELL7_VERSION      Install a specific version
+  NIGHTCELL7_INSTALL_DIR  Default \$HOME/.nightcell7
+  NIGHTCELL7_BIN_DIR      Default \$HOME/.local/bin
+USAGE
+}
+
+main() {
+  case "${1:-install}" in
+    install)            banner; do_install install ;;
+    update|upgrade)     banner; do_install update ;;
+    uninstall|remove)   banner; do_uninstall ;;
+    login|signin)       banner; do_login ;;
+    version|--version)  do_version ;;
+    help|--help|-h)     usage ;;
+    *) fail "Unknown command: $1. Try 'help'." ;;
+  esac
 }
 
 main "$@"

@@ -160,6 +160,33 @@ sh install.sh`}
         </DraftNotice>
       ) : null}
 
+      <h3 id="manage">Managing the install</h3>
+      <p>
+        The installer handles its own lifecycle. After installing, the <code>nightcell7</code>{" "}
+        command forwards the same subcommands.
+      </p>
+      <Command label="Update to the latest version">
+        {`nightcell7 update
+# or, without it installed:
+curl -fsSL https://nightcell7.com/install.sh | sh -s -- update`}
+      </Command>
+      <Command label="Sign in">{`nightcell7 login`}</Command>
+      <Command label="Check versions">{`nightcell7 version`}</Command>
+      <Command label="Uninstall">
+        {`nightcell7 uninstall
+# or:
+curl -fsSL https://nightcell7.com/install.sh | sh -s -- uninstall`}
+      </Command>
+      <Command label="Windows (PowerShell)">
+        {`$env:NIGHTCELL7_COMMAND='update';    irm https://nightcell7.com/install.ps1 | iex
+$env:NIGHTCELL7_COMMAND='uninstall'; irm https://nightcell7.com/install.ps1 | iex`}
+      </Command>
+      <p>
+        Uninstalling removes the app, the launcher and the desktop entry. It deliberately leaves
+        your saves and settings alone and tells you where they are, rather than deleting data you
+        did not ask it to touch.
+      </p>
+
       <h3>Package managers</h3>
       <p>
         Pick your platform&rsquo;s manager and it handles upgrades for you. Each entry has install,
