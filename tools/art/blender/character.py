@@ -47,6 +47,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import _lib as L  # noqa: E402
+import animate  # noqa: E402
 
 HEIGHT = 1.8
 
@@ -270,7 +271,7 @@ def build(seed: int = 31) -> None:
     L.bevel(armour, width=0.006)
     L.bevel(gear, width=0.005)
 
-    L.finish_object(
+    mesh = L.finish_object(
         "character",
         [
             L.Part(body, L.MAT_RUBBER),
@@ -280,6 +281,14 @@ def build(seed: int = 31) -> None:
         shade_smooth_angle=math.radians(38),
     )
 
+    # ---- rig and animation -------------------------------------------------
+    # Bound by proximity rather than Blender's automatic weights: this mesh is
+    # a union of many disjoint pieces, and bone-heat weighting needs closed
+    # connected geometry — it fails outright here.
+    rig = L.build_armature("character_rig")
+    L.bind_by_proximity(mesh, rig)
+    animate.build_all(rig)
+
     # Collision proxy matching the simulated capsule.
     L.add_collider("character", (0.0, 0.0, HEIGHT / 2), (0.6, 0.4, HEIGHT))
     # Where a weapon world-model attaches, and where other players' tracers
@@ -287,7 +296,7 @@ def build(seed: int = 31) -> None:
     L.add_socket("WEAPON", (0.20, -0.26, 0.95))
     L.add_socket("HEAD", (0.0, 0.0, 1.63))
 
-    L.export_glb(L.output_path("character.glb"))
+    L.export_glb(L.output_path("character.glb"), animated=True)
 
 
 build()

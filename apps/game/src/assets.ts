@@ -1,4 +1,4 @@
-import type { AssetContainer, Mesh, Scene } from "@babylonjs/core";
+import type { AnimationGroup, AssetContainer, Mesh, Scene } from "@babylonjs/core";
 import {
   Color3,
   EquiRectangularCubeTexture,
@@ -277,6 +277,40 @@ export interface Placement {
  * `__root__` node to convert glTF's right-handed space. Building the transform
  * by hand instead means getting that conversion right on every prop.
  */
+/**
+ * Instantiate once, keeping the animation groups.
+ *
+ * `placeAll` discards them, which is fine for static props but useless for a
+ * character: the clips live on the instantiated copy, not the container, so
+ * they have to be captured at instantiation or they cannot be played at all.
+ */
+export function placeAnimated(
+  container: AssetContainer,
+  name: string,
+  placement: Placement,
+): { root: TransformNode; clips: Map<string, AnimationGroup> } | null {
+  const entry = container.instantiateModelsToScene((source) => `${name}_${source}`, false, {
+    doNotInstantiate: true,
+  });
+
+  const root = entry.rootNodes.find((n): n is TransformNode => n instanceof TransformNode);
+  if (!root) return null;
+
+  root.position = placement.position.clone();
+  if (placement.rotationY !== undefined) root.rotation = new Vector3(0, placement.rotationY, 0);
+  if (placement.scaling) root.scaling = placement.scaling.clone();
+
+  const clips = new Map<string, AnimationGroup>();
+  for (const group of entry.animationGroups) {
+    // Names come through as "<instance>_<clip>"; index by the clip.
+    const clip = group.name.split("_").pop() ?? group.name;
+    group.stop();
+    clips.set(clip, group);
+  }
+
+  return { root, clips };
+}
+
 export function placeAll(
   container: AssetContainer,
   name: string,

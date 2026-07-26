@@ -358,8 +358,14 @@ def add_socket(name: str, location: tuple[float, float, float], rotation=(0.0, 0
 # ------------------------------------------------------------------- export
 
 
-def export_glb(path: str) -> None:
-    """Export the whole scene to GLB, without textures or lights."""
+def export_glb(path: str, *, animated: bool = False) -> None:
+    """
+    Export the whole scene to GLB, without textures or lights.
+
+    `animated` turns on skinning and animation export. It is off by default
+    because the props have neither, and exporting empty skin/animation blocks
+    on every static mesh is wasted bytes.
+    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     bpy.ops.export_scene.gltf(
@@ -373,8 +379,12 @@ def export_glb(path: str) -> None:
         export_cameras=False,
         export_lights=False,
         export_extras=False,
-        export_animations=False,
-        export_skins=False,
+        export_animations=animated,
+        # Each action becomes its own glTF animation, which is what Babylon
+        # loads as a separate AnimationGroup.
+        export_animation_mode="ACTIONS" if animated else "ACTIONS",
+        export_bake_animation=animated,
+        export_skins=animated,
         export_morph=False,
         # Empties carry the SOCKET_ markers, so they must survive the export.
         use_visible=False,
@@ -500,3 +510,155 @@ def subdivide_smooth(bm: bmesh.types.BMesh, cuts: int = 1) -> None:
             use_grid_fill=True,
             smooth=1.0,
         )
+
+
+# -------------------------------------------------------------------- rigging
+
+# The skeleton, as (name, parent, head, tail). Positions match the proportions
+# in `character.py`; if that file's joints move, these must follow.
+HUMANOID_BONES = [
+    ("hips",        None,        (0.000,  0.000, 0.920), (0.000,  0.000, 1.030)),
+    ("spine",       "hips",      (0.000,  0.000, 1.030), (0.000,  0.000, 1.170)),
+    ("chest",       "spine",     (0.000,  0.000, 1.170), (0.000,  0.000, 1.330)),
+    ("neck",        "chest",     (0.000,  0.000, 1.330), (0.000,  0.000, 1.470)),
+    ("head",        "neck",      (0.000,  0.000, 1.470), (0.000,  0.000, 1.760)),
+
+    ("shoulder.L", "chest",  (0.060, 0.0, 1.320), ( 0.200, 0.0, 1.350)),
+    ("upperarm.L", "shoulder.L", ( 0.200, 0.000, 1.350), ( 0.225, -0.010, 1.100)),
+    ("forearm.L",  "upperarm.L", ( 0.225, -0.010, 1.100), ( 0.205, -0.150, 0.945)),
+    ("hand.L",     "forearm.L",  ( 0.205, -0.150, 0.945), ( 0.190, -0.260, 0.940)),
+
+    ("shoulder.R", "chest",  (-0.060, 0.0, 1.320), (-0.200, 0.0, 1.350)),
+    ("upperarm.R", "shoulder.R", (-0.200, 0.000, 1.350), (-0.225, -0.010, 1.100)),
+    ("forearm.R",  "upperarm.R", (-0.225, -0.010, 1.100), (-0.205, -0.150, 0.945)),
+    ("hand.R",     "forearm.R",  (-0.205, -0.150, 0.945), (-0.190, -0.260, 0.940)),
+
+    ("thigh.L", "hips",    ( 0.098, 0.000, 0.920), ( 0.098, 0.000, 0.450)),
+    ("shin.L",  "thigh.L", ( 0.098, 0.000, 0.450), ( 0.098, 0.000, 0.100)),
+    ("foot.L",  "shin.L",  ( 0.098, 0.000, 0.100), ( 0.098, -0.140, 0.020)),
+
+    ("thigh.R", "hips",    (-0.098, 0.000, 0.920), (-0.098, 0.000, 0.450)),
+    ("shin.R",  "thigh.R", (-0.098, 0.000, 0.450), (-0.098, 0.000, 0.100)),
+    ("foot.R",  "shin.R",  (-0.098, 0.000, 0.100), (-0.098, -0.140, 0.020)),
+]
+
+
+def build_armature(name: str = "rig"):
+    """Create the humanoid armature in the current scene."""
+    armature = bpy.data.armatures.new(name)
+    obj = bpy.data.objects.new(name, armature)
+    bpy.context.collection.objects.link(obj)
+
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+
+    for bone_name, parent, head, tail in HUMANOID_BONES:
+        bone = armature.edit_bones.new(bone_name)
+        bone.head = Vector(head)
+        bone.tail = Vector(tail)
+        if parent:
+            bone.parent = armature.edit_bones[parent]
+            bone.use_connect = False
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+    return obj
+
+
+def _point_segment_distance(p: Vector, a: Vector, b: Vector) -> float:
+    ab = b - a
+    length_sq = ab.dot(ab)
+    if length_sq < 1e-12:
+        return (p - a).length
+    t = max(0.0, min(1.0, (p - a).dot(ab) / length_sq))
+    return (p - (a + ab * t)).length
+
+
+def bind_by_proximity(mesh_obj, armature_obj, blend: float = 0.035) -> None:
+    """
+    Weight every vertex to its nearest bone, blending with the runner-up.
+
+    Blender's automatic (bone-heat) weighting is the usual choice and it fails
+    here: this mesh is a union of many disjoint pieces — pouches, straps, boots
+    — and bone heat needs closed, connected geometry, so it errors out on
+    "failed to find solution for one or more bones".
+
+    Nearest-segment weighting is robust against any topology because it only
+    looks at distance. Blending the two closest bones over a few centimetres
+    keeps elbows and knees from tearing into rigid chunks, which is the usual
+    complaint about this approach.
+    """
+    bones = [
+        (b.name, armature_obj.matrix_world @ b.head_local, armature_obj.matrix_world @ b.tail_local)
+        for b in armature_obj.data.bones
+    ]
+
+    groups = {name: mesh_obj.vertex_groups.new(name=name) for name, _, _ in bones}
+
+    for vertex in mesh_obj.data.vertices:
+        world = mesh_obj.matrix_world @ vertex.co
+        ranked = sorted(
+            ((_point_segment_distance(world, head, tail), name) for name, head, tail in bones),
+            key=lambda pair: pair[0],
+        )
+        best_d, best = ranked[0]
+        second_d, second = ranked[1] if len(ranked) > 1 else (best_d, best)
+
+        if second_d - best_d >= blend:
+            groups[best].add([vertex.index], 1.0, "REPLACE")
+        else:
+            # Linear blend across the overlap band.
+            t = 0.5 + (second_d - best_d) / (2.0 * blend)
+            groups[best].add([vertex.index], t, "REPLACE")
+            groups[second].add([vertex.index], 1.0 - t, "REPLACE")
+
+    mesh_obj.parent = armature_obj
+    modifier = mesh_obj.modifiers.new("Armature", "ARMATURE")
+    modifier.object = armature_obj
+
+
+# ------------------------------------------------------------------ animation
+
+
+def new_action(armature_obj, name: str):
+    """Start a fresh action on the armature and return it."""
+    if armature_obj.animation_data is None:
+        armature_obj.animation_data_create()
+    action = bpy.data.actions.new(name)
+    # Without a fake user an unassigned action is dropped before export.
+    action.use_fake_user = True
+    armature_obj.animation_data.action = action
+    for pose_bone in armature_obj.pose.bones:
+        pose_bone.rotation_mode = "XYZ"
+    return action
+
+
+def key_pose(armature_obj, frame: int, pose: dict) -> None:
+    """
+    Key a set of bone rotations (degrees) at `frame`.
+
+    Every bone named in the action is keyed on every keyframe, even when it is
+    not moving. glTF samples animation per channel, and a bone keyed on only
+    some frames interpolates from wherever it happened to be — which shows up
+    as limbs drifting between cycles.
+    """
+    for bone_name, rotation in pose.items():
+        pose_bone = armature_obj.pose.bones.get(bone_name)
+        if pose_bone is None:
+            continue
+        pose_bone.rotation_euler = tuple(math.radians(a) for a in rotation)
+        pose_bone.keyframe_insert("rotation_euler", frame=frame)
+
+
+def key_location(armature_obj, bone_name: str, frame: int, offset) -> None:
+    pose_bone = armature_obj.pose.bones.get(bone_name)
+    if pose_bone is None:
+        return
+    pose_bone.location = Vector(offset)
+    pose_bone.keyframe_insert("location", frame=frame)
+
+
+def set_action_range(action, start: int, end: int) -> None:
+    action.frame_range  # noqa: B018 - touch so Blender computes it
+    action.use_frame_range = True
+    action.frame_start = start
+    action.frame_end = end
