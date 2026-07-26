@@ -56,9 +56,15 @@ export default function HomePage() {
             </a>
           </div>
 
-          <p className="price-note" style={{ marginTop: "2rem" }}>
-            Web · Installable PWA · Windows · macOS · Linux
-          </p>
+          <div className="hero__install">
+            <p className="command__label">Or install the desktop client</p>
+            <pre>
+              <code>curl -fsSL https://nightcell7.com/install.sh | sh</code>
+            </pre>
+            <p className="price-note">
+              macOS and Linux · <a href="/downloads">Windows and package managers</a>
+            </p>
+          </div>
         </div>
       </section>
 

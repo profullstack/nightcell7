@@ -181,7 +181,7 @@ export function createRepositories(db: Database): Repositories {
       const rows = await db
         .select({
           userId: users.id,
-          verifiedAt: users.verifiedAt,
+          emailVerified: users.emailVerified,
           status: users.status,
           expiresAt: sessions.expiresAt,
           revokedAt: sessions.revokedAt,
@@ -207,7 +207,7 @@ export function createRepositories(db: Database): Repositories {
 
       return {
         userId: row.userId,
-        verified: row.verifiedAt !== null,
+        verified: row.emailVerified,
         status: row.status as AccountContext["status"],
         multiplayerBannedUntil:
           bans[0]?.endsAt ?? (bans.length > 0 ? "9999-12-31T00:00:00.000Z" : null),

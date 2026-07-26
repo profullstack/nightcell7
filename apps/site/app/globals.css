@@ -918,6 +918,118 @@ a {
   color: var(--bone-300);
 }
 
+.footer__columns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.5rem 2rem;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 860px) {
+  .footer__columns {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.footer__columns h3 {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dust-gold);
+  margin: 0 0 1rem;
+}
+
+.footer__columns ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.footer__columns a {
+  font-size: 0.85rem;
+  color: var(--bone-300);
+  transition: color var(--motion-micro) var(--ease-standard);
+}
+
+.footer__columns a:hover {
+  color: var(--signal-cyan);
+}
+
+/* --------------------------------------------------- package manager blocks */
+
+.manager {
+  margin: 2.5rem 0;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 14%, transparent);
+  background: color-mix(in srgb, var(--ink-900) 60%, transparent);
+}
+
+.manager h4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-100);
+}
+
+.manager__platform {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bone-300);
+  padding: 0.2rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 28%, transparent);
+  border-radius: 999px;
+}
+
+.manager .command {
+  margin: 0.75rem 0;
+}
+
+/* Anchor targets sit under the sticky masthead without the heading hiding. */
+.manager,
+.prose h3[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* --------------------------------------------------------- hero install */
+
+.hero__install {
+  margin-top: 2.5rem;
+  max-width: 44rem;
+}
+
+.hero__install pre {
+  margin: 0;
+  padding: 0.85rem 1.1rem;
+  background: color-mix(in srgb, var(--ink-950) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--signal-cyan) 40%, transparent);
+  overflow-x: auto;
+}
+
+.hero__install code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--bone-100);
+}
+
+.hero__install .price-note {
+  margin-top: 0.6rem;
+}
+
+.hero__install a {
+  color: var(--signal-cyan);
+}
+
 .footer nav {
   display: flex;
   flex-wrap: wrap;

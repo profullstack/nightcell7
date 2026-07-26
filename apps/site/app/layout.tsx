@@ -75,28 +75,121 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main id="main">{children}</main>
         <footer className="footer">
-          <nav aria-label="Footer">
-            <a href="/system-requirements">System Requirements</a>
-            <a href="/faq">FAQ</a>
-            <a href="/support">Support</a>
-            <a href="/press">Press</a>
-            <a href="/credits">Credits</a>
-            <a href="/licenses">Licenses</a>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-            <a href="/refunds">Refunds</a>
-            <a href="/community-guidelines">Community Guidelines</a>
-            <a href="/status">Service Status</a>
-            {/* Public source. rel=noreferrer alongside target=_blank so the
-                new tab cannot reach back through window.opener. */}
-            <a
-              href="https://github.com/profullstack/nightcell7"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              GitHub
-            </a>
-          </nav>
+          <div className="footer__columns">
+            <div>
+              <h3>Game</h3>
+              <ul>
+                <li>
+                  <a href="/episodes/false-dawn">Episode 1 &mdash; False Dawn</a>
+                </li>
+                <li>
+                  <a href="/multiplayer">Multiplayer Alpha</a>
+                </li>
+                <li>
+                  <a href="/characters/rook">Rook</a>
+                </li>
+                <li>
+                  <a href="/characters/leila">Leila</a>
+                </li>
+                <li>
+                  <a href="/play">Play in browser</a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3>Install</h3>
+              <ul>
+                <li>
+                  <a href="/downloads">All downloads</a>
+                </li>
+                <li>
+                  <a href="/downloads#homebrew">Homebrew (macOS)</a>
+                </li>
+                <li>
+                  <a href="/downloads#scoop">Scoop (Windows)</a>
+                </li>
+                <li>
+                  <a href="/downloads#winget">WinGet (Windows)</a>
+                </li>
+                <li>
+                  <a href="/downloads#aur">AUR (Arch)</a>
+                </li>
+                <li>
+                  <a href="/downloads#deb">APT / .deb</a>
+                </li>
+                <li>
+                  <a href="/downloads#rpm">RPM (Fedora)</a>
+                </li>
+                <li>
+                  <a href="/downloads#nix">Nix</a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3>Resources</h3>
+              <ul>
+                <li>
+                  <a href="/system-requirements">System Requirements</a>
+                </li>
+                <li>
+                  <a href="/faq">FAQ</a>
+                </li>
+                <li>
+                  <a href="/support">Support</a>
+                </li>
+                <li>
+                  <a href="/news">News</a>
+                </li>
+                <li>
+                  <a href="/status">Service Status</a>
+                </li>
+                <li>
+                  <a href="/press">Press Kit</a>
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/profullstack/nightcell7"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Source on GitHub
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3>Legal</h3>
+              <ul>
+                <li>
+                  <a href="/privacy">Privacy</a>
+                </li>
+                <li>
+                  <a href="/terms">Terms</a>
+                </li>
+                <li>
+                  <a href="/refunds">Refunds</a>
+                </li>
+                <li>
+                  <a href="/licenses">Licenses</a>
+                </li>
+                <li>
+                  <a href="/community-guidelines">Community Guidelines</a>
+                </li>
+                <li>
+                  <a href="/credits">Credits</a>
+                </li>
+                <li>
+                  <a href="https://profullstack.com" target="_blank" rel="noopener noreferrer">
+                    Profullstack, Inc.
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
           {/* Required fiction disclaimer (PRD §32). */}
           <p className="disclaimer">
             NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its
