@@ -6,7 +6,9 @@
     <title>NIGHTCELL 7: FALSE DAWN</title>
     <meta name="description" content="Two operatives. Two countries. One manufactured war." />
     <meta name="theme-color" content="#07090c" />
-    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <!-- Relative so Vite resolves it against `base` (/play/). A root-absolute
+         href cannot resolve once the gateway serves this under a subpath. -->
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   </head>
   <body>
     <!-- The renderer owns this canvas; Preact never touches per-frame state. -->

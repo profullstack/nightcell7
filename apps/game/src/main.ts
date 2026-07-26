@@ -1,95 +1,117 @@
-import {
-  Color3,
-  Color4,
-  FreeCamera,
-  HemisphericLight,
-  MeshBuilder,
-  Scene,
-  StandardMaterial,
-  Vector3,
-} from "@babylonjs/core";
-import { ARDAVAN_YARD, mapChecksum } from "@nightcell7/multiplayer-sim";
+import { FreeCamera, Scene, Vector3 } from "@babylonjs/core";
+import { ARDAVAN_YARD, mapChecksum, spawnsForTeam, TEAM_IDS } from "@nightcell7/multiplayer-sim";
+import { createHud, renderFault } from "./hud";
+import { requestedVantage } from "./photo";
+import { PlayerController } from "./player";
 import { createRenderer, DynamicResolution } from "./renderer";
+import { buildWorld } from "./world";
+import "./style.css";
 
 /**
  * Game entry point.
  *
- * Milestone 2 greybox: boots the renderer, builds the Ardavan Yard collision
- * volumes as visible boxes, and proves the movement feel loop before any art
- * exists. "A grey room, one enemy, and one rifle must already feel good"
- * (PRD §40).
+ * Milestone 2 greybox: boots the renderer, dresses the Ardavan Yard collision
+ * volumes, and proves the movement feel loop before any authored art exists.
+ * "A grey room, one enemy, and one rifle must already feel good" (PRD §40) —
+ * the room is no longer grey, but every solid in it is still the collision
+ * data, so feel and geometry cannot drift apart.
  */
 
 async function boot(): Promise<void> {
   const canvas = document.getElementById("viewport") as HTMLCanvasElement | null;
   if (!canvas) throw new Error("viewport canvas missing");
 
+  const ui = document.getElementById("ui");
+  if (!ui) throw new Error("ui root missing");
+
   const { engine, kind } = await createRenderer(canvas);
+
+  const checksum = mapChecksum(ARDAVAN_YARD);
   console.info(
     JSON.stringify({
       msg: "renderer ready",
       renderer: kind,
       map: ARDAVAN_YARD.id,
-      mapChecksum: mapChecksum(ARDAVAN_YARD),
+      mapChecksum: checksum,
     }),
   );
 
   const scene = new Scene(engine);
-  // Kaviran night palette: blue-black with warm industrial light (PRD §14.4).
-  scene.clearColor = new Color4(0.027, 0.035, 0.047, 1);
+
+  // Enter at a real Nightcell spawn rather than an arbitrary camera position,
+  // so the greybox is entered the way a match would be.
+  const spawn = spawnsForTeam(ARDAVAN_YARD, TEAM_IDS.NIGHTCELL)[0];
+  if (!spawn) throw new Error("map has no Nightcell spawn");
 
   const camera = new FreeCamera("camera", new Vector3(0, 1.65, 40), scene);
-  camera.setTarget(new Vector3(0, 1.65, 0));
-  camera.attachControl(canvas, true);
   camera.minZ = 0.05;
+  camera.maxZ = 600;
   camera.fov = (90 * Math.PI) / 180;
+  // Input is owned by PlayerController, which runs the shared authoritative
+  // simulation. Attaching Babylon's own controls here would fight it.
 
-  const light = new HemisphericLight("ambient", new Vector3(0.2, 1, 0.1), scene);
-  light.intensity = 0.55;
-  light.diffuse = new Color3(0.65, 0.72, 0.85);
-  light.groundColor = new Color3(0.12, 0.1, 0.09);
+  buildWorld(scene, engine, camera, ARDAVAN_YARD);
 
-  const greybox = new StandardMaterial("greybox", scene);
-  greybox.diffuseColor = new Color3(0.32, 0.33, 0.35);
-  greybox.specularColor = new Color3(0.05, 0.05, 0.05);
+  // Photo mode: park the camera at a named vantage, leave the UI layer empty,
+  // and skip the controller entirely. Used to regenerate marketing captures
+  // and lighting baselines reproducibly (see tools/art/capture.mjs).
+  const vantage = requestedVantage(window.location.search);
+  if (vantage) {
+    camera.position.set(...vantage.position);
+    camera.rotation.set(vantage.pitch, vantage.yaw, 0);
+    if (vantage.fovDegrees) camera.fov = (vantage.fovDegrees * Math.PI) / 180;
 
-  // The visual greybox is generated FROM the collision data, so the two cannot
-  // drift apart while the map is being iterated on (PRD §18.2).
-  ARDAVAN_YARD.boxes.forEach((box, index) => {
-    const size = {
-      x: box.max.x - box.min.x,
-      y: box.max.y - box.min.y,
-      z: box.max.z - box.min.z,
-    };
-    const mesh = MeshBuilder.CreateBox(
-      `col_${index}`,
-      { width: size.x, height: size.y, depth: size.z },
-      scene,
-    );
-    mesh.position = new Vector3(
-      box.min.x + size.x / 2,
-      box.min.y + size.y / 2,
-      box.min.z + size.z / 2,
-    );
-    mesh.material = greybox;
-    mesh.freezeWorldMatrix();
+    engine.runRenderLoop(() => scene.render());
+    window.addEventListener("resize", () => engine.resize());
+    engine.resize();
+
+    // The capture script waits on this flag rather than a fixed sleep, so a
+    // slow machine cannot produce a half-converged frame.
+    scene.executeWhenReady(() => {
+      window.setTimeout(() => {
+        (window as unknown as { __NC7_PHOTO_READY?: boolean }).__NC7_PHOTO_READY = true;
+      }, 400);
+    });
+    return;
+  }
+
+  const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
+
+  const hud = createHud(ui, {
+    renderer: kind,
+    mapName: ARDAVAN_YARD.displayName,
+    mapChecksum: checksum,
+    onStart: () => player.requestLock(),
   });
+
+  player.onLockChanged = (locked) => hud.setLocked(locked);
+  hud.setLocked(false);
 
   const dynamicResolution = new DynamicResolution(engine);
 
   engine.runRenderLoop(() => {
-    dynamicResolution.update(engine.getDeltaTime());
+    const deltaMs = engine.getDeltaTime();
+    dynamicResolution.update(deltaMs);
+    // Movement only advances while the pointer is locked; otherwise the start
+    // gate is up and the yard should sit still behind it.
+    if (player.isLocked) player.update(deltaMs);
+    hud.update(player.status(), engine.getFps());
     scene.render();
   });
 
+  // Babylon sizes the backbuffer from the canvas' CSS box, so a resize must be
+  // forwarded or the image keeps the old aspect ratio and stretches.
   window.addEventListener("resize", () => engine.resize());
+  engine.resize();
 }
 
 void boot().catch((error: unknown) => {
   console.error(JSON.stringify({ msg: "boot failed", error: String(error) }));
   const ui = document.getElementById("ui");
   if (ui) {
-    ui.textContent =
-      "NIGHTCELL 7 could not start. Your browser may not support WebGL2. See /system-requirements.";
+    renderFault(
+      ui,
+      "NIGHTCELL 7 could not start. Your browser may not support WebGL2, or hardware acceleration may be disabled.",
+    );
   }
 });

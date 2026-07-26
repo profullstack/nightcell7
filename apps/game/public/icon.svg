@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="NIGHTCELL 7">
+  <title>NIGHTCELL 7</title>
+  <!--
+    The divided signal, reduced to a mark that survives 32px.
+    One cell, split down the meridian: Rook's red on the west, Leila's cyan on
+    the east, and a single transmission that crosses the divide and breaks.
+  -->
+  <rect width="64" height="64" fill="#07090c"/>
+
+  <!-- Containment brackets: the hard editorial geometry of the system. -->
+  <path d="M8 6h10V8H10v8H8V6Z" fill="#ad9365"/>
+  <path d="M56 6H46V8h8v8h2V6Z" fill="#ad9365"/>
+  <path d="M8 58h10v-2H10v-8H8v10Z" fill="#ad9365"/>
+  <path d="M56 58H46v-2h8v-8h2v10Z" fill="#ad9365"/>
+
+  <!-- The cell: two halves that never quite meet. -->
+  <path d="M14 22h16v20H14V22Z" fill="#d33a3f" fill-opacity="0.9"/>
+  <path d="M34 22h16v20H34V22Z" fill="#54bdca" fill-opacity="0.9"/>
+
+  <!-- The meridian. -->
+  <rect x="31.4" y="16" width="1.2" height="32" fill="#ece8df"/>
+
+  <!-- The falsified transmission: clean on one side, fractured on the other. -->
+  <path d="M14 32h6l3-7 4 14 3-7h4" fill="none" stroke="#07090c" stroke-width="2.4"
+        stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M36 32h3l2-4 3 8 2-4h4" fill="none" stroke="#07090c" stroke-width="2.4"
+        stroke-linecap="square" stroke-linejoin="miter" stroke-dasharray="5 3"/>
+</svg>

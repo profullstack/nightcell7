@@ -1,5 +1,8 @@
+import Image from "next/image";
 import { SHARED_TIMELINE, SIDE } from "@nightcell7/game-core";
 import { CATALOG, formatPrice } from "@nightcell7/entitlements";
+import { HeroPlot, LeilaSigil, RookSigil, SignalCell } from "./art";
+import { CaptureGallery, heroCapture } from "./gallery";
 
 /**
  * Home page (PRD §20.3).
@@ -9,10 +12,27 @@ import { CATALOG, formatPrice } from "@nightcell7/entitlements";
  */
 export default function HomePage() {
   const episode = CATALOG[0]!;
+  const hero = heroCapture();
 
   return (
     <>
       <section className="hero">
+        {/* Real in-engine frame, heavily scrimmed so it reads as atmosphere
+            behind the type rather than competing with it. */}
+        {hero ? (
+          <div className="hero__plate" aria-hidden="true">
+            <Image
+              src={`/media/yard/${hero.file}`}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="hero__plate-img"
+            />
+          </div>
+        ) : null}
+        <HeroPlot className="hero__plot" />
+
         <div className="shell">
           <h1>
             NIGHTCELL <span style={{ color: "var(--signal-red)" }}>7</span>
@@ -53,6 +73,7 @@ export default function HomePage() {
 
           <div className="split">
             <article className="side side--rook">
+              <RookSigil className="side__sigil" />
               <p className="side__route">Rook Campaign — Nightcell</p>
               <h3>Rook</h3>
               <p>
@@ -74,6 +95,7 @@ export default function HomePage() {
             </article>
 
             <article className="side side--leila">
+              <LeilaSigil className="side__sigil" />
               <p className="side__route">Leila Campaign — Countersignal</p>
               <h3>Leila Farzan</h3>
               <p>
@@ -118,6 +140,19 @@ export default function HomePage() {
 
       <section className="section">
         <div className="shell">
+          <p className="section__label">Ardavan Yard</p>
+          <h2>Where the alpha is played.</h2>
+          <p className="lede">
+            The 6v6 multiplayer map: three lanes, two vertical routes, and no one-way geometry.
+            Every frame below is captured in engine from the current build.
+          </p>
+          <CaptureGallery />
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="shell">
+          <SignalCell className="section__mark" />
           <p className="section__label">One purchase</p>
           <h2>One theater. Two campaigns.</h2>
           <div className="price-block">

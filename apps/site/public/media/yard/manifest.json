@@ -1,0 +1,63 @@
+{
+  "generator": "tools/art/capture.mjs",
+  "source": "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
+  "license": "Original work, © NIGHTCELL 7. No third-party assets.",
+  "commit": "9e0d892d8cf55eb61344c2335b65fef73261c127",
+  "capturedAt": "2026-07-26T00:04:21.086Z",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "shots": [
+    {
+      "name": "yard-approach",
+      "caption": "The approach from the Nightcell muster point, looking north up the centre lane toward the false dawn.",
+      "position": [0, 1.7, 44],
+      "yaw": 3.141592653589793,
+      "pitch": 0.02,
+      "file": "yard-approach.webp"
+    },
+    {
+      "name": "west-catwalk",
+      "caption": "The west catwalk above the pipe rack — one of the yard's two vertical routes, and the only place both spawn markers are visible at once.",
+      "position": [-28, 8.1, 24],
+      "yaw": 2.701769682087222,
+      "pitch": 0.14,
+      "file": "west-catwalk.webp"
+    },
+    {
+      "name": "tank-row",
+      "caption": "The east lane, running between the storage tanks and the perimeter with the gantry deck overhead.",
+      "position": [34, 1.7, 14],
+      "yaw": 3.141592653589793,
+      "pitch": 0.03,
+      "fovDegrees": 78,
+      "file": "tank-row.webp"
+    },
+    {
+      "name": "central-hardpoint",
+      "caption": "Pushing north off the central hard point. Container colour encodes the contested axis — cyan is Directorate ground — so the lane is legible without a minimap.",
+      "position": [-17, 1.7, 15],
+      "yaw": 2.764601535159018,
+      "pitch": 0.02,
+      "file": "central-hardpoint.webp"
+    },
+    {
+      "name": "gantry-overlook",
+      "caption": "From the east gantry, looking back across the container yard under the sodium masts.",
+      "position": [30, 8.1, -14],
+      "yaw": 4.1469023027385274,
+      "pitch": 0.2,
+      "fovDegrees": 82,
+      "file": "gantry-overlook.webp"
+    },
+    {
+      "name": "north-gate",
+      "caption": "The Directorate end of the yard, looking into the first light beyond the north wall.",
+      "position": [0, 1.7, -22],
+      "yaw": 3.141592653589793,
+      "pitch": 0.06,
+      "file": "north-gate.webp"
+    }
+  ]
+}

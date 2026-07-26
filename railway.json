@@ -3,9 +3,7 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "Dockerfile",
-    "watchPatterns": [
-      "**"
-    ]
+    "watchPatterns": ["**"]
   },
   "deploy": {
     "startCommand": "node tools/release/start-all.mjs",
