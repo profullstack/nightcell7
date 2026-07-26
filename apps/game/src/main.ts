@@ -147,7 +147,10 @@ async function boot(): Promise<void> {
     if (!locked) return;
     // Browsers only allow audio to start from a user gesture, and taking
     // pointer lock is one. Without this every sound is silently discarded.
-    void audio.unlock().then(() => audio.startAmbience());
+    void audio.unlock().then(() => {
+      audio.startAmbience();
+      audio.startMusic();
+    });
   };
   hud.setLocked(false);
 

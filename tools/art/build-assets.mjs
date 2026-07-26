@@ -121,9 +121,20 @@ function toWebp(pngDir, outDir) {
   return total;
 }
 
-function directoryBytes(dir) {
+/**
+ * Bytes in `dir`, excluding anything matched by `skip`.
+ *
+ * Music is excluded from the totals on purpose. Those tracks are streamed by an
+ * <audio> element on demand and are never part of the shell download, so
+ * counting them would make the manifest claim a 40 MB shell that does not
+ * exist and would trip the budget guard in assets.test.ts over files the
+ * player may never fetch.
+ */
+function directoryBytes(dir, skip) {
   if (!existsSync(dir)) return 0;
-  return readdirSync(dir).reduce((sum, f) => sum + statSync(join(dir, f)).size, 0);
+  return readdirSync(dir)
+    .filter((f) => !skip || !skip.test(f))
+    .reduce((sum, f) => sum + statSync(join(dir, f)).size, 0);
 }
 
 function main() {
@@ -255,10 +266,11 @@ function main() {
 
   const modelBytes = directoryBytes(MODELS_OUT);
   const textureBytes = directoryBytes(TEXTURES_OUT);
-  const audioBytesTotal = directoryBytes(AUDIO_OUT);
+  // Skip streamed music and any video the directory happens to hold.
+  const audioBytesTotal = directoryBytes(AUDIO_OUT, /^music_|\.mp4$/);
   const audio = existsSync(AUDIO_OUT)
     ? readdirSync(AUDIO_OUT)
-        .filter((f) => f.endsWith(".mp3"))
+        .filter((f) => f.endsWith(".mp3") && !f.startsWith("music_"))
         .sort()
     : [];
 
@@ -286,6 +298,12 @@ function main() {
         models,
         textures,
         audio,
+        // Streamed on demand, so outside the shell budget entirely.
+        music: existsSync(AUDIO_OUT)
+          ? readdirSync(AUDIO_OUT)
+              .filter((f) => f.startsWith("music_") && f.endsWith(".mp3"))
+              .sort()
+          : [],
         bytes: {
           models: modelBytes,
           textures: textureBytes,
