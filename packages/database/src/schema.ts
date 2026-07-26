@@ -18,6 +18,20 @@ const timestamps = {
     .default(sql`(current_timestamp)`),
 };
 
+/**
+ * Timestamps for the Better Auth-managed tables.
+ *
+ * Better Auth writes epoch milliseconds, not ISO strings. Stored in a text
+ * column those read back as "1785045862563.0", and `new Date(...)` on that is
+ * Invalid Date — which silently turned the session-expiry comparison into
+ * `NaN <= now`, i.e. false, i.e. expired sessions accepted forever. Integer
+ * timestamp columns make Drizzle hand back real Date objects instead.
+ */
+const authTimestamps = {
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+};
+
 // --------------------------------------------------------------------------
 // Accounts
 // --------------------------------------------------------------------------
@@ -40,7 +54,7 @@ export const users = sqliteTable(
     displayNameChangedAt: text("display_name_changed_at"),
     /** active | restricted | banned | deleted */
     status: text("status").notNull().default("active"),
-    ...timestamps,
+    ...authTimestamps,
   },
   (table) => ({
     emailIdx: unique("users_email_unique").on(table.email),
@@ -64,11 +78,11 @@ export const sessions = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     token: text("token").notNull(),
-    expiresAt: text("expires_at").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     revokedAt: text("revoked_at"),
-    ...timestamps,
+    ...authTimestamps,
   },
   (table) => ({
     tokenIdx: unique("sessions_token_unique").on(table.token),
@@ -91,12 +105,12 @@ export const accounts = sqliteTable(
     providerId: text("provider_id").notNull(),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
-    accessTokenExpiresAt: text("access_token_expires_at"),
-    refreshTokenExpiresAt: text("refresh_token_expires_at"),
+    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp_ms" }),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp_ms" }),
     scope: text("scope"),
     idToken: text("id_token"),
     password: text("password"),
-    ...timestamps,
+    ...authTimestamps,
   },
   (table) => ({
     providerIdx: unique("accounts_provider_account_unique").on(table.providerId, table.accountId),
@@ -111,8 +125,8 @@ export const verifications = sqliteTable(
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: text("expires_at").notNull(),
-    ...timestamps,
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    ...authTimestamps,
   },
   (table) => ({
     identifierIdx: index("verifications_identifier_idx").on(table.identifier),

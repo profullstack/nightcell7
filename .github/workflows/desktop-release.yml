@@ -17,8 +17,24 @@ permissions:
 # corrupted large binaries — AppImage squashfs, .deb lzma, .rpm payload — with
 # hashes that matched on upload and failed on download. Do not reintroduce it.
 jobs:
+  gate:
+    name: Full gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - name: Release load gate
+        run: pnpm loadtest -- --rooms 20 --matches 50
+
   build:
     name: Build ${{ matrix.platform }}-${{ matrix.arch }}
+    needs: gate
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -72,6 +88,18 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # An EMPTY CSC_LINK is worse than an absent one: electron-builder
+          # treats it as a certificate path, resolves "" to the project dir and
+          # dies with "<dir> not a file". Unset it and disable auto-discovery
+          # so an unsigned build is a deliberate outcome, not a crash.
+          if [ -z "${CSC_LINK:-}" ]; then
+            unset CSC_LINK CSC_KEY_PASSWORD
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            echo "No signing certificate configured — producing an UNSIGNED build."
+          fi
+          if [ -z "${APPLE_ID:-}" ]; then
+            unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
+          fi
           cd apps/desktop
           npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
 

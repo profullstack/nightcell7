@@ -194,7 +194,9 @@ export function createRepositories(db: Database): Repositories {
       const row = rows[0];
       if (!row) return null;
       if (row.revokedAt) return null;
-      if (new Date(row.expiresAt).getTime() <= Date.now()) return null;
+      // `expiresAt` is a real Date (integer timestamp column), so this
+      // comparison is meaningful rather than a silent NaN.
+      if (row.expiresAt.getTime() <= Date.now()) return null;
 
       // An active ban makes the multiplayer ticket endpoint fail closed.
       const bans = await db
