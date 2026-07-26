@@ -42,10 +42,39 @@ jobs:
       # PowerShell runs on Linux, so the Windows installer is checkable here
       # rather than trusted on inspection.
       - name: Install PowerShell
+        env:
+          # Authenticated so the release lookup is not subject to the shared
+          # runners' unauthenticated GitHub API rate limit. Hitting that limit
+          # returned an empty URL, `curl -fsSL ""` failed, and the whole job
+          # went red for a reason that had nothing to do with the code.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Known-good fallback if the API is unavailable entirely.
+          PWSH_FALLBACK: "7.4.6"
         run: |
-          URL=$(curl -fsSL https://api.github.com/repos/PowerShell/PowerShell/releases/latest \
-            | grep -o '"browser_download_url": *"[^"]*linux-x64.tar.gz"' | cut -d'"' -f4 | head -1)
-          mkdir -p "$HOME/.pwsh" && curl -fsSL "$URL" | tar -xz -C "$HOME/.pwsh"
+          set -euo pipefail
+
+          resolve_url() {
+            curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+              https://api.github.com/repos/PowerShell/PowerShell/releases/latest \
+              | grep -o '"browser_download_url": *"[^"]*linux-x64.tar.gz"' \
+              | cut -d'"' -f4 | head -1
+          }
+
+          URL=""
+          for attempt in 1 2 3; do
+            URL=$(resolve_url || true)
+            [ -n "$URL" ] && break
+            echo "release lookup attempt $attempt failed, retrying" >&2
+            sleep $((attempt * 5))
+          done
+
+          if [ -z "$URL" ]; then
+            echo "falling back to pinned PowerShell $PWSH_FALLBACK" >&2
+            URL="https://github.com/PowerShell/PowerShell/releases/download/v${PWSH_FALLBACK}/powershell-${PWSH_FALLBACK}-linux-x64.tar.gz"
+          fi
+
+          mkdir -p "$HOME/.pwsh"
+          curl -fsSL --retry 3 --retry-delay 5 "$URL" | tar -xz -C "$HOME/.pwsh"
           chmod +x "$HOME/.pwsh/pwsh"
           echo "$HOME/.pwsh" >> "$GITHUB_PATH"
 
