@@ -87,6 +87,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/refunds">Refunds</a>
             <a href="/community-guidelines">Community Guidelines</a>
             <a href="/status">Service Status</a>
+            {/* Public source. rel=noreferrer alongside target=_blank so the
+                new tab cannot reach back through window.opener. */}
+            <a
+              href="https://github.com/profullstack/nightcell7"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
           </nav>
           {/* Required fiction disclaimer (PRD §32). */}
           <p className="disclaimer">
