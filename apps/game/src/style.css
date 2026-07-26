@@ -343,6 +343,91 @@ body {
   margin: 0;
 }
 
+/* Mode picker. A real fieldset/radio group, so arrow keys and screen readers
+   work without reimplementing either (accessibility is P0). The native radio
+   is hidden visually but stays in the accessibility tree and keeps focus. */
+.modes {
+  border: 0;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  max-width: 44rem;
+}
+
+.modes__legend {
+  width: 100%;
+  padding: 0;
+  margin-bottom: 0.55rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--dust-gold) 85%, transparent);
+}
+
+.modes__option {
+  cursor: pointer;
+}
+
+.modes__option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modes__name {
+  display: inline-block;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 28%, transparent);
+  border-radius: 2px;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+  transition:
+    border-color 150ms cubic-bezier(0.2, 0, 0, 1),
+    color 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.modes__option:hover .modes__name {
+  color: var(--bone-100);
+  border-color: color-mix(in srgb, var(--bone-300) 55%, transparent);
+}
+
+.modes__option input:checked + .modes__name {
+  color: var(--ink-950);
+  background: var(--bone-100);
+  border-color: var(--bone-100);
+}
+
+/* The focus ring has to live on the label, because the input it belongs to is
+   visually hidden — without this the group is keyboard-navigable but invisible
+   to anyone using it that way. */
+.modes__option input:focus-visible + .modes__name {
+  outline: 2px solid var(--signal-cyan);
+  outline-offset: 3px;
+}
+
+.modes__blurb {
+  width: 100%;
+  margin: 0.15rem 0 0;
+  min-height: 2.4em;
+  font-size: 0.63rem;
+  letter-spacing: 0.16em;
+  line-height: 1.9;
+  color: var(--hud-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modes__name {
+    transition: none;
+  }
+}
+
 .gate__button {
   margin-top: 0.5rem;
   padding: 0.9rem 2.2rem;

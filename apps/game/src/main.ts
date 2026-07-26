@@ -4,6 +4,8 @@ import { fireIntervalMs, getWeapon, MULTIPLAYER_LOADOUT } from "@nightcell7/game
 import { decideAccess, loadViewer, parseMode } from "./access";
 import { modeLabel, renderGate } from "./gate";
 import { createHud, renderFault } from "./hud";
+import { GAME_MODE, preferredMode, rememberMode } from "./modes";
+import { TrainingTargets } from "./targets";
 import { requestedVantage } from "./photo";
 import { PlayerController } from "./player";
 import { Viewmodel } from "./viewmodel";
@@ -13,6 +15,20 @@ import { Opponents } from "./opponents";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
 import "./style.css";
+
+/**
+ * `localStorage` where it exists and is reachable.
+ *
+ * Reading the property itself throws in a browser with storage disabled — not
+ * only the methods on it — so the guard has to wrap the access, not the call.
+ */
+function safeStorage(): Storage | undefined {
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Game entry point.
@@ -129,9 +145,19 @@ async function boot(): Promise<void> {
   // The flash lights the yard, not the gun held in front of it.
   effects.excludeFromFlash(viewmodel.meshes());
 
-  // Live opponents. These run the real MatchSimulation and BotController, so
-  // they move, aim and shoot under exactly the rules the server enforces.
-  const opponents = new Opponents(scene, world.assets);
+  // What is in the yard, decided by the chosen mode.
+  //
+  // `Opponents` is built in every mode, including the ones with no bots: it
+  // owns the `MatchSimulation`, which is where the player's own grenade count,
+  // cooldown and blast are resolved. An empty roster is a supported
+  // configuration, not a degenerate one.
+  const gameMode = preferredMode(window.location.search, safeStorage());
+  const roster = gameMode === GAME_MODE.DEATHMATCH ? {} : ({ enemies: 0, friendlies: 0 } as const);
+  const opponents = new Opponents(scene, world.assets, roster);
+
+  // Stationary targets, for the range only. They are presentation-only hit
+  // volumes; nothing here is scored.
+  const targets = gameMode === GAME_MODE.RANGE ? new TrainingTargets(scene, world.assets) : null;
 
   const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
 
@@ -139,6 +165,17 @@ async function boot(): Promise<void> {
     renderer: kind,
     mapName: ARDAVAN_YARD.displayName,
     mapChecksum: checksum,
+    mode: gameMode,
+    // Remembered immediately rather than on start, so a player who picks a mode
+    // and then reloads does not silently lose the choice.
+    //
+    // Changing it reloads: the yard is dressed at boot, and swapping a roster
+    // and a set of targets live would be a second, subtly different code path
+    // for something that happens once before a match.
+    onModeChange: (next) => {
+      rememberMode(next, safeStorage());
+      if (next !== gameMode) window.location.search = `?mode=${next}`;
+    },
     onStart: () => player.requestLock(),
   });
 
@@ -198,17 +235,18 @@ async function boot(): Promise<void> {
         // A target only counts if it is in front of whatever the round would
         // otherwise hit, so one standing behind a container cannot be shot
         // through it.
-        const onTarget = opponents.tryHit(
-          { x: eye.x, y: eye.y, z: eye.z },
-          { x: aim.x, y: aim.y, z: aim.z },
-          effects.trace(eye, aim).distance,
-        );
+        const reach = effects.trace(eye, aim).distance;
+        const from = { x: eye.x, y: eye.y, z: eye.z };
+        const along = { x: aim.x, y: aim.y, z: aim.z };
+        const onTarget =
+          opponents.tryHit(from, along, reach) ?? targets?.tryHit(from, along, reach) ?? null;
         // A hit on a person gets the heavy burst.
         effects.fire(muzzle, eye, aim, onTarget?.point, onTarget !== null);
       }
     }
     effects.update();
     opponents.update(deltaMs, status.position, camera.rotation.y);
+    targets?.update();
     // Draw whatever the bots shot at this tick, so incoming fire is visible.
     for (const shot of opponents.drainShots()) {
       effects.tracerOnly(shot.from, shot.to);

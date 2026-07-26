@@ -1,4 +1,5 @@
 import type { ControllerStatus } from "./player";
+import { DEFAULT_GAME_MODE, GAME_MODES, modeInfo, type GameMode } from "./modes";
 
 /**
  * HUD and start gate.
@@ -10,6 +11,9 @@ import type { ControllerStatus } from "./player";
  */
 
 export interface HudOptions {
+  /** Preselected mode, and the sink for whichever the player picks. */
+  mode?: GameMode;
+  onModeChange?: (mode: GameMode) => void;
   readonly renderer: string;
   readonly mapName: string;
   readonly mapChecksum: string;
@@ -121,6 +125,40 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
       "Alpha build. Movement runs the same authoritative simulation as multiplayer, so what you feel here is what the server enforces.",
     ),
   );
+
+  // Mode picker.
+  //
+  // Radios rather than buttons, because this is a choice that persists into the
+  // match rather than an action — and a radio group gives arrow-key navigation
+  // and a screen-reader announcement for free, which a row of divs would not
+  // (reduced motion and accessibility are P0).
+  let selected: GameMode = options.mode ?? DEFAULT_GAME_MODE;
+  const modes = el("fieldset", "modes");
+  const legend = el("legend", "modes__legend", "Game mode");
+  modes.append(legend);
+
+  const blurb = el("p", "modes__blurb", modeInfo(selected).blurb);
+
+  for (const mode of GAME_MODES) {
+    const label = el("label", "modes__option");
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "nc7-mode";
+    input.value = mode.id;
+    input.checked = mode.id === selected;
+    input.addEventListener("change", () => {
+      if (!input.checked) return;
+      selected = mode.id;
+      blurb.textContent = mode.blurb;
+      options.onModeChange?.(mode.id);
+    });
+    label.append(input);
+    label.append(el("span", "modes__name", mode.name));
+    modes.append(label);
+  }
+
+  modes.append(blurb);
+  gate.append(modes);
 
   const button = el("button", "gate__button", "Enter the yard");
   button.type = "button";
