@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "../_components/page-shell";
+import { CapturePlate } from "../gallery";
 
 export const metadata: Metadata = { title: "System Requirements" };
 
@@ -74,6 +75,8 @@ export default function RequirementsPage() {
         Keyboard and mouse or a gamepad, with full rebinding. Controller aim assist is available;
         there is no mouse aim assist.
       </p>
+
+      <CapturePlate name="under-the-gantry" label="Running now" />
     </PageShell>
   );
 }

@@ -39,6 +39,8 @@ export interface ControllerStatus {
   readonly crouching: boolean;
   readonly sprinting: boolean;
   readonly locked: boolean;
+  /** Fire button held. Presentation only — the server decides what a shot does. */
+  readonly firing: boolean;
 }
 
 export class PlayerController {
@@ -218,6 +220,7 @@ export class PlayerController {
       crouching: this.state.crouching,
       sprinting: this.held.has("ShiftLeft"),
       locked: this.locked,
+      firing: this.firing,
     };
   }
 

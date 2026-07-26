@@ -1162,3 +1162,205 @@ a {
     transform: none;
   }
 }
+
+/* ---------------------------------------------------------------- lightbox */
+
+/*
+ * Fullscreen capture viewer.
+ *
+ * The frames are 2560 wide and carry detail — corrugation, grating, weld
+ * seams, aggregate in the concrete — that a grid thumbnail throws away.
+ */
+
+.gallery__zoom {
+  display: block;
+  position: relative;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  /* The button wraps an image; it must not add its own box. */
+  line-height: 0;
+}
+
+.gallery__zoom:focus-visible {
+  outline: 2px solid var(--signal-cyan);
+  outline-offset: 3px;
+}
+
+.gallery__expand {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  padding: 0.25rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-100);
+  background: rgb(7 9 12 / 78%);
+  border: 1px solid rgb(236 232 223 / 22%);
+  border-radius: var(--radius-sharp);
+  opacity: 0;
+  transition: opacity var(--motion-micro) var(--ease-standard);
+  line-height: 1.4;
+}
+
+.gallery__zoom:hover .gallery__expand,
+.gallery__zoom:focus-visible .gallery__expand {
+  opacity: 1;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3.5rem 1rem 1.5rem;
+  background: rgb(3 4 6 / 96%);
+  /* The backdrop is the click target for dismissal. */
+  cursor: zoom-out;
+}
+
+.lightbox:focus {
+  outline: none;
+}
+
+.lightbox__bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(180deg, rgb(7 9 12 / 92%), transparent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--bone-300);
+  cursor: default;
+}
+
+.lightbox__count {
+  color: var(--bone-100);
+}
+
+.lightbox__hint {
+  margin-left: auto;
+  /* Advisory only — hidden on narrow screens where the keys do not exist. */
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .lightbox__hint {
+    display: inline;
+  }
+}
+
+.lightbox__close {
+  margin-left: auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--bone-100);
+  background: rgb(23 28 34 / 90%);
+  border: 1px solid rgb(236 232 223 / 22%);
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+}
+
+@media (min-width: 720px) {
+  .lightbox__close {
+    margin-left: 0;
+  }
+}
+
+.lightbox__close:hover {
+  border-color: var(--signal-red);
+  color: var(--signal-red);
+}
+
+.lightbox__close:focus-visible {
+  outline: 2px solid var(--signal-cyan);
+  outline-offset: 2px;
+}
+
+.lightbox__figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: min(1600px, 96vw);
+  margin: 0;
+  cursor: default;
+}
+
+/* Clips the zoomed image instead of letting it push the dialog around. */
+.lightbox__frame {
+  overflow: hidden;
+  border: 1px solid rgb(236 232 223 / 14%);
+  background: var(--ink-950);
+  line-height: 0;
+}
+
+.lightbox__frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 78vh;
+  object-fit: contain;
+  transition: transform var(--motion-component) var(--ease-standard);
+  user-select: none;
+}
+
+.lightbox__figure figcaption {
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--bone-300);
+  max-width: 76ch;
+}
+
+.lightbox__nav {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 2.8rem;
+  height: 4.4rem;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--bone-100);
+  background: rgb(13 17 22 / 82%);
+  border: 1px solid rgb(236 232 223 / 18%);
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+}
+
+.lightbox__nav:hover {
+  border-color: var(--signal-cyan);
+  color: var(--signal-cyan);
+}
+
+.lightbox__nav:focus-visible {
+  outline: 2px solid var(--signal-cyan);
+  outline-offset: 2px;
+}
+
+.lightbox__nav--prev {
+  left: 0.5rem;
+}
+
+.lightbox__nav--next {
+  right: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox__frame img,
+  .gallery__expand {
+    transition: none;
+  }
+}

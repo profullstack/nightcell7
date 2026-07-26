@@ -72,6 +72,42 @@ export const VANTAGES: readonly Vantage[] = [
     yaw: Math.PI,
     pitch: 0.06,
   },
+  {
+    name: "pipe-rack-run",
+    caption:
+      "The west lane pipe rack, looking south under the catwalk. Cover here is continuous but low, so the lane rewards movement over holding an angle.",
+    position: [-24, 1.7, -18],
+    yaw: 0,
+    pitch: 0.04,
+    fovDegrees: 80,
+  },
+  {
+    name: "container-alley",
+    caption:
+      "Between the northern container stacks. The corrugation and corner castings are the only cover in the centre lane, and both sides can reach it in the opening seconds.",
+    position: [0, 1.7, -8],
+    yaw: Math.PI,
+    pitch: 0.0,
+    fovDegrees: 74,
+  },
+  {
+    name: "muster-point",
+    caption:
+      "The Nightcell muster point at the southern gate, where a squad forms up before pushing into the yard.",
+    position: [0, 1.7, 52],
+    yaw: Math.PI,
+    pitch: 0.05,
+    fovDegrees: 84,
+  },
+  {
+    name: "under-the-gantry",
+    caption:
+      "Beneath the east gantry, looking up the tank row. Holding the deck overhead means giving up the lane below it.",
+    position: [27, 1.7, 6],
+    yaw: Math.PI * 1.04,
+    pitch: 0.22,
+    fovDegrees: 80,
+  },
 ];
 
 export function vantageByName(name: string): Vantage | undefined {

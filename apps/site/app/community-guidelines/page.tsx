@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "../_components/page-shell";
+import { CapturePlate } from "../gallery";
 
 export const metadata: Metadata = { title: "Community Guidelines" };
 
@@ -44,6 +45,8 @@ export default function GuidelinesPage() {
         Every action is recorded and auditable. A multiplayer ban does not remove episodes you have
         paid for — you keep your single-player content.
       </p>
+
+      <CapturePlate name="central-hardpoint" label="Multiplayer Alpha" />
     </PageShell>
   );
 }

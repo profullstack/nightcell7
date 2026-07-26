@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -116,6 +117,50 @@ describe("generated textures", () => {
   it("ships the IBL environment", () => {
     // Without this every metal in the yard renders black, and nothing throws.
     expect(() => statSync(join(TEXTURES_DIR, "env_sky.webp"))).not.toThrow();
+  });
+});
+
+describe("generated audio", () => {
+  const AUDIO = join(__dirname, "../public/audio");
+
+  // Mirrors the VARIED table in audio.ts. If these drift apart the game asks
+  // for a clip that was never generated and that sound is silently missing.
+  const VARIED: Record<string, number> = {
+    fire: 4,
+    step_concrete: 5,
+    step_grating: 4,
+    impact_concrete: 4,
+  };
+  const SINGLE = ["reload", "ui_hover", "ui_click", "ui_error", "ambience_yard"];
+
+  it("ships every clip the engine asks for", () => {
+    for (const [family, count] of Object.entries(VARIED)) {
+      for (let i = 1; i <= count; i += 1) {
+        const file = join(AUDIO, `${family}_${String(i).padStart(2, "0")}.mp3`);
+        expect(() => statSync(file), `missing ${family} variant ${i}`).not.toThrow();
+      }
+    }
+    for (const name of SINGLE) {
+      expect(() => statSync(join(AUDIO, `${name}.mp3`)), `missing ${name}.mp3`).not.toThrow();
+    }
+  });
+
+  it("gives repeated sounds real variations", () => {
+    // CLAUDE.md requires variations for repeated sounds. Identical files would
+    // pass the existence check above while defeating the entire point.
+    //
+    // Compare content, not file size: these are encoded at a constant bit
+    // rate, so four different gunshots of the same duration produce four
+    // identically sized files. Sizes made this test pass-by-accident in one
+    // direction and fail-by-accident in the other.
+    for (const [family, count] of Object.entries(VARIED)) {
+      const digests = new Set<string>();
+      for (let i = 1; i <= count; i += 1) {
+        const bytes = readFileSync(join(AUDIO, `${family}_${String(i).padStart(2, "0")}.mp3`));
+        digests.add(createHash("sha256").update(bytes).digest("hex"));
+      }
+      expect(digests.size, `${family} variants are not actually different`).toBe(count);
+    }
   });
 });
 

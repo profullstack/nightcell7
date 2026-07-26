@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { MISSION_SPECS, SIDE } from "@nightcell7/game-core";
 import { CATALOG, formatPrice } from "@nightcell7/entitlements";
-import { CaptureStrip, CapturePlate, GreyboxNotice } from "../../gallery";
+import { CaptureStrip, CapturePlate, CaptureNotice } from "../../gallery";
 
 export const metadata: Metadata = {
   title: "Episode 1 — False Dawn",
@@ -73,7 +73,7 @@ export default function EpisodePage() {
           and reinterpret each other.
         </p>
         <CaptureStrip names={["yard-approach", "central-hardpoint", "gantry-overlook"]} />
-        <GreyboxNotice />
+        <CaptureNotice />
 
         <h3 style={{ marginTop: "4rem" }}>Content notes</h3>
         <ul className="includes">

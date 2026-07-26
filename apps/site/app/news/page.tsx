@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageShell } from "../_components/page-shell";
+import { CapturePlate } from "../gallery";
 
 export const metadata: Metadata = { title: "News" };
 
@@ -47,6 +48,8 @@ export default function NewsPage() {
           <p>{entry.body}</p>
         </article>
       ))}
+
+      <CapturePlate name="container-alley" label="Latest build" />
     </PageShell>
   );
 }

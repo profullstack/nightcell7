@@ -280,15 +280,15 @@ export async function buildWorld(
   map: CollisionMap = ARDAVAN_YARD,
 ): Promise<WorldHandles> {
   scene.clearColor = new Color4(PALETTE.ink.r, PALETTE.ink.g, PALETTE.ink.b, 1);
-  scene.ambientColor = new Color3(0.08, 0.1, 0.14);
+  scene.ambientColor = new Color3(0.14, 0.17, 0.22);
 
   // Distance haze. Ardavan Yard is 80 x 120 m, so density is tuned to soften
   // the far perimeter without fogging out the mid-lane sightlines.
   scene.fogMode = Scene.FOGMODE_EXP2;
-  scene.fogDensity = 0.0105;
+  scene.fogDensity = 0.0085;
   // Slightly warm and lifted: distance should read as haze catching the yard's
   // sodium light, not as a black void the far perimeter falls into.
-  scene.fogColor = new Color3(0.085, 0.09, 0.115);
+  scene.fogColor = new Color3(0.135, 0.14, 0.175);
 
   const assets = await loadAssets(scene);
 
@@ -317,7 +317,7 @@ export async function buildWorld(
   // every container and wall; without a strong fill those faces are black
   // silhouettes and the lanes stop reading as space you can move through.
   const ambient = new HemisphericLight("ambient", new Vector3(0.1, 1, 0.05), scene);
-  ambient.intensity = 2.15;
+  ambient.intensity = 4.05;
   ambient.diffuse = new Color3(0.34, 0.45, 0.66);
   ambient.groundColor = new Color3(0.22, 0.16, 0.12);
   ambient.specular = new Color3(0.16, 0.2, 0.26);
@@ -326,7 +326,7 @@ export async function buildWorld(
   // what produces the long shadows the yard reads by.
   const key = new DirectionalLight("false-dawn", new Vector3(0.12, -0.2, 1), scene);
   key.position = new Vector3(-10, 26, -95);
-  key.intensity = 4.2;
+  key.intensity = 5.4;
   key.diffuse = PALETTE.dustGold;
   key.specular = new Color3(0.9, 0.75, 0.5);
 
@@ -334,7 +334,7 @@ export async function buildWorld(
   // instead of dissolving into it.
   const rim = new DirectionalLight("rim", new Vector3(-0.25, -0.35, -1), scene);
   rim.position = new Vector3(20, 30, 90);
-  rim.intensity = 1.35;
+  rim.intensity = 1.95;
   rim.diffuse = new Color3(0.4, 0.58, 0.78);
   rim.specular = new Color3(0.5, 0.68, 0.85);
 
@@ -501,7 +501,7 @@ export async function buildWorld(
     const lamp = new PointLight(`lamp-light_${i}`, new Vector3(x + 0.86, 8.5, z), scene);
     lamp.diffuse = PALETTE.sodium;
     lamp.specular = PALETTE.sodium;
-    lamp.intensity = 210;
+    lamp.intensity = 250;
     lamp.range = 40;
     lamp.falloffType = PointLight.FALLOFF_PHYSICAL;
   });
@@ -546,10 +546,10 @@ export async function buildWorld(
   pipeline.imageProcessingEnabled = true;
   pipeline.imageProcessing.toneMappingEnabled = true;
   pipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-  pipeline.imageProcessing.exposure = 1.62;
+  pipeline.imageProcessing.exposure = 2.05;
   pipeline.imageProcessing.contrast = 1.25;
   pipeline.imageProcessing.vignetteEnabled = true;
-  pipeline.imageProcessing.vignetteWeight = 2.4;
+  pipeline.imageProcessing.vignetteWeight = 1.35;
   pipeline.imageProcessing.vignetteStretch = 0.4;
   pipeline.imageProcessing.vignetteColor = new Color4(0, 0, 0, 0);
 

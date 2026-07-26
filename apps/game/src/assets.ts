@@ -159,7 +159,7 @@ export function createEnvironment(scene: Scene): EquiRectangularCubeTexture {
   scene.environmentTexture = environment;
   // The yard is lit by its own lamps and the dawn; the environment supplies
   // reflection and a little fill, and overpowering it flattens the scene.
-  scene.environmentIntensity = 1.4;
+  scene.environmentIntensity = 2.9;
   return environment;
 }
 
