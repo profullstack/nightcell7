@@ -15,7 +15,7 @@ const REPO = "https://github.com/profullstack/nightcell7";
  * page shows the real commands and says plainly that nothing is published,
  * rather than linking at 404s.
  */
-const HAS_RELEASE = false;
+const HAS_RELEASE = true;
 
 function Command({ label, children }: { label?: string; children: string }) {
   return (
@@ -165,6 +165,10 @@ sh install.sh`}
         Pick your platform&rsquo;s manager and it handles upgrades for you. Each entry has install,
         upgrade and uninstall.
       </p>
+      <DraftNotice>
+        The taps and repositories these commands point at are not published yet, so they will not
+        resolve today. The one-line installer above and the direct downloads below do work.
+      </DraftNotice>
 
       {MANAGERS.map((manager) => (
         <section key={manager.id} id={manager.id} className="manager">
