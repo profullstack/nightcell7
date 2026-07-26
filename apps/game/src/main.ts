@@ -176,6 +176,13 @@ async function boot(): Promise<void> {
         status.position.y > 5.5,
       );
 
+      // Grenades. The throw goes through the same simulation the bots use, so
+      // the count, the cooldown and the blast are all decided there rather
+      // than here — this only asks and then plays the result.
+      if (player.consumeThrowRequest()) {
+        if (opponents.throwGrenade(camera.rotation.x)) audio.reload();
+      }
+
       if (status.firing && performance.now() - lastShotAt >= fireInterval) {
         lastShotAt = performance.now();
         audio.fire();
@@ -206,7 +213,11 @@ async function boot(): Promise<void> {
     for (const shot of opponents.drainShots()) {
       effects.tracerOnly(shot.from, shot.to);
     }
-    hud.update(status, engine.getFps());
+    for (const blast of opponents.drainExplosions()) {
+      effects.explode(new Vector3(blast.position.x, blast.position.y, blast.position.z));
+      audio.explosion(blast.distanceM);
+    }
+    hud.update(status, engine.getFps(), opponents.grenadeCount());
     scene.render();
   });
 

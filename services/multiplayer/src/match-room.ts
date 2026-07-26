@@ -273,6 +273,12 @@ export class MatchRoom extends Room<MatchState> {
 
     handle(CLIENT_MESSAGE.RELOAD, (client) => this.sim.requestReload(client.sessionId));
 
+    // The client asks; the server decides whether there is a grenade left,
+    // whether the cooldown has passed, and where it leaves from.
+    handle(CLIENT_MESSAGE.THROW_GRENADE, (client) => {
+      this.sim.throwGrenade(client.sessionId);
+    });
+
     handle(CLIENT_MESSAGE.SWITCH_WEAPON, (client, payload) => {
       this.sim.requestWeaponSwitch(client.sessionId, (payload as { slot: number }).slot);
     });
@@ -391,6 +397,7 @@ export class MatchRoom extends Room<MatchState> {
     entry.armor = Math.round(player.armor);
     entry.weaponSlot = player.weaponSlot;
     entry.ammoInMagazine = player.ammo[player.weaponSlot]?.magazine ?? 0;
+    entry.grenades = player.grenades;
     entry.ammoReserve = player.ammo[player.weaponSlot]?.reserve ?? 0;
     entry.reloadingUntilMs = Math.max(0, Math.round(player.reloadingUntilMs));
     entry.nextFireAtMs = Math.max(0, Math.round(player.nextFireAtMs));
@@ -428,6 +435,32 @@ export class MatchRoom extends Room<MatchState> {
             weaponId: event.weaponId,
             headshot: event.headshot,
             respawnAtMs: event.respawnAtMs,
+          });
+          break;
+        case "grenade_thrown":
+          this.broadcast(SERVER_MESSAGE.GRENADE_THROWN, {
+            grenadeId: event.grenadeId,
+            ownerSessionId: event.ownerId,
+            team: event.team,
+            x: event.position.x,
+            y: event.position.y,
+            z: event.position.z,
+            vx: event.velocity.x,
+            vy: event.velocity.y,
+            vz: event.velocity.z,
+            fuseMs: event.fuseMs,
+            tick: event.tick,
+          });
+          break;
+        case "grenade_exploded":
+          this.broadcast(SERVER_MESSAGE.GRENADE_EXPLODED, {
+            grenadeId: event.grenadeId,
+            ownerSessionId: event.ownerId,
+            x: event.position.x,
+            y: event.position.y,
+            z: event.position.z,
+            victimSessionIds: event.victims.map((victim) => victim.playerId),
+            tick: event.tick,
           });
           break;
         case "respawn":

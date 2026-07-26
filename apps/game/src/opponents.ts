@@ -14,6 +14,7 @@ import {
   TEAM_IDS,
   TICK_MS,
   type SimEvent,
+  type SimGrenade,
   type SimPlayer,
   type Vec3,
   spawnsForTeam,
@@ -33,6 +34,18 @@ const IDLE_SPEED = 0.35;
 const RESPAWN_MS = 6000;
 
 const LOCAL_ID = "local-player";
+
+/** A grenade in flight, and the mesh following it. */
+interface GrenadeView {
+  readonly root: TransformNode;
+}
+
+/** A detonation the renderer still has to draw. */
+export interface Explosion {
+  readonly position: Vec3;
+  /** Distance from the local player, for volume. */
+  readonly distanceM: number;
+}
 
 interface BotView {
   readonly id: string;
@@ -90,6 +103,9 @@ export class Opponents {
   /** Shots fired by bots since the last drain, for the renderer to draw. */
   private readonly shots: BotShot[] = [];
   private readonly deadUntil = new Map<string, number>();
+  private readonly grenadeViews = new Map<string, GrenadeView>();
+  private readonly explosions: Explosion[] = [];
+  private readonly grenadeModel: AssetContainer | null;
 
   constructor(_scene: Scene, assets: AssetSet) {
     // Back on the generated character.
@@ -128,6 +144,8 @@ export class Opponents {
     const friendlyModel = assets.models.get("character");
     const character = enemyModel;
     if (!character) throw new Error("no character model loaded");
+
+    this.grenadeModel = assets.models.get("wep_grenade") ?? null;
 
     // Weapons for the bots.
     //
@@ -258,6 +276,34 @@ export class Opponents {
   }
 
   /** Bot shots fired since the last call, and clears the queue. */
+  /**
+   * The local player throws a grenade.
+   *
+   * Routed through the same `MatchSimulation` the bots use rather than a
+   * client-side special case, so the sandbox enforces the count, the cooldown
+   * and the blast exactly as the authoritative server would. Returns false
+   * when the simulation refused — out of grenades, or still on cooldown.
+   */
+  throwGrenade(pitch: number): boolean {
+    const local = this.sim.players.get(LOCAL_ID);
+    if (!local) return false;
+    // The sim throws along the player's own aim, and `update` only syncs yaw.
+    local.movement.pitch = pitch;
+    return this.sim.throwGrenade(LOCAL_ID) !== null;
+  }
+
+  /** Grenades the local player has left, for the HUD. */
+  grenadeCount(): number {
+    return this.sim.players.get(LOCAL_ID)?.grenades ?? 0;
+  }
+
+  /** Detonations since the last call, for the renderer to draw and play. */
+  drainExplosions(): Explosion[] {
+    const drained = [...this.explosions];
+    this.explosions.length = 0;
+    return drained;
+  }
+
   drainShots(): BotShot[] {
     return this.shots.splice(0, this.shots.length);
   }
@@ -291,6 +337,54 @@ export class Opponents {
       if (!player) continue;
       this.syncView(view, player);
     }
+
+    this.syncGrenades();
+  }
+
+  /**
+   * Keep one mesh per grenade the simulation has in flight.
+   *
+   * Driven off `sim.grenades` rather than off the throw event, so a grenade
+   * can never be left on screen after the simulation has forgotten it — the
+   * map is the truth and the meshes follow.
+   */
+  private syncGrenades(): void {
+    for (const [id, grenade] of this.sim.grenades) {
+      let view = this.grenadeViews.get(id);
+      if (!view) {
+        const created = this.createGrenadeView(id, grenade);
+        if (!created) continue;
+        view = created;
+        this.grenadeViews.set(id, view);
+      }
+      view.root.position.set(grenade.position.x, grenade.position.y, grenade.position.z);
+      // Tumble in flight. A grenade that slides through the air facing one way
+      // reads as a thrown prop rather than as something live.
+      if (!grenade.resting) {
+        view.root.rotation.x += 0.28;
+        view.root.rotation.z += 0.19;
+      }
+    }
+
+    // Anything the simulation dropped without an explosion event (a match
+    // reset, a removed player) still has to lose its mesh.
+    for (const [id, view] of this.grenadeViews) {
+      if (this.sim.grenades.has(id)) continue;
+      view.root.dispose();
+      this.grenadeViews.delete(id);
+    }
+  }
+
+  private createGrenadeView(id: string, grenade: SimGrenade): GrenadeView | null {
+    if (!this.grenadeModel) return null;
+    const [root] = placeAll(this.grenadeModel, `grenade_${id}`, [
+      {
+        position: new Vector3(grenade.position.x, grenade.position.y, grenade.position.z),
+      },
+    ]);
+    if (!root) return null;
+    for (const mesh of root.getChildMeshes()) mesh.isPickable = false;
+    return { root };
   }
 
   private consume(events: readonly SimEvent[]): void {
@@ -302,6 +396,26 @@ export class Opponents {
           this.play(view, "death", false);
           this.deadUntil.set(event.victimId, performance.now() + RESPAWN_MS);
         }
+        continue;
+      }
+
+      if (event.type === "grenade_exploded") {
+        const view = this.grenadeViews.get(event.grenadeId);
+        if (view) {
+          view.root.dispose();
+          this.grenadeViews.delete(event.grenadeId);
+        }
+        const listener = this.sim.players.get(LOCAL_ID)?.movement.position;
+        this.explosions.push({
+          position: { ...event.position },
+          distanceM: listener
+            ? Math.hypot(
+                event.position.x - listener.x,
+                event.position.y - listener.y,
+                event.position.z - listener.z,
+              )
+            : 0,
+        });
         continue;
       }
 

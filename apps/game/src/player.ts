@@ -51,6 +51,14 @@ export class PlayerController {
   private seq = 0;
   private locked = false;
   private firing = false;
+  /**
+   * Edge-triggered throw request.
+   *
+   * Held keys are level-triggered, which is right for movement and wrong for a
+   * grenade: holding G would empty the pouch in two frames. This latches on the
+   * key-down and is cleared by whoever consumes it.
+   */
+  private throwRequested = false;
   private readonly sensitivity: number;
   private readonly invertY: boolean;
   private readonly spawn: Vec3;
@@ -80,6 +88,9 @@ export class PlayerController {
     const onKeyDown = (e: KeyboardEvent) => {
       // Never swallow the browser's own escape hatches.
       if (e.code === "F5" || e.code === "F12") return;
+      if (this.locked && e.code === "KeyG" && !this.held.has("KeyG")) {
+        this.throwRequested = true;
+      }
       this.held.add(e.code);
       if (this.locked) e.preventDefault();
     };
@@ -108,6 +119,7 @@ export class PlayerController {
         // walking into a wall while the pause overlay is up.
         this.held.clear();
         this.firing = false;
+        this.throwRequested = false;
       }
       this.onLockChanged?.(this.locked);
     };
@@ -143,6 +155,13 @@ export class PlayerController {
 
   requestLock(): void {
     void this.canvas.requestPointerLock();
+  }
+
+  /** Take the pending throw request, if any. Clears it. */
+  consumeThrowRequest(): boolean {
+    if (!this.throwRequested) return false;
+    this.throwRequested = false;
+    return true;
   }
 
   get isLocked(): boolean {

@@ -18,7 +18,7 @@ export interface HudOptions {
 
 export interface Hud {
   /** Cheap enough to call every frame; writes only what actually changed. */
-  update(status: ControllerStatus, fps: number): void;
+  update(status: ControllerStatus, fps: number, grenades?: number): void;
   setLocked(locked: boolean): void;
   dispose(): void;
 }
@@ -29,6 +29,7 @@ const KEYS: ReadonlyArray<readonly [string, string]> = [
   ["Ctrl / C", "Crouch"],
   ["Space", "Jump"],
   ["Mouse", "Look"],
+  ["G", "Throw frag"],
   ["Esc", "Release cursor"],
 ];
 
@@ -82,6 +83,16 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   bl.append(stanceValue);
   hud.append(bl);
 
+  // Bottom-centre: equipment. Only the grenade count for now — the magazine
+  // lives on the weapon in this build, and a HUD element per stat would crowd
+  // a screen that is deliberately sparse.
+  const bc = el("div", "hud__block hud__block--bc");
+  bc.append(el("p", "hud__label", "Frag"));
+  const grenadeValue = el("p", "hud__value", "0");
+  bc.append(grenadeValue);
+  bc.append(el("p", "hud__sub", "G TO THROW"));
+  hud.append(bc);
+
   // Bottom-right: position + frame budget.
   const br = el("div", "hud__block hud__block--br");
   br.append(el("p", "hud__label", "Grid reference"));
@@ -134,11 +145,21 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   let lastStance = "";
   let lastPos = "";
   let lastFps = "";
+  let lastGrenades = "";
   let fpsAccumulator = 0;
   let fpsFrames = 0;
 
   return {
-    update(status: ControllerStatus, fps: number): void {
+    update(status: ControllerStatus, fps: number, grenades = 0): void {
+      const grenadeText = String(grenades);
+      if (grenadeText !== lastGrenades) {
+        grenadeValue.textContent = grenadeText;
+        // Empty is worth showing differently: a count that just reads "0" is
+        // easy to miss mid-fight and then G silently does nothing.
+        grenadeValue.classList.toggle("hud__value--spent", grenades <= 0);
+        lastGrenades = grenadeText;
+      }
+
       const speed = status.speed.toFixed(1);
       if (speed !== lastSpeed) {
         speedValue.textContent = speed;

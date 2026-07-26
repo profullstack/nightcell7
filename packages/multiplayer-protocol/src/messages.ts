@@ -99,6 +99,9 @@ export const SERVER_MESSAGE = {
   RESPAWN: "respawn",
   MATCH_START: "match_start",
   MATCH_END: "match_end",
+  /** A grenade left someone's hand. Clients simulate its flight themselves. */
+  GRENADE_THROWN: "gt",
+  GRENADE_EXPLODED: "gx",
   PING_MARK: "ping_mark",
   QUICK_MESSAGE: "quick_message",
   REJECTED: "rejected",
@@ -166,6 +169,40 @@ export interface MatchEndPayload {
   durationMs: number;
 }
 
+/**
+ * A thrown grenade.
+ *
+ * Deliberately *not* replicated per tick. The flight model in
+ * `@nightcell7/multiplayer-sim` is deterministic and shared, so every client
+ * can run it from this one message and arrive at the same place the server
+ * does — which costs one packet per throw instead of a position for every
+ * grenade on every snapshot (PRD §30.3, network budget).
+ */
+export interface GrenadeThrownPayload {
+  grenadeId: string;
+  ownerSessionId: string;
+  team: number;
+  x: number;
+  y: number;
+  z: number;
+  vx: number;
+  vy: number;
+  vz: number;
+  fuseMs: number;
+  tick: number;
+}
+
+export interface GrenadeExplodedPayload {
+  grenadeId: string;
+  ownerSessionId: string;
+  x: number;
+  y: number;
+  z: number;
+  /** Session ids the blast reached, for hit feedback. Damage itself is state. */
+  victimSessionIds: string[];
+  tick: number;
+}
+
 export interface RejectedPayload {
   code: string;
   detail?: string;
@@ -195,6 +232,8 @@ export interface ServerMessageMap {
   [SERVER_MESSAGE.RESPAWN]: RespawnPayload;
   [SERVER_MESSAGE.MATCH_START]: { startedAtMs: number };
   [SERVER_MESSAGE.MATCH_END]: MatchEndPayload;
+  [SERVER_MESSAGE.GRENADE_THROWN]: GrenadeThrownPayload;
+  [SERVER_MESSAGE.GRENADE_EXPLODED]: GrenadeExplodedPayload;
   [SERVER_MESSAGE.PING_MARK]: PingMarkPayload;
   [SERVER_MESSAGE.QUICK_MESSAGE]: QuickMessagePayload;
   [SERVER_MESSAGE.REJECTED]: RejectedPayload;

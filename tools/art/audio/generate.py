@@ -225,6 +225,56 @@ def impact_concrete(seed: int) -> np.ndarray:
     return fade(normalise(soft_clip(tick + puff + debris), peak=0.7))
 
 
+def grenade_blast(seed: int) -> np.ndarray:
+    """
+    A frag detonation: crack, body, and a tail that outlasts both.
+
+    Three layers, because a single enveloped noise burst reads as a door
+    slamming rather than as an explosion:
+
+      * a very short high crack, which is what makes it read as *sharp* rather
+        than merely loud;
+      * a low body around 55 Hz, carrying the weight — this is the layer a
+        laptop speaker mostly cannot reproduce, so the blast must still work
+        without it;
+      * a long, dark tail of debris and yard reverberation. The tail is what
+        distinguishes an explosion from an impact, and it is deliberately most
+        of the clip's length.
+
+    Deliberately not normalised to the same peak as a gunshot. A grenade that
+    merely matches the rifle in level does not feel bigger than one, so the
+    weight comes from spectrum and duration instead of clipping harder.
+    """
+    rng = np.random.default_rng(seed)
+    n = int(RATE * 1.60)
+
+    crack = noise(n, rng) * envelope(n, 0.0002, 0.010, power=1.6)
+    crack = one_pole_highpass(crack, 1800) * 0.85
+
+    body = noise(n, rng) * envelope(n, 0.002, 0.16, power=1.3)
+    body = one_pole_lowpass(body, 420)
+    # A falling sine under the noise gives the blast a pitch to drop, which is
+    # most of what "big" sounds like.
+    t = np.arange(n) / RATE
+    sweep = np.sin(2 * np.pi * (58 * np.exp(-t * 3.4)) * t)
+    body = body + sweep * envelope(n, 0.001, 0.22, power=1.5) * 0.8
+
+    tail = noise(n, rng) * envelope(n, 0.03, 0.85, power=0.75) * 0.42
+    tail = bandpass(tail, 90, 2600)
+
+    debris = np.zeros(n)
+    for _ in range(14):
+        at = rng.uniform(0.06, 0.9)
+        start = int(at * RATE)
+        length = min(n - start, int(RATE * 0.05))
+        if length <= 0:
+            continue
+        piece = noise(length, rng) * envelope(length, 0.001, 0.02)
+        debris[start : start + length] += bandpass(piece, 900, 6500) * rng.uniform(0.05, 0.16)
+
+    return fade(normalise(soft_clip(crack + body + tail + debris), peak=0.94), ms=40.0)
+
+
 def reload_clack(seed: int) -> np.ndarray:
     """Magazine out, magazine in, bolt release — three mechanical events."""
     rng = np.random.default_rng(seed)
@@ -316,6 +366,10 @@ SOUNDS: dict[str, tuple] = {
     "step_concrete": (lambda s: footstep(s, "concrete"), 5, 3200),
     "step_grating": (lambda s: footstep(s, "grating"), 4, 3300),
     "impact_concrete": (impact_concrete, 4, 3400),
+    # Explosions are rare per match but very recognisable, so a repeat inside
+    # one firefight is obvious — three takes (CLAUDE.md: repeated sounds need
+    # variations).
+    "explosion": (grenade_blast, 3, 3800),
 }
 
 SINGLES = {

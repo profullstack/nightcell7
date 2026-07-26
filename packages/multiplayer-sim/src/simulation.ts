@@ -1,4 +1,5 @@
 import {
+  GRENADE_SPEC,
   MULTIPLAYER_LOADOUT,
   TDM_RULES,
   applyDamage,
@@ -19,16 +20,24 @@ import {
   type InputFrame,
 } from "@nightcell7/multiplayer-protocol";
 import { EYE_HEIGHT_CROUCHED, EYE_HEIGHT_STANDING, MAX_REWIND_MS, TICK_MS } from "./constants";
+import {
+  grenadeShouldDetonate,
+  resolveBlast,
+  stepGrenade,
+  type BlastCandidate,
+  type SimGrenade,
+} from "./grenades";
 import { PositionHistory, resolveHitscan, rewindTicks, type HitCandidate } from "./hitscan";
 import type { CollisionMap } from "./map";
 import {
   createMovementState,
   isBelowKillPlane,
+  playerHeight,
   stepMovement,
   type MovementState,
 } from "./movement";
 import { selectSpawn } from "./spawn";
-import { directionFromAngles, type Vec3 } from "./vec";
+import { add, directionFromAngles, scale, type Vec3 } from "./vec";
 
 /**
  * The authoritative match simulation.
@@ -74,6 +83,9 @@ export interface SimPlayer {
   ammo: AmmoState[];
   nextFireAtMs: number;
   reloadingUntilMs: number;
+  /** Grenades left this life. Replenished on respawn, never mid-life. */
+  grenades: number;
+  nextGrenadeAtMs: number;
   /** True while the trigger has been held since the last shot (semi-auto gate). */
   triggerHeld: boolean;
 
@@ -120,6 +132,25 @@ export type SimEvent =
     }
   | { type: "respawn"; playerId: string; position: Vec3; yaw: number; tick: number }
   | {
+      type: "grenade_thrown";
+      grenadeId: string;
+      ownerId: string;
+      team: number;
+      position: Vec3;
+      velocity: Vec3;
+      fuseMs: number;
+      tick: number;
+    }
+  | {
+      type: "grenade_exploded";
+      grenadeId: string;
+      ownerId: string;
+      position: Vec3;
+      /** Everyone the blast reached, for client-side damage feedback. */
+      victims: readonly { playerId: string; damage: number }[];
+      tick: number;
+    }
+  | {
       type: "match_end";
       reason: "score_limit" | "time_limit";
       winningTeam: number | null;
@@ -157,7 +188,11 @@ export class MatchSimulation {
   winningTeam: number | null = null;
   terminationReason: "score_limit" | "time_limit" | null = null;
 
+  /** Grenades currently in flight, keyed by id. */
+  readonly grenades = new Map<string, SimGrenade>();
+
   private readonly recentDeaths: { position: Vec3; atMs: number }[] = [];
+  private nextGrenadeSeq = 0;
   private events: SimEvent[] = [];
   private emitStartNextStep = false;
 
@@ -205,6 +240,8 @@ export class MatchSimulation {
       }),
       nextFireAtMs: 0,
       reloadingUntilMs: 0,
+      grenades: GRENADE_SPEC.carried,
+      nextGrenadeAtMs: 0,
       triggerHeld: false,
       alive: true,
       respawnAtMs: 0,
@@ -367,6 +404,10 @@ export class MatchSimulation {
       });
     }
 
+    // After movement and history: a grenade detonating this tick should test
+    // against where players actually ended up, not where they started.
+    this.stepGrenades();
+
     if (this.phase === "live") {
       const outcome = evaluateMatchOutcome(this.scores, this.elapsedMs, this.rules);
       if (outcome.ended) {
@@ -494,6 +535,149 @@ export class MatchSimulation {
   }
 
   /** Client intent to reload. Validated exactly like any other intent. */
+  /**
+   * Throw a grenade from a player's authoritative eye position.
+   *
+   * The client asks; it does not say from where, in which direction, or with
+   * how many left. All three come from server state, so a tampered client can
+   * neither throw from somewhere it is not standing nor conjure a third
+   * grenade (PRD §18.3).
+   */
+  throwGrenade(playerId: string): SimGrenade | null {
+    const player = this.players.get(playerId);
+    if (!player || !player.alive) return null;
+    if (player.grenades <= 0) return null;
+    if (this.elapsedMs < player.nextGrenadeAtMs) return null;
+
+    player.grenades -= 1;
+    player.nextGrenadeAtMs = this.elapsedMs + GRENADE_SPEC.cooldownMs;
+
+    const eye = {
+      x: player.movement.position.x,
+      y:
+        player.movement.position.y +
+        (player.movement.crouching ? EYE_HEIGHT_CROUCHED : EYE_HEIGHT_STANDING),
+      z: player.movement.position.z,
+    };
+    const aim = directionFromAngles(player.movement.yaw, player.movement.pitch);
+
+    // Start slightly ahead of the eye. Spawning exactly on it puts the grenade
+    // inside the thrower's own capsule, where the very first substep registers
+    // a wall and it bounces straight back into their feet.
+    const origin = add(eye, scale(aim, 0.45));
+
+    const grenade: SimGrenade = {
+      id: `${this.matchId}:g${(this.nextGrenadeSeq += 1)}`,
+      ownerId: player.id,
+      ownerTeam: player.team,
+      position: origin,
+      velocity: add(scale(aim, GRENADE_SPEC.throwSpeed), {
+        x: 0,
+        y: GRENADE_SPEC.throwLift,
+        z: 0,
+      }),
+      fuseRemainingMs: GRENADE_SPEC.fuseMs,
+      bounces: 0,
+      resting: false,
+    };
+    // Inherit half the thrower's motion, so a grenade thrown while sprinting
+    // does not appear to be dropped behind them.
+    grenade.velocity = add(grenade.velocity, scale(player.movement.velocity, 0.5));
+
+    this.grenades.set(grenade.id, grenade);
+    this.events.push({
+      type: "grenade_thrown",
+      grenadeId: grenade.id,
+      ownerId: player.id,
+      team: player.team,
+      position: { ...grenade.position },
+      velocity: { ...grenade.velocity },
+      fuseMs: GRENADE_SPEC.fuseMs,
+      tick: this.tick,
+    });
+    return grenade;
+  }
+
+  /** Advance every grenade in flight and detonate the ones whose fuse ran out. */
+  private stepGrenades(): void {
+    for (const grenade of [...this.grenades.values()]) {
+      stepGrenade(grenade, TICK_MS, this.map);
+      if (!grenadeShouldDetonate(grenade)) continue;
+      this.grenades.delete(grenade.id);
+      this.detonate(grenade);
+    }
+  }
+
+  private detonate(grenade: SimGrenade): void {
+    const candidates: BlastCandidate[] = [...this.players.values()].map((player) => ({
+      id: player.id,
+      team: player.team,
+      // Chest height. Measuring to the feet would let a blast at head height
+      // on a catwalk miss the person standing in it.
+      center: {
+        x: player.movement.position.x,
+        y: player.movement.position.y + playerHeight(player.movement.crouching) * 0.5,
+        z: player.movement.position.z,
+      },
+      alive: player.alive,
+    }));
+
+    const victims = resolveBlast(
+      grenade.position,
+      grenade.ownerId,
+      grenade.ownerTeam,
+      candidates,
+      this.map,
+    );
+
+    const owner = this.players.get(grenade.ownerId) ?? null;
+    const applied: { playerId: string; damage: number }[] = [];
+
+    for (const victim of victims) {
+      const player = this.players.get(victim.playerId);
+      if (!player || !player.alive) continue;
+      // Spawn protection holds against explosions too, or a grenade lobbed at
+      // a spawn exit beats the rule that protects it.
+      if (this.elapsedMs < player.spawnProtectedUntilMs) continue;
+
+      const result = applyDamage({ health: player.health, armor: player.armor }, victim.damage);
+      player.health = result.vitals.health;
+      player.armor = result.vitals.armor;
+      applied.push({ playerId: player.id, damage: victim.damage });
+
+      if (owner && owner.id !== player.id) {
+        player.recentDamage.set(owner.id, {
+          amount: (player.recentDamage.get(owner.id)?.amount ?? 0) + victim.damage,
+          atMs: this.elapsedMs,
+        });
+      }
+
+      this.events.push({
+        type: "hit",
+        attackerId: grenade.ownerId,
+        victimId: player.id,
+        damage: victim.damage,
+        armorAbsorbed: result.armorAbsorbed,
+        headshot: false,
+        tick: this.tick,
+      });
+
+      if (result.killed) {
+        // A grenade kill is credited to the thrower, including their own.
+        this.killPlayer(player, owner, null, false);
+      }
+    }
+
+    this.events.push({
+      type: "grenade_exploded",
+      grenadeId: grenade.id,
+      ownerId: grenade.ownerId,
+      position: { ...grenade.position },
+      victims: applied,
+      tick: this.tick,
+    });
+  }
+
   requestReload(playerId: string): void {
     const player = this.players.get(playerId);
     if (!player || !player.alive) return;
@@ -689,6 +873,10 @@ export class MatchSimulation {
     player.spawnProtectedUntilMs = this.elapsedMs + this.rules.spawnProtectionMs;
     player.reloadingUntilMs = 0;
     player.nextFireAtMs = 0;
+    // Grenades come back with a life, never during one — a resupply mid-fight
+    // turns the throwable into a second primary.
+    player.grenades = GRENADE_SPEC.carried;
+    player.nextGrenadeAtMs = 0;
     player.recentDamage.clear();
     player.history.clear();
     player.ammo = player.weapons.map((id) => {

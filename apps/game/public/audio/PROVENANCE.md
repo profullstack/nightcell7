@@ -39,6 +39,7 @@ variations exist to prevent.
 | `step_concrete_01..05`             | 5        | Short, dry, mid-heavy                                                                                        |
 | `step_grating_01..04`              | 4        | Adds decaying metallic partials — a real gameplay cue that someone is on the catwalk or gantry               |
 | `impact_concrete_01..04`           | 4        | Tick, dust, debris tail                                                                                      |
+| `explosion_01..03`                 | 3        | Grenade detonation: high crack, a 58 Hz body that falls in pitch, and a long dark debris tail                |
 | `reload`                           | 1        | Three mechanical events: magazine out, magazine seated, bolt forward                                         |
 | `ui_hover`, `ui_click`, `ui_error` | 1 each   | Cold and mechanical, matching DIVIDED SIGNAL. Nothing musical                                                |
 | `ambience_yard`                    | 1        | 11.6 s seamless loop: wind, 50 Hz lamp hum, distant plant drone                                              |

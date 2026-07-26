@@ -96,6 +96,9 @@ const PROPS = [
   { fbx: "Fbx/SM_Prop_AmmoBox_01", out: "prop_ammo_box", slot: "synty_atlas" },
   { fbx: "Fbx/SM_Prop_Barrier_Tall_01", out: "prop_barrier", slot: "synty_atlas" },
   { fbx: "Fbx/SM_Prop_WaterTank_02", out: "prop_water_tank", slot: "synty_atlas" },
+  // The frag grenade goes through the prop path, not the weapon one: it is a
+  // single mesh with nothing to assemble and no muzzle to find.
+  { fbx: "Fbx/SM_Wep_Grenade_01", out: "wep_grenade", slot: "synty_weapons" },
 ];
 
 /**
