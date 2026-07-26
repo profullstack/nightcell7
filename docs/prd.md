@@ -30,6 +30,7 @@ commit as the code (CLAUDE.md).
 | Multiplayer                      | P0 V1 requirement, server-authoritative                                  |
 | V1 multiplayer mode              | 6v6 Team Deathmatch, private matches, optional bot fill                  |
 | V1 multiplayer map               | Ardavan Yard (derived from Episode 1 architecture)                       |
+| V1 throwable                     | **Frag grenade only** — 2 per life, no resupply, no other gadget         |
 | Multiplayer access               | Free to verified accounts, no pay-to-win                                 |
 | Runtime target                   | 60–90 minutes per campaign side                                          |
 | Engine / build                   | Babylon.js / Vite                                                        |
@@ -69,7 +70,8 @@ commit as the code (CLAUDE.md).
 | §12.4    | Health/armour, regen ceiling, no bullet sponges                | `packages/game-core/src/damage.ts`                                                             |
 | §12.6    | Difficulty changes tactics, not enemy health                   | `packages/game-core/src/difficulty.ts`                                                         |
 | §13.1    | Four hero weapons, fictional                                   | `packages/game-core/src/weapons.ts`                                                            |
-| §13.3    | Friendly-fire and identification rules                         | `multiplayer-sim/src/hitscan.ts` (team filter)                                                 |
+| §13.2    | One throwable: the frag grenade                                | `packages/game-core/src/grenades.ts`, `multiplayer-sim/src/grenades.ts`                        |
+| §13.3    | Friendly-fire and identification rules                         | `multiplayer-sim/src/hitscan.ts` (team filter), `grenades.ts` (`resolveBlast`)                 |
 | §17.2    | Single-repository mandate                                      | `pnpm-workspace.yaml`, `CLAUDE.md`                                                             |
 | §17.3    | Monorepo layout                                                | repository root                                                                                |
 | §17.5    | Railway topology and public routing                            | `infra/railway/`, `services/gateway/src/routes.ts`                                             |
@@ -138,6 +140,8 @@ Encoded in `CLAUDE.md` and enforced by review:
 - Peer-to-peer or host-migrated multiplayer authority
 - Kernel-level anti-cheat
 - Native mobile play
+- Throwables beyond the frag grenade — the other five entries in `GADGET` are
+  campaign fiction, not multiplayer content, and stay that way for V1
 - Separate repositories for the site, game, backend, multiplayer or infrastructure
 - Direct client connections to internal Railway service domains
 - Selling the second campaign or the true ending separately

@@ -170,6 +170,15 @@ body {
   justify-items: end;
 }
 
+/* Equipment. Centred low, clear of the two telemetry corners. */
+.hud__block--bc {
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  justify-items: center;
+}
+
 .hud__label {
   font-size: 0.6rem;
   letter-spacing: 0.3em;
@@ -186,6 +195,12 @@ body {
 
 .hud__value--cyan {
   color: var(--signal-cyan);
+}
+
+/* Out of grenades. Dimmed rather than recoloured red: this is an absence, not
+   an alarm, and the palette reserves red for damage. */
+.hud__value--spent {
+  color: var(--hud-dim);
 }
 
 .hud__sub {

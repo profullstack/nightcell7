@@ -78,6 +78,7 @@ export const MODELS = [
   "wep_rifle",
   "wep_smg",
   "wep_sniper",
+  "wep_grenade",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];

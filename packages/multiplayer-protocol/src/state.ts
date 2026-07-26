@@ -54,6 +54,8 @@ export class PlayerState extends Schema {
   weaponSlot = 0;
   ammoInMagazine = 0;
   ammoReserve = 0;
+  /** Grenades left this life — HUD only; the server owns the count. */
+  grenades = 0;
   /** Match-clock milliseconds; 0 when not reloading. */
   reloadingUntilMs = 0;
   /** Earliest match-clock time this player may fire again. */
@@ -96,6 +98,7 @@ defineTypes(PlayerState, {
   armor: "uint8",
   weaponSlot: "uint8",
   ammoInMagazine: "uint8",
+  grenades: "uint8",
   ammoReserve: "uint16",
   reloadingUntilMs: "uint32",
   nextFireAtMs: "uint32",

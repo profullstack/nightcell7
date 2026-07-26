@@ -117,6 +117,7 @@ material-slot or `COL_` conventions the generated props use;
 | `models/wep_rifle.glb`         | Synty POLYGON Military — `SM_Wep_Preset_A_Rifle_01*`        | Synty Store licence (purchased) |
 | `models/wep_smg.glb`           | Synty POLYGON Military — `SM_Wep_Preset_A_SMG_01*`          | Synty Store licence (purchased) |
 | `models/wep_sniper.glb`        | Synty POLYGON Military — `SM_Wep_Preset_B_Sniper_01*`       | Synty Store licence (purchased) |
+| `models/wep_grenade.glb`       | Synty POLYGON Military — `SM_Wep_Grenade_01`                | Synty Store licence (purchased) |
 | `textures/synty_weapons.webp`  | Synty POLYGON Military — `PolygonMilitary_Weapons_01`       | Synty Store licence (purchased) |
 
 Purchased from https://syntystore.com. The licence grants perpetual,

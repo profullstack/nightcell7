@@ -26,6 +26,7 @@ const VARIED = {
   step_concrete: 5,
   step_grating: 4,
   impact_concrete: 4,
+  explosion: 3,
 } as const;
 
 const SINGLE = ["reload", "ui_hover", "ui_click", "ui_error", "ambience_yard"] as const;
@@ -192,6 +193,21 @@ export class GameAudio {
 
   impact(): void {
     this.playVaried("impact_concrete", 0.6);
+  }
+
+  /**
+   * A grenade detonating, at a volume set by how far away it was.
+   *
+   * Distance attenuation is done here rather than with a positional audio node
+   * because there is exactly one listener and the clip is a one-shot; a full
+   * panner graph per explosion buys nothing a curve does not. The floor is
+   * deliberately non-zero — a blast you cannot hear is a blast you cannot
+   * learn from.
+   */
+  explosion(distanceM = 0): void {
+    const falloff = Math.max(0.16, 1 - distanceM / 42);
+    // Larger jitter than a gunshot: three takes have to cover a whole match.
+    this.playVaried("explosion", falloff, 0.09);
   }
 
   reload(): void {

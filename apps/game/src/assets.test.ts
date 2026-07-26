@@ -95,6 +95,7 @@ describe("generated models", () => {
     "wep_rifle",
     "wep_smg",
     "wep_sniper",
+    "wep_grenade",
   ]);
 
   it("only uses material slots the engine can bind", () => {
@@ -207,6 +208,7 @@ describe("generated audio", () => {
     step_concrete: 5,
     step_grating: 4,
     impact_concrete: 4,
+    explosion: 3,
   };
   const SINGLE = ["reload", "ui_hover", "ui_click", "ui_error", "ambience_yard"];
 

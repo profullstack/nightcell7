@@ -26,6 +26,17 @@ export interface BotTuning {
   engageRangeM: number;
   /** Distance the bot tries to hold from its target. */
   preferredRangeM: number;
+  /**
+   * Range band in which a bot will throw a grenade.
+   *
+   * The lower bound is not a style choice: the blast damages its owner, so a
+   * bot throwing at something 4 m away kills itself, which reads as a bug
+   * rather than as difficulty.
+   */
+  grenadeMinRangeM: number;
+  grenadeMaxRangeM: number;
+  /** Probability per second of throwing while a target sits in that band. */
+  grenadeChancePerSecond: number;
 }
 
 export const DEFAULT_BOT_TUNING: BotTuning = {
@@ -34,6 +45,9 @@ export const DEFAULT_BOT_TUNING: BotTuning = {
   reactionMs: 420,
   engageRangeM: 45,
   preferredRangeM: 14,
+  grenadeMinRangeM: 11,
+  grenadeMaxRangeM: 30,
+  grenadeChancePerSecond: 0.22,
 };
 
 /** Small deterministic PRNG so a bot match can be replayed exactly. */
@@ -109,6 +123,22 @@ export class BotController {
       const aimed = Math.abs(angleDelta(yaw, desiredYaw)) < 0.09;
       if (acquiredFor >= this.tuning.reactionMs && aimed && range <= this.tuning.engageRangeM) {
         buttons |= BUTTON.FIRE;
+      }
+
+      // Grenades. The throw is a request like any other — the simulation
+      // decides whether there is one left and where it leaves from, so a bot
+      // gets no more than a player would.
+      if (
+        acquiredFor >= this.tuning.reactionMs &&
+        range >= this.tuning.grenadeMinRangeM &&
+        range <= this.tuning.grenadeMaxRangeM &&
+        this.rng.next() < this.tuning.grenadeChancePerSecond * (dtMs / 1000)
+      ) {
+        // Aim the throw where the bot is looking, which the lob turns into an
+        // arc that lands near the target rather than at its feet.
+        self.movement.yaw = yaw;
+        self.movement.pitch = pitch;
+        sim.throwGrenade(this.playerId);
       }
     } else {
       // Patrol: wander toward the middle of the map so bots do not idle in spawn.
