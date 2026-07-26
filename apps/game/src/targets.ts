@@ -75,7 +75,7 @@ export interface TargetHit {
  * band read at range. This is a readability decision, not a fidelity one — an
  * enemy you cannot resolve is a broken game, not a moody one.
  */
-function brighten(root: TransformNode): void {
+export function brightenCharacter(root: TransformNode): void {
   const localised = new Map<Material, Material>();
 
   for (const mesh of root.getChildMeshes() as Mesh[]) {
@@ -86,14 +86,38 @@ function brighten(root: TransformNode): void {
     if (!clone) {
       clone = source.clone(`target_${source.name}`) ?? source;
       if (clone instanceof PBRMaterial) {
-        // Team colour: keep it saturated and give it a little glow so the
-        // armband is the thing that catches the eye first.
         const isTeam = source.name.includes("paint");
-        clone.albedoColor = isTeam ? new Color3(1.5, 0.75, 0.7) : new Color3(2.3, 2.25, 2.15);
-        clone.metallic = 0.0;
-        clone.roughness = 0.85;
-        clone.environmentIntensity = 1.4;
-        if (isTeam) clone.emissiveColor = new Color3(0.22, 0.04, 0.05);
+
+        // `albedoColor` MULTIPLIES the albedo texture. The first attempt used
+        // 2.3 to drag the figures out of the dark, which pushed every texel
+        // past white and erased the texture entirely — the result read as a
+        // featureless white stormtrooper, not a fighter in field clothing.
+        //
+        // A moderate, *warm* multiplier lifts them without flattening them:
+        // the weave, the dirt and the wear all survive, and the colour lands
+        // on worn khaki rather than bleached plastic.
+        // A tint *below* one, not above it.
+        //
+        // The original "dark blobs" were diagnosed when the yard's ambient
+        // was 2.15. It is 4.05 now — raised in the brightness pass — so a
+        // multiplier over 1 on top of that clipped every texel to white at
+        // exposure 2.05 and produced a featureless pale figure. The characters
+        // stopped needing any lift the moment the scene got brighter; what
+        // they need is colour.
+        clone.albedoColor = isTeam ? new Color3(0.86, 0.3, 0.26) : new Color3(0.78, 0.68, 0.52);
+
+        // Metallic and roughness are left to the ORM texture. Overriding them
+        // to flat values was the other half of the plastic look: it removed
+        // every difference between cloth, webbing and boot leather.
+        clone.environmentIntensity = 0.85;
+
+        // A little self-illumination so the silhouette separates from an unlit
+        // background without washing the surface out. The team band gets more,
+        // because it is the thing that has to be identifiable at range.
+        // No self-illumination on cloth — it is lit plenty. Only the team band
+        // gets a trace, and only enough to survive the bloom threshold rather
+        // than glow through it.
+        clone.emissiveColor = isTeam ? new Color3(0.05, 0.008, 0.008) : new Color3(0, 0, 0);
       }
       localised.set(source, clone);
     }
@@ -117,7 +141,7 @@ export class TrainingTargets {
       });
       if (!placed) return;
 
-      brighten(placed.root);
+      brightenCharacter(placed.root);
 
       // Arm them. A figure standing in a contested yard with empty hands reads
       // as a mannequin no matter how good the model is.
