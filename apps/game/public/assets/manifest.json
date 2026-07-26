@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 4.5.12 LTS",
-  "commit": "ad926825e31ded8e6197881e6d68cf00f368ed65",
+  "commit": "e132eb8caf8583e204fe8a2292219ebce39c6955",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
   "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
   "textureSize": 1024,
@@ -69,12 +69,12 @@
     "ui_hover.mp3"
   ],
   "music": [
-    "music_frost-on-the-oar.mp3",
-    "music_ironwood-oath.mp3",
-    "music_runes-on-ice.mp3",
-    "music_storm-crown-oath.mp3",
-    "music_the-wolf-called-want-part-2.mp3",
-    "music_the-wolf-called-want.mp3"
+    "throngva/frost-on-the-oar.mp3",
+    "throngva/ironwood-oath.mp3",
+    "throngva/runes-on-ice.mp3",
+    "throngva/storm-crown-oath.mp3",
+    "throngva/the-wolf-called-want-part-2.mp3",
+    "throngva/the-wolf-called-want.mp3"
   ],
   "bytes": {
     "models": 4206012,

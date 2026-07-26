@@ -268,15 +268,16 @@ function main() {
   const modelBytes = directoryBytes(MODELS_OUT);
   const textureBytes = directoryBytes(TEXTURES_OUT);
   // Skip streamed music and any video the directory happens to hold.
-  // Allowlist the generated effects rather than trying to pattern-match the
-  // music. Tracks arrive with whatever names they were given, so an exclusion
-  // pattern silently under-counts the moment one does not match — which is how
-  // 22 MB of songs ended up inside a 6 MB budget guard.
-  const SFX = /^(fire_|step_|impact_|reload\.|ui_|ambience_yard\.)/;
-  const audioBytesTotal = directoryBytes(AUDIO_OUT, (f) => !SFX.test(f));
+  // Only the generated effects, which are the flat .mp3 files in the audio
+  // root. Music lives under audio/music/<artist>/ and is streamed on demand,
+  // so it is outside the shell budget by virtue of where it sits rather than
+  // by a filename pattern — a pattern silently under-counted the moment a
+  // track arrived under its own name, which put 22 MB of songs inside a 6 MB
+  // guard.
+  const audioBytesTotal = directoryBytes(AUDIO_OUT, (f) => !f.endsWith(".mp3"));
   const audio = existsSync(AUDIO_OUT)
     ? readdirSync(AUDIO_OUT)
-        .filter((f) => f.endsWith(".mp3") && SFX.test(f))
+        .filter((f) => f.endsWith(".mp3"))
         .sort()
     : [];
 
@@ -304,10 +305,16 @@ function main() {
         models,
         textures,
         audio,
-        // Streamed on demand, so outside the shell budget entirely.
-        music: existsSync(AUDIO_OUT)
-          ? readdirSync(AUDIO_OUT)
-              .filter((f) => f.endsWith(".mp3") && !SFX.test(f))
+        // Streamed on demand, so outside the shell budget entirely. Listed as
+        // artist/song so provenance is readable straight from the manifest.
+        music: existsSync(join(AUDIO_OUT, "music"))
+          ? readdirSync(join(AUDIO_OUT, "music"), { withFileTypes: true })
+              .filter((e) => e.isDirectory())
+              .flatMap((artist) =>
+                readdirSync(join(AUDIO_OUT, "music", artist.name))
+                  .filter((f) => f.endsWith(".mp3"))
+                  .map((f) => `${artist.name}/${f}`),
+              )
               .sort()
           : [],
         bytes: {

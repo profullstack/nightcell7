@@ -43,14 +43,39 @@ const SINGLE = ["reload", "ui_hover", "ui_click", "ui_error", "ambience_yard"] a
  * is playable before a note has arrived, so music is fetched on demand rather
  * than gating the first match (PRD §30).
  */
-const MUSIC = [
-  "music_frost-on-the-oar",
-  "music_ironwood-oath",
-  "music_runes-on-ice",
-  "music_storm-crown-oath",
-  "music_the-wolf-called-want",
-  "music_the-wolf-called-want-part-2",
-] as const;
+interface Track {
+  /** Path under `audio/`, artist folder and all. */
+  readonly file: string;
+  readonly title: string;
+  readonly artist: string;
+}
+
+/**
+ * The soundtrack, organised by artist.
+ *
+ * `music/<artist>/<song>.mp3` rather than a flat `music_*.mp3` pile: the
+ * licence and attribution belong to the artist, not to each file, and a folder
+ * per artist is where a reader looks for that. It also stopped a real bug —
+ * the download-budget guard excluded music by a `^music_` filename pattern,
+ * which silently under-counted the moment a track arrived under its own name.
+ * A directory cannot be misspelt into the wrong bucket.
+ */
+const MUSIC: readonly Track[] = [
+  { file: "music/throngva/frost-on-the-oar.mp3", title: "Frost on the Oar", artist: "Þrøngva" },
+  { file: "music/throngva/runes-on-ice.mp3", title: "Runes on Ice", artist: "Þrøngva" },
+  { file: "music/throngva/ironwood-oath.mp3", title: "Ironwood Oath", artist: "Þrøngva" },
+  { file: "music/throngva/storm-crown-oath.mp3", title: "Storm Crown Oath", artist: "Þrøngva" },
+  {
+    file: "music/throngva/the-wolf-called-want.mp3",
+    title: "The Wolf Called Want",
+    artist: "Þrøngva",
+  },
+  {
+    file: "music/throngva/the-wolf-called-want-part-2.mp3",
+    title: "The Wolf Called Want (Part 2)",
+    artist: "Þrøngva",
+  },
+];
 
 type VariedName = keyof typeof VARIED;
 
@@ -235,7 +260,7 @@ export class GameAudio {
 
     const advance = () => {
       this.musicIndex = (this.musicIndex + 1) % MUSIC.length;
-      element.src = `${BASE}${MUSIC[this.musicIndex]}.mp3`;
+      element.src = `${BASE}${MUSIC[this.musicIndex]?.file ?? ""}`;
       void element.play().catch(() => {
         // Autoplay can still be refused; failing quietly is right here,
         // because losing the soundtrack must never interrupt a match.
@@ -246,9 +271,14 @@ export class GameAudio {
     // A track that fails to load should move on rather than end the playlist.
     element.addEventListener("error", advance);
 
-    element.src = `${BASE}${MUSIC[this.musicIndex]}.mp3`;
+    element.src = `${BASE}${MUSIC[this.musicIndex]?.file ?? ""}`;
     void element.play().catch(() => {});
     this.music = element;
+  }
+
+  /** The track playing now, for a "now playing" line if one is ever wanted. */
+  nowPlaying(): Track | undefined {
+    return this.music ? MUSIC[this.musicIndex] : undefined;
   }
 
   stopMusic(): void {

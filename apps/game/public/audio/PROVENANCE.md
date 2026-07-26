@@ -59,3 +59,28 @@ variations exist to prevent.
 
 Original work, © NIGHTCELL 7. No third-party audio, no sampled material, and
 nothing produced by a generative audio model.
+
+## Music
+
+Original work by **Þrøngva**, written for this game by the project owner. Not
+licensed from a third party, so there is no external licence to comply with and
+no attribution obligation — the credit below is for the record.
+
+Laid out as `music/<artist>/<song>.mp3`. The licence and attribution belong to
+the artist rather than to each file, and a folder per artist is where a reader
+looks for that. It also removed a real bug: the download-budget guard used to
+exclude music by a `^music_` filename pattern, which silently under-counted the
+moment a track arrived under its own name and put 22 MB of songs inside a 6 MB
+guard. A directory cannot be misspelt into the wrong bucket.
+
+| File                                             | Title                         |
+| ------------------------------------------------ | ----------------------------- |
+| `music/throngva/frost-on-the-oar.mp3`            | Frost on the Oar              |
+| `music/throngva/runes-on-ice.mp3`                | Runes on Ice                  |
+| `music/throngva/ironwood-oath.mp3`               | Ironwood Oath                 |
+| `music/throngva/storm-crown-oath.mp3`            | Storm Crown Oath              |
+| `music/throngva/the-wolf-called-want.mp3`        | The Wolf Called Want          |
+| `music/throngva/the-wolf-called-want-part-2.mp3` | The Wolf Called Want (Part 2) |
+
+Streamed by an `<audio>` element on demand and deliberately outside the 15 MB
+shell budget (PRD §30): the game is playable before a note arrives.
