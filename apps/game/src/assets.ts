@@ -55,11 +55,15 @@ export const MODELS = [
   "lamp_mast",
   "character",
   "carbine",
-  // Licensed CC0 characters (Quaternius). These carry their own rig,
-  // animations and materials, so they bypass the material-slot convention the
-  // generated props follow — see apps/game/public/assets/PROVENANCE.md.
-  "fighter_insurgent",
-  "fighter_soldier",
+  // The licensed Synty characters are deliberately NOT here.
+  //
+  // They convert, load and texture correctly, but neither route to animating
+  // them works yet — retargeting our clips onto Synty's skeleton leaves the
+  // arms in its T-pose, and skinning the mesh to our rig loses the arms in the
+  // bind (docs/HANDOFF-synty.md). Listing them anyway cost 1.24 MB of the shell
+  // download, fetched and parsed at every boot, for two models nothing drew.
+  // They are regenerated on demand by `tools/art/import-synty.mjs
+  // --with-characters` when there is something to ship.
   // Licensed Synty POLYGON Military static meshes. Vehicles bind the shared
   // `synty_vehicles` atlas; props reuse the character atlas (`synty_atlas`),
   // since both were authored against Synty's Texture_01_A. No new texture ships

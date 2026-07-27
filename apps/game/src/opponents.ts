@@ -138,22 +138,12 @@ export class Opponents {
     // One model per faction.
     //
     // Nightcell are irregulars: olive drab, boots, a pack — someone fighting
-    // with what they own. The first attempt used the pack's `Worker`, which is
-    // a hi-vis construction labourer and read exactly like one. That difference is
-    // the fastest target ID a player gets, and it is carried by the whole
-    // silhouette rather than by a colour swatch.
-    // Back on the generated character for now.
+    // Both sides use the generated character.
     //
-    // The licensed Quaternius models are committed and load fine, but they
-    // render as glowing white figures in this scene and three attempts did not
-    // fix it: scaling albedo to the yard's actual exposure budget (0.42, then
-    // 0.18), clearing emissive unconditionally, and excluding them from the
-    // GlowLayer all left them blown out. Something else in their imported
-    // material setup is driving it and I have not identified what.
-    //
-    // The generated character renders correctly, so the bots use it until the
-    // licensed ones are diagnosed. Swapping back is a one-line change:
-    //   assets.models.get("fighter_soldier") / ("fighter_worker")
+    // The licensed Synty characters would be a clear upgrade and are not ready:
+    // see docs/HANDOFF-synty.md for the two attempts and where each stops. They
+    // are told apart by team colour and weapon instead, which is what
+    // `brightenCharacter` and `weaponFor` below are for.
     const enemyModel = assets.models.get("character");
     const friendlyModel = assets.models.get("character");
     const character = enemyModel;

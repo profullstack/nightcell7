@@ -12,16 +12,16 @@ oversight.
 The Synty characters are committed, load fine, are textured, and are **not
 shipped**, because their animation retarget is broken.
 
-| Thing                                                 | State                                           |
-| ----------------------------------------------------- | ----------------------------------------------- |
-| `models/fighter_insurgent.glb`, `fighter_soldier.glb` | committed, load, textured, animation wrong      |
-| `textures/synty_atlas.webp`                           | working, 388 KB, shared by characters + props   |
-| `tools/art/blender/import_synty.py`                   | character converter; maths fixed, export broken |
-| `tools/art/blender/import_synty_prop.py`              | static-mesh converter; **working, shipped**     |
-| 2 vehicles + 5 props (`veh_*`, `prop_*`)              | **integrated** — converted, textured, placed    |
-| `textures/synty_vehicles.webp`                        | working, 76 KB, shared by all vehicles          |
-| 3 weapons (`wep_*`) + `synty_weapons.webp`            | **integrated** — player viewmodel and bot hands |
-| Shell budget                                          | 7.13 MB against a 9 MB guard                    |
+| Thing                                                 | State                                                                                                        |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `models/fighter_insurgent.glb`, `fighter_soldier.glb` | **not shipped** — convert and load, animation unsolved; regenerate with `import-synty.mjs --with-characters` |
+| `textures/synty_atlas.webp`                           | working, 388 KB, shared by characters + props                                                                |
+| `tools/art/blender/import_synty.py`                   | character converter; maths fixed, export broken                                                              |
+| `tools/art/blender/import_synty_prop.py`              | static-mesh converter; **working, shipped**                                                                  |
+| 2 vehicles + 5 props (`veh_*`, `prop_*`)              | **integrated** — converted, textured, placed                                                                 |
+| `textures/synty_vehicles.webp`                        | working, 76 KB, shared by all vehicles                                                                       |
+| 3 weapons (`wep_*`) + `synty_weapons.webp`            | **integrated** — player viewmodel and bot hands                                                              |
+| Shell budget                                          | 5.98 MB against a 9 MB guard                                                                                 |
 
 Source pack is at `~/src/nightcell7-assets/SourceFiles/` (406 MB, outside the
 repo, not committed).
