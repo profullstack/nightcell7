@@ -70,12 +70,21 @@ T-pose: legs move, arms stay out. Every clip measures 2.02-2.05 m across.
 
 ## Next steps, in order
 
-1. **Stop retargeting. Skin the Synty mesh to our rig instead.**
-   This is the recommended route. Our rig already has all five clips working;
-   the Synty character is, for our purposes, just a 4k-triangle mesh. Parenting
-   it to our existing armature with automatic weights removes the entire
-   skeleton-to-skeleton problem rather than solving it. Risk is weighting
-   quality around the shoulders and hips, which is inspectable in a render.
+1. ~~**Stop retargeting. Skin the Synty mesh to our rig instead.**~~
+   **Tried — `tools/art/blender/skin_synty.py`. Gets close, still not
+   shippable.** The export carries all five clips, height matches our rig to
+   within 2%, and the torso, legs and head animate correctly. The arms do not:
+   one locks straight out at shoulder height, the other crumples into the
+   chest.
+
+   The pose step is provably correct — every mapped arm bone reaches its target
+   direction to within 0.0 degrees, checked bone by bone — yet the baked mesh
+   still measures 1.16 m across against our rig's 0.69 m, so the mesh is not
+   following its own skeleton. Suspicion is on the `ARMATURE_AUTO` bind rather
+   than the pose. The character's extreme vertices turn out to be fingertips
+   weighted to `indexFinger_03_l/r`, bones the script never poses; whether
+   those are parented under `Hand_*` in the FBX has not been confirmed and is
+   the first thing to check.
 
    Two approaches that were tried and measured, so they are not repeated:
    - _Copy world orientation outright_ — removes the rest precondition and the
@@ -87,21 +96,30 @@ T-pose: legs move, arms stay out. Every clip measures 2.02-2.05 m across.
      so the two rest frames are not being compared in a common basis. Worth
      revisiting only with that basis problem understood.
 
-2. **Verify objectively, and measure the right mesh.** Load the exported GLB,
+2. **Get clips authored for the Synty skeleton instead.**
+   Both directions of moving animation between these two skeletons have now
+   cost more than they are worth. An auto-rigging service takes a mesh and
+   returns a rigged, animated FBX — no retarget, no rebind, and the result is
+   authored against the body it ships with. That is very likely cheaper than a
+   third attempt at either script here.
+
+3. **Verify objectively, and measure the right mesh.** Load the exported GLB,
    assign each action directly (muting or deleting the NLA, or the assigned
    action masks whichever strip you unmute), step every frame, and measure the
-   _character_ mesh — explicitly excluding the stray `Icosphere`, which is what
-   produced the bogus splay reading above. A walk frame should be near
+   _character_ mesh — explicitly excluding the collision proxy, which is what
+   produced the bogus splay reading above — the "stray Icosphere" is
+   `COL_character`, the collision hull that ships inside `character.glb`, at
+   1.9 x 2.0 x 2.8 against a body of 0.69 x 0.62 x 1.75. A walk frame should be near
    `0.6-0.9 x 0.4 x 1.8`. A bind-pose preview looks fine even when the
    animation is broken, which is how this shipped in the first place.
 
-3. **Then swap the bots back.** Two lines in `apps/game/src/opponents.ts`,
+4. **Then swap the bots back.** Two lines in `apps/game/src/opponents.ts`,
    marked in a comment there:
    `assets.models.get("fighter_soldier")` / `("fighter_insurgent")`, and clip
    names change from lowercase (`walk`/`run`/`idle`/`death`) to Synty's
    (`Walk`/`Run`/`Idle_Gun`/`Death`).
 
-4. ~~**Then vehicles and props.**~~ **Done.** `import_synty_prop.py` converts
+5. ~~**Then vehicles and props.**~~ **Done.** `import_synty_prop.py` converts
    the static `SM_Veh_*` / `SM_Prop_*` meshes: no retarget, just unit apply,
    recentre-to-ground, per-mesh material naming, weld and (for vehicles)
    decimate. Shipped: `veh_armored_car`, `veh_technical` and five props
@@ -120,7 +138,7 @@ T-pose: legs move, arms stay out. Every clip measures 2.02-2.05 m across.
    kept out of the three lanes, so rule 1 still holds for the play space.
    Promoting any to real cover is a `map.ts` collision + checksum change.
 
-5. ~~**Then weapons.**~~ **Done.** `import_synty_weapon.py` assembles the
+6. ~~**Then weapons.**~~ **Done.** `import_synty_weapon.py` assembles the
    modular `SM_Wep_*` parts into one mesh and places `SOCKET_MUZZLE`.
    `wep_rifle` is the player's viewmodel; the Directorate carry it and Nightcell
    the SMG, so the two sides are legible at a glance. The generated `carbine` is
@@ -137,7 +155,7 @@ T-pose: legs move, arms stay out. Every clip measures 2.02-2.05 m across.
      change was landing on nothing; forcing the weapon bright red changed
      nothing on screen, which is what finally identified it.
 
-6. **Everything licensed is reproducible.** `node tools/art/import-synty.mjs`
+7. **Everything licensed is reproducible.** `node tools/art/import-synty.mjs`
    holds the source file, slot, decimation and atlas for every Synty asset and
    reproduces the committed files byte for byte. Before it, those parameters
    lived only in one session's shell history.
