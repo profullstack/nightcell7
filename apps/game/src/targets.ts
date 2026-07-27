@@ -92,12 +92,12 @@ export interface TeamPalette {
 }
 
 export const TEAM_PALETTE: { readonly friendly: TeamPalette; readonly enemy: TeamPalette } = {
-  // Nightcell: cool, grey-green, signal cyan. Matches the HUD's own cyan, which
-  // is already the colour of "yours" everywhere else in the interface.
-  friendly: { band: new Color3(0.16, 0.62, 0.74), cloth: new Color3(0.5, 0.58, 0.58) },
-  // Directorate: warm khaki and red, which is the palette the yard's own
-  // containers and hazard paint already use for "theirs".
-  enemy: { band: new Color3(0.86, 0.26, 0.2), cloth: new Color3(0.78, 0.68, 0.52) },
+  // Nightcell: cool cloth, signal cyan band — the colour the HUD already uses
+  // for "yours" everywhere else in the interface.
+  friendly: { band: new Color3(0.1, 0.75, 0.95), cloth: new Color3(0.42, 0.52, 0.6) },
+  // Directorate: warm cloth, hot orange-red band, matching the yard's own
+  // containers and hazard paint.
+  enemy: { band: new Color3(1.0, 0.28, 0.12), cloth: new Color3(0.72, 0.6, 0.44) },
 };
 
 export function brightenCharacter(root: TransformNode, palette?: TeamPalette): void {
@@ -133,7 +133,21 @@ export function brightenCharacter(root: TransformNode, palette?: TeamPalette): v
         // stopped needing any lift the moment the scene got brighter; what
         // they need is colour.
         const team = palette ?? TEAM_PALETTE.enemy;
-        clone.albedoColor = isTeam ? team.band : team.cloth;
+
+        if (isTeam) {
+          // Replace the band's texture, do not tint it.
+          //
+          // `albedoColor` MULTIPLIES, and this material's texture is
+          // `paint_red`. Multiplying red by cyan is near-black, so the friendly
+          // band came out unlit black while only the enemy's red survived —
+          // which is why the two teams still read the same on screen. A flat
+          // colour with no texture is the only way to get a saturated hue the
+          // source does not already contain.
+          clone.albedoTexture = null;
+          clone.albedoColor = team.band;
+        } else {
+          clone.albedoColor = team.cloth;
+        }
 
         // Metallic and roughness are left to the ORM texture. Overriding them
         // to flat values was the other half of the plastic look: it removed
@@ -146,9 +160,14 @@ export function brightenCharacter(root: TransformNode, palette?: TeamPalette): v
         // No self-illumination on cloth — it is lit plenty. Only the team band
         // gets a trace, and only enough to survive the bloom threshold rather
         // than glow through it.
-        // Scaled from the band colour rather than hard-coded red, so a cyan
-        // team gets a cyan trace instead of a red one on a blue-grey figure.
-        clone.emissiveColor = isTeam ? team.band.scale(0.06) : new Color3(0, 0, 0);
+        // The band self-illuminates, and generously.
+        //
+        // This is the one thing that has to be readable across a dark yard at
+        // 40 m, and a diffuse surface at that distance is a grey smudge however
+        // it is coloured. Emissive puts it above the scene's bloom threshold so
+        // the GlowLayer picks it up, which is what turns a colour into a marker.
+        // A previous 0.06 was invisible in play.
+        clone.emissiveColor = isTeam ? team.band.scale(0.85) : new Color3(0, 0, 0);
       }
       localised.set(source, clone);
     }
