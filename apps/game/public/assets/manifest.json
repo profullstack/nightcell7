@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 4.5.12 LTS",
-  "commit": "8fb62aa99ff07aa4cc32ff0fea2ec71adb09fbb2",
+  "commit": "89ecfe33b694d24f41f3ec9bd585e7fdb24f68c1",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
   "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
   "textureSize": 1024,
@@ -11,8 +11,6 @@
     "character.glb",
     "container.glb",
     "deck.glb",
-    "fighter_insurgent.glb",
-    "fighter_soldier.glb",
     "hardpoint.glb",
     "lamp_mast.glb",
     "pipe_rack.glb",
@@ -94,9 +92,9 @@
     "throngva/the-wolf-called-want.mp3"
   ],
   "bytes": {
-    "models": 4722360,
+    "models": 3422320,
     "textures": 2447388,
     "audio": 402789,
-    "total": 7572537
+    "total": 6272497
   }
 }

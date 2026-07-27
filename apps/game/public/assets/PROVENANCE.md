@@ -103,8 +103,6 @@ material-slot or `COL_` conventions the generated props use;
 
 | File                           | Source                                                      | Licence                         |
 | ------------------------------ | ----------------------------------------------------------- | ------------------------------- |
-| `models/fighter_insurgent.glb` | Synty POLYGON Military — `SK_Chr_Insurgent_Male_01`         | Synty Store licence (purchased) |
-| `models/fighter_soldier.glb`   | Synty POLYGON Military — `SK_Chr_Soldier_Male_01`           | Synty Store licence (purchased) |
 | `models/veh_armored_car.glb`   | Synty POLYGON Military — `SM_Veh_Light_Armored_Car_01`      | Synty Store licence (purchased) |
 | `models/veh_technical.glb`     | Synty POLYGON Military — `SM_Veh_Pickup_Technical_01`       | Synty Store licence (purchased) |
 | `models/prop_barrel.glb`       | Synty POLYGON Military — `SM_Prop_Barrel_01`                | Synty Store licence (purchased) |
@@ -124,6 +122,13 @@ Purchased from https://syntystore.com. The licence grants perpetual,
 royalty-free commercial use in unlimited titles and permits modification; it
 does **not** permit reselling the assets as assets. Not copyright ownership,
 which only a work-for-hire commission gives.
+
+The two Synty **characters** are converted by
+`tools/art/blender/import_synty.py` but are **not shipped**: neither route to
+animating them works yet (docs/HANDOFF-synty.md), and carrying two models
+nothing draws cost 1.24 MB of the shell download at every boot. The converters
+and the licence record stay; the GLBs are regenerated on demand with
+`node tools/art/import-synty.mjs --with-characters`.
 
 Source files are **not** committed — the pack is 406 MB unpacked and lives
 outside the repo. Only the converted GLBs and the shared atlases ship.
