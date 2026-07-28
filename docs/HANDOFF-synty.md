@@ -68,6 +68,40 @@ Rest-relative retargeting transfers _deviation from rest_. The source barely
 deviates from its own arms-down rest, so the target barely deviates from its
 T-pose: legs move, arms stay out. Every clip measures 2.02-2.05 m across.
 
+## Solved: the retarget works (attempt 3)
+
+`tools/art/blender/retarget_mocap.py` retargets MoCap Online's library onto a
+Synty character and the result is correct — verified by render, not measurement
+alone: an upright figure holding a rifle in a two-handed aim, 1.72-1.79 m tall,
+arms down at 0.59-0.66 m across, legs striding.
+
+The maths was never wrong. Rest-relative retargeting transfers a bone's
+deviation from its own rest, which requires both skeletons to share a reference
+pose. Our generated rig rests **arms-down at 0.69 m**; Synty binds in a
+**T-pose at 2.03 m**. MoCap Online's Biped rig rests in a **T-pose at 1.95 m** —
+same reference pose as Synty, so the same formula applies cleanly.
+
+Two bugs found on the way, both measurable:
+
+- The mocap FBX imports Y-up and the Synty FBX does not, so the character
+  animated flat on its back (0.97 x 1.99 x 0.78 for something 1.79 m tall).
+  Fixed by flattening both object transforms into their bones rather than
+  carrying the space conversion through the algebra.
+- Each imported FBX brings its own action, which the exporter shipped as extra
+  bind-pose clips. Anything not explicitly baked is now dropped before export.
+
+**Still blocked on wiring, not on animation.** Putting the result into
+`Opponents` makes the bots invisible — they load, nothing errors, nothing draws.
+Tried and did not fix it: wrapping all root nodes from
+`instantiateModelsToScene` in one parent (the licensed GLB has armature and mesh
+as separate roots; the generated character has one `__root__`), and checking the
+clip-name lookup. Next step is to instrument what `placeAnimated` returns for
+this container.
+
+The free pack has **no death animation** — locomotion, rifle handling, zombie
+and office clips only. A stand-in that tips the body over was written and
+reverted with the rest; it is worth restoring when the wiring works.
+
 ## Next steps, in order
 
 1. ~~**Stop retargeting. Skin the Synty mesh to our rig instead.**~~
