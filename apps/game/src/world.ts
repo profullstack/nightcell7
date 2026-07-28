@@ -548,6 +548,46 @@ export async function buildWorld(
     { position: new Vector3(35, 0, -52), rotationY: -2.2 },
     { position: new Vector3(-35, 0, 52), rotationY: 0.9 },
   ]);
+  // --- skyline -----------------------------------------------------------
+  //
+  // Everything here stands OUTSIDE the perimeter, past |x| 40 / |z| 60, which
+  // is beyond the map bounds and therefore unreachable. That is the whole
+  // point: the collision map in `packages/multiplayer-sim/src/map.ts` is the
+  // authority on what is solid, and a building the player can see but walk
+  // through is worse than no building at all. Nothing out here can be entered,
+  // shot from, or hidden behind, so none of it touches the server map or its
+  // checksum.
+  //
+  // The perimeter wall is 12 m. Only what rises past that is visible from the
+  // yard, which is why the two towers earn their place unaided — 29.7 m and
+  // 27.2 m — and the hangar and guard towers are lifted onto a shelf so their
+  // rooflines clear it. Their bases sit below 12 m and are hidden by the wall
+  // that makes the trick necessary in the first place.
+  put("env_control_tower", "sky_control", [
+    { position: new Vector3(54, 0, -16), rotationY: -1.9 },
+    { position: new Vector3(-52, 0, 34), rotationY: 1.2 },
+  ]);
+  put("env_oil_tower", "sky_oil", [
+    { position: new Vector3(-56, 0, -6), rotationY: 0.4 },
+    { position: new Vector3(50, 0, 44), rotationY: 2.7 },
+  ]);
+  put("env_hangar", "sky_hangar", [
+    { position: new Vector3(-6, 5, -86), rotationY: 0 },
+    { position: new Vector3(14, 5, 88), rotationY: Math.PI },
+  ]);
+  put("env_guard_tower", "sky_guard", [
+    { position: new Vector3(45, 8, 8), rotationY: -1.6 },
+    { position: new Vector3(-45, 8, -28), rotationY: 1.6 },
+    { position: new Vector3(45, 8, -46), rotationY: -1.6 },
+  ]);
+
+  // Tents in the spawn ends, alongside the barrels and ammo boxes — the same
+  // cosmetic zones, for the same reason.
+  put("env_tent", "tent", [
+    { position: new Vector3(-31, 0, -44), rotationY: 0.5 },
+    { position: new Vector3(31, 0, 44), rotationY: -2.6 },
+  ]);
+
   put("prop_barrier", "barrier", [
     { position: new Vector3(-6, 0, -56), rotationY: 0 },
     { position: new Vector3(-2, 0, -56), rotationY: 0 },
