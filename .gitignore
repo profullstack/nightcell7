@@ -38,3 +38,8 @@ __pycache__/
 # Scratch screenshots from local verification runs.
 shot-*.png
 docs/POLYGON_Military_SourceFiles_v5.zip
+
+# Licensed asset packs live OUTSIDE the repo (~/src/nightcell7-assets).
+# The repo is public; a licence to use assets in the game is not a licence to
+# redistribute them. See apps/game/public/assets/PROVENANCE.md.
+nightcell7-assets/
