@@ -20,6 +20,8 @@
  *     allocation, which is cheap enough to do on every footstep.
  */
 
+import SOUNDTRACK from "virtual:soundtrack";
+
 /** Clip families with variations. Index is 1-based to match the filenames. */
 const VARIED = {
   fire: 4,
@@ -52,6 +54,53 @@ interface Track {
 }
 
 /**
+ * Artist display names, keyed by folder.
+ *
+ * The folder is ASCII so it is safe in a URL and a shell; the display name is
+ * how the artist actually writes it. Anything unlisted falls back to the folder
+ * name in title case, so a new artist appears sensibly without an entry.
+ */
+const ARTIST_NAMES: Record<string, string> = {
+  throngva: "Þrøngva",
+};
+
+/** Words a title leaves lowercase unless they lead. */
+const MINOR_WORDS = new Set(["a", "an", "and", "at", "for", "in", "of", "on", "or", "the", "to"]);
+
+const capitalise = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
+
+/**
+ * Turn a file stem into a display title.
+ *
+ * `the-wolf-called-want-part-2` -> `The Wolf Called Want (Part 2)`. A stem that
+ * already contains spaces is taken as authored, since someone who names a file
+ * `More Than Enough.mp3` has already made the decision.
+ */
+export function titleFromStem(stem: string): string {
+  if (stem.includes(" ")) return stem;
+
+  const part = /-part-(\d+)$/i.exec(stem);
+  const words = (part ? stem.slice(0, part.index) : stem).split("-").filter(Boolean);
+  const title = words
+    .map((word, index) =>
+      index > 0 && MINOR_WORDS.has(word.toLowerCase()) ? word.toLowerCase() : capitalise(word),
+    )
+    .join(" ");
+
+  return part ? `${title} (Part ${part[1]})` : title;
+}
+
+/** `<artist>/<song>.mp3`, as the glob emits it, to a playable track. */
+export function toTrack(relative: string): Track {
+  const [folder = "", file = ""] = relative.split("/");
+  return {
+    file: `music/${relative}`,
+    title: titleFromStem(file.replace(/\.mp3$/i, "")),
+    artist: ARTIST_NAMES[folder] ?? capitalise(folder),
+  };
+}
+
+/**
  * The soundtrack, organised by artist.
  *
  * `music/<artist>/<song>.mp3` rather than a flat `music_*.mp3` pile: the
@@ -60,23 +109,24 @@ interface Track {
  * the download-budget guard excluded music by a `^music_` filename pattern,
  * which silently under-counted the moment a track arrived under its own name.
  * A directory cannot be misspelt into the wrong bucket.
+ *
+ * The list is **discovered, not written down**: `virtual:soundtrack` globs that
+ * directory (see `vite-plugin-soundtrack.ts`). Adding a track is dropping the
+ * file in — no edit here, and no Blender-dependent `assets:build`.
  */
-const MUSIC: readonly Track[] = [
-  { file: "music/throngva/frost-on-the-oar.mp3", title: "Frost on the Oar", artist: "Þrøngva" },
-  { file: "music/throngva/runes-on-ice.mp3", title: "Runes on Ice", artist: "Þrøngva" },
-  { file: "music/throngva/ironwood-oath.mp3", title: "Ironwood Oath", artist: "Þrøngva" },
-  { file: "music/throngva/storm-crown-oath.mp3", title: "Storm Crown Oath", artist: "Þrøngva" },
-  {
-    file: "music/throngva/the-wolf-called-want.mp3",
-    title: "The Wolf Called Want",
-    artist: "Þrøngva",
-  },
-  {
-    file: "music/throngva/the-wolf-called-want-part-2.mp3",
-    title: "The Wolf Called Want (Part 2)",
-    artist: "Þrøngva",
-  },
-];
+const MUSIC: readonly Track[] = SOUNDTRACK.map(toTrack);
+
+/**
+ * The URL for a track.
+ *
+ * Each path segment is encoded separately — the separators must survive, but a
+ * track named `More Than Enough.mp3` must not reach the network with raw
+ * spaces in it. Track names come from a filesystem, so they will not all be
+ * tidy kebab-case.
+ */
+function trackUrl(track: Track): string {
+  return BASE + track.file.split("/").map(encodeURIComponent).join("/");
+}
 
 type VariedName = keyof typeof VARIED;
 
@@ -268,27 +318,34 @@ export class GameAudio {
    */
   startMusic(volume = 0.28): void {
     if (this.music) return;
+    // No soundtrack shipped: nothing to start, and `advance` would divide by
+    // zero and loop on a blank src forever.
+    if (MUSIC.length === 0) return;
 
     this.musicIndex = Math.floor(Math.random() * MUSIC.length);
     const element = new Audio();
     element.volume = volume;
     element.preload = "none";
 
-    const advance = () => {
-      this.musicIndex = (this.musicIndex + 1) % MUSIC.length;
-      element.src = `${BASE}${MUSIC[this.musicIndex]?.file ?? ""}`;
+    const play = (track: Track | undefined) => {
+      if (!track) return;
+      element.src = trackUrl(track);
       void element.play().catch(() => {
         // Autoplay can still be refused; failing quietly is right here,
         // because losing the soundtrack must never interrupt a match.
       });
     };
 
+    const advance = () => {
+      this.musicIndex = (this.musicIndex + 1) % MUSIC.length;
+      play(MUSIC[this.musicIndex]);
+    };
+
     element.addEventListener("ended", advance);
     // A track that fails to load should move on rather than end the playlist.
     element.addEventListener("error", advance);
 
-    element.src = `${BASE}${MUSIC[this.musicIndex]?.file ?? ""}`;
-    void element.play().catch(() => {});
+    play(MUSIC[this.musicIndex]);
     this.music = element;
   }
 

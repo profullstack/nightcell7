@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { soundtrack } from "./vite-plugin-soundtrack";
 
 /**
  * Game build (PRD §17.1, §27).
@@ -11,6 +12,7 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   base: "/play/",
   plugins: [
+    soundtrack(),
     preact(),
     VitePWA({
       registerType: "prompt", // never force an update mid-mission (PRD §27.4)

@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import { soundtrack } from "./apps/game/vite-plugin-soundtrack";
 
 /**
  * One test runner for the whole repository. Package-local `vitest.config.ts`
@@ -6,6 +7,10 @@ import { defineConfig } from "vitest/config";
  * tests always run together in a single command (PRD §17.2).
  */
 export default defineConfig({
+  // `apps/game/src/audio.ts` imports the `virtual:soundtrack` glob, so the
+  // runner has to resolve it too — otherwise importing the module under test
+  // fails before a single assertion runs.
+  plugins: [soundtrack()],
   test: {
     include: [
       "packages/**/*.test.ts",
