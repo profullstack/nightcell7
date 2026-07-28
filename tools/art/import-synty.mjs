@@ -99,6 +99,21 @@ const PROPS = [
   // The frag grenade goes through the prop path, not the weapon one: it is a
   // single mesh with nothing to assemble and no muzzle to find.
   { fbx: "Fbx/SM_Wep_Grenade_01", out: "wep_grenade", slot: "synty_weapons" },
+
+  // Environment. These are backdrop structures placed *outside* the perimeter
+  // walls, so they are decimated hard: nothing here is ever closer than 15 m
+  // and most of it is a silhouette above a 12 m wall. The oil tower imports at
+  // 1.7 MB and lands at 337 KB with no visible difference at that distance.
+  {
+    fbx: "Fbx/SM_Bld_ControlTower_01",
+    out: "env_control_tower",
+    slot: "synty_atlas",
+    decimate: 0.45,
+  },
+  { fbx: "Fbx/SM_Bld_OilTower_01", out: "env_oil_tower", slot: "synty_atlas", decimate: 0.18 },
+  { fbx: "Fbx/SM_Bld_Hangar_01", out: "env_hangar", slot: "synty_atlas", decimate: 0.8 },
+  { fbx: "Fbx/SM_Bld_GuardTower_01", out: "env_guard_tower", slot: "synty_atlas" },
+  { fbx: "Fbx/SM_Bld_CamoNet_Tent_01", out: "env_tent", slot: "synty_atlas" },
 ];
 
 /**

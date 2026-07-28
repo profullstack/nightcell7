@@ -116,6 +116,11 @@ material-slot or `COL_` conventions the generated props use;
 | `models/wep_smg.glb`           | Synty POLYGON Military — `SM_Wep_Preset_A_SMG_01*`          | Synty Store licence (purchased) |
 | `models/wep_sniper.glb`        | Synty POLYGON Military — `SM_Wep_Preset_B_Sniper_01*`       | Synty Store licence (purchased) |
 | `models/wep_grenade.glb`       | Synty POLYGON Military — `SM_Wep_Grenade_01`                | Synty Store licence (purchased) |
+| `models/env_control_tower.glb` | Synty POLYGON Military — `SM_Bld_ControlTower_01`           | Synty Store licence (purchased) |
+| `models/env_oil_tower.glb`     | Synty POLYGON Military — `SM_Bld_OilTower_01`               | Synty Store licence (purchased) |
+| `models/env_hangar.glb`        | Synty POLYGON Military — `SM_Bld_Hangar_01`                 | Synty Store licence (purchased) |
+| `models/env_guard_tower.glb`   | Synty POLYGON Military — `SM_Bld_GuardTower_01`             | Synty Store licence (purchased) |
+| `models/env_tent.glb`          | Synty POLYGON Military — `SM_Bld_CamoNet_Tent_01`           | Synty Store licence (purchased) |
 | `textures/synty_weapons.webp`  | Synty POLYGON Military — `PolygonMilitary_Weapons_01`       | Synty Store licence (purchased) |
 
 Purchased from https://syntystore.com. The licence grants perpetual,
