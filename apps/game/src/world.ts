@@ -271,6 +271,8 @@ const SECTION = {
   pipe_rack: 5.0,
   containerWidth: 2.9,
   containerLength: 6.0,
+  hexCoverWidth: 4.0,
+  hexCoverLength: 4.0,
 } as const;
 
 export async function buildWorld(
@@ -434,8 +436,35 @@ export async function buildWorld(
         break;
       }
 
-      case "container":
       case "block": {
+        // The cross-links are authoritative 4 x 3 x 12 m solids. Three
+        // four-metre hex-cover modules fill each volume exactly, so the new
+        // tactical art remains honest to server collision.
+        const nx = Math.max(1, Math.round(v.size.x / SECTION.hexCoverWidth));
+        const nz = Math.max(1, Math.round(v.size.z / SECTION.hexCoverLength));
+        const placements: Placement[] = [];
+        for (let ix = 0; ix < nx; ix += 1) {
+          for (let iz = 0; iz < nz; iz += 1) {
+            placements.push({
+              position: new Vector3(
+                v.centre.x - v.size.x / 2 + (ix + 0.5) * (v.size.x / nx),
+                v.box.min.y,
+                v.centre.z - v.size.z / 2 + (iz + 0.5) * (v.size.z / nz),
+              ),
+              rotationY: (ix + iz) % 2 === 0 ? 0 : Math.PI,
+              scaling: new Vector3(
+                v.size.x / nx / SECTION.hexCoverWidth,
+                v.size.y / 3.0,
+                v.size.z / nz / SECTION.hexCoverLength,
+              ),
+            });
+          }
+        }
+        put("hex_cover", `hex_cover_${index}`, placements);
+        break;
+      }
+
+      case "container": {
         // Fill the volume with a grid of container-sized units, so a 6 x 6
         // volume gets two side by side and a 4 x 12 cross-link gets two
         // end to end.

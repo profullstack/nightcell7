@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 4.5.12 LTS",
-  "commit": "2e6f8b5fa1d4ec8b8ec40787a22ff48aa304990b",
+  "commit": "650e8a26333ca74a79d4429392f5fd4b401110cf",
   "license": "Original work, © NIGHTCELL 7. No third-party assets.",
   "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
   "textureSize": 1024,
@@ -17,6 +17,7 @@
     "env_oil_tower.glb",
     "env_tent.glb",
     "hardpoint.glb",
+    "hex_cover.glb",
     "lamp_mast.glb",
     "pipe_rack.glb",
     "prop_ammo_box.glb",
@@ -98,9 +99,9 @@
     "throngva/the-wolf-called-want.mp3"
   ],
   "bytes": {
-    "models": 4366692,
+    "models": 4707744,
     "textures": 2447388,
     "audio": 402789,
-    "total": 7216869
+    "total": 7557921
   }
 }

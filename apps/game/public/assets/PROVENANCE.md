@@ -20,6 +20,7 @@ Blender version and commit each build came from.
 | Output                                                                            | Generator                                    |
 | --------------------------------------------------------------------------------- | -------------------------------------------- |
 | `models/container.glb`                                                            | `tools/art/blender/container.py`             |
+| `models/hex_cover.glb`                                                            | `tools/art/blender/hex_cover.py`             |
 | `models/tank.glb`, `deck`, `pipe_rack`, `wall`, `hardpoint`, `stair`, `lamp_mast` | `tools/art/blender/yard.py`                  |
 | `models/character.glb`                                                            | `tools/art/blender/character.py`             |
 | `models/carbine.glb`                                                              | `tools/art/blender/weapon.py`                |

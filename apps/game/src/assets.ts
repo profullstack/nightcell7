@@ -46,6 +46,7 @@ export type MaterialName = (typeof MATERIALS)[number] | "lamp_glass";
 /** Models built by the asset pipeline. */
 export const MODELS = [
   "container",
+  "hex_cover",
   "tank",
   "deck",
   "pipe_rack",

@@ -63,6 +63,17 @@ function names(entries: { name?: string }[] | undefined): string[] {
 }
 
 describe("generated models", () => {
+  it("ships the tactical hex cover portfolio asset", () => {
+    expect(MODELS).toContain("hex_cover");
+
+    const file = join(MODELS_DIR, "hex_cover.glb");
+    expect(() => statSync(file), "missing hex_cover.glb — run pnpm assets:build").not.toThrow();
+
+    const meshes = names(glbJson(file).meshes);
+    expect(meshes).toContain("hex_cover");
+    expect(meshes).toContain("COL_hex_cover");
+  });
+
   it("every model the engine loads exists on disk", () => {
     for (const model of MODELS) {
       const file = join(MODELS_DIR, `${model}.glb`);

@@ -39,7 +39,7 @@ const args = process.argv.slice(2);
 const has = (flag) => args.includes(flag);
 
 /** Model generators, in the order they are built. */
-const MODEL_SCRIPTS = ["yard.py", "container.py", "character.py", "weapon.py"];
+const MODEL_SCRIPTS = ["yard.py", "container.py", "hex_cover.py", "character.py", "weapon.py"];
 
 /** Texture resolution. 1024 keeps the whole set near 2 MB as WebP. */
 const TEXTURE_SIZE = 1024;
