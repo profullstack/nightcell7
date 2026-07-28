@@ -82,6 +82,14 @@ guard. A directory cannot be misspelt into the wrong bucket.
 | `music/throngva/storm-crown-oath.mp3`            | Storm Crown Oath              |
 | `music/throngva/the-wolf-called-want.mp3`        | The Wolf Called Want          |
 | `music/throngva/the-wolf-called-want-part-2.mp3` | The Wolf Called Want (Part 2) |
+| `music/throngva/More Than Enough.mp3`            | More Than Enough              |
+
+The table is a record, not a registry: the playlist itself is discovered by
+globbing this directory (`apps/game/vite-plugin-soundtrack.ts`), so adding a
+track is dropping the file in. Titles are derived from the filename, which is
+why `More Than Enough.mp3` keeps its spacing and capitalisation as authored
+while the kebab-case names are expanded — both routes are covered by
+`apps/game/src/audio.test.ts`.
 
 Streamed by an `<audio>` element on demand and deliberately outside the 15 MB
 shell budget (PRD §30): the game is playable before a note arrives.

@@ -94,6 +94,11 @@ describe("generated models", () => {
     "wep_smg",
     "wep_sniper",
     "wep_grenade",
+    "env_control_tower",
+    "env_oil_tower",
+    "env_hangar",
+    "env_guard_tower",
+    "env_tent",
   ]);
 
   it("only uses material slots the engine can bind", () => {

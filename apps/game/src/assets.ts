@@ -83,6 +83,13 @@ export const MODELS = [
   "wep_smg",
   "wep_sniper",
   "wep_grenade",
+  // Licensed Synty environment. Backdrop structures standing outside the
+  // perimeter walls, plus tents inside the spawn ends — see `world.ts`.
+  "env_control_tower",
+  "env_oil_tower",
+  "env_hangar",
+  "env_guard_tower",
+  "env_tent",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];
