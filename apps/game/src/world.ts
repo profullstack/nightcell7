@@ -18,7 +18,7 @@ import {
   type Camera,
 } from "@babylonjs/core";
 import { ARDAVAN_YARD, type CollisionMap } from "@nightcell7/multiplayer-sim";
-import type { Aabb } from "@nightcell7/multiplayer-sim";
+import type { MapVolume } from "@nightcell7/multiplayer-sim";
 import {
   createTiledMaterial,
   loadAssets,
@@ -71,12 +71,12 @@ export interface WorldHandles {
 }
 
 interface Volume {
-  readonly box: Aabb;
+  readonly box: MapVolume;
   readonly size: Vector3;
   readonly centre: Vector3;
 }
 
-function volumeOf(box: Aabb): Volume {
+function volumeOf(box: MapVolume): Volume {
   const size = new Vector3(box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z);
   return {
     box,
@@ -98,11 +98,17 @@ type VolumeKind =
   | "pipe_rack"
   | "stair"
   | "container"
-  | "block";
+  | "block"
+  | "prop";
 
 function classify(v: Volume, map: CollisionMap): VolumeKind {
   const { size, centre } = v;
   const footprint = size.x * size.z;
+
+  // A tagged volume says what it is. Checked first, because the dimension
+  // heuristics below cannot tell an armoured car from a ramp step — both are
+  // about 1.5 m tall — and guessing wrong silently mis-skins the yard.
+  if (v.box.tag) return "prop";
 
   // The ground plane is the only volume that spans essentially the whole map.
   if (footprint > 3000 && size.y <= 2) return "ground";
@@ -263,6 +269,22 @@ function tileAlong(
   }
   return { placements, scale };
 }
+
+/**
+ * Which model draws each tagged collision volume.
+ *
+ * `rotationY` orients the model to the volume: the T-wall is modelled with its
+ * long axis along Z, and the ones flanking the centre lane need to span X, so
+ * they are turned a quarter turn. Everything else is already axis-aligned to
+ * the volume it was measured against.
+ */
+const PROP_MODELS = {
+  vehicle_armored_car: { name: "veh_armored_car" as const, rotationY: 0 },
+  vehicle_technical: { name: "veh_technical" as const, rotationY: 0 },
+  barrier: { name: "prop_barrier" as const, rotationY: Math.PI / 2 },
+  water_tank: { name: "prop_water_tank" as const, rotationY: 0 },
+  barrel_stack: { name: "prop_barrel_stack" as const, rotationY: 0 },
+} satisfies Record<string, { name: ModelName; rotationY: number }>;
 
 /** Native footprint of each tiled model, in metres. Must match `tools/art`. */
 const SECTION = {
@@ -434,6 +456,23 @@ export async function buildWorld(
         break;
       }
 
+      case "prop": {
+        // Drawn from the collision volume itself, so the model and the solid
+        // cannot drift apart. The volume's height is the model's *body* — a
+        // vehicle's gun and aerial stand above it and are not collidable — so
+        // the model is placed on the volume floor at its natural size rather
+        // than stretched to fill the box.
+        const model = PROP_MODELS[v.box.tag as keyof typeof PROP_MODELS];
+        if (!model) break;
+        put(model.name, `${v.box.tag}_${index}`, [
+          {
+            position: new Vector3(v.centre.x, v.box.min.y, v.centre.z),
+            rotationY: model.rotationY,
+          },
+        ]);
+        break;
+      }
+
       case "container":
       case "block": {
         // Fill the volume with a grid of container-sized units, so a 6 x 6
@@ -508,30 +547,19 @@ export async function buildWorld(
 
   // ------------------------------------------------- cosmetic set-dressing
   //
-  // Licensed Synty vehicles and props, staged in the two spawn zones and the
-  // back corners against the perimeter — the band beyond the outermost
-  // collision volumes (|x| > 32, |z| > 44) and inside the walls.
+  // What remains here is small scatter with no collision: loose barrels and
+  // ammo boxes dressing the two spawn ends.
   //
-  // These are the one deliberate exception to rule 1 at the top of this file:
-  // they are NOT generated from collision data and carry no collider, so a
-  // player can walk through them. That is why they are confined to the
-  // protected spawn ends and never to the three combat lanes — nothing here can
-  // become fake cover in a firefight. Promoting any of them to real cover is a
-  // deliberate change to the server map (`packages/multiplayer-sim/src/map.ts`)
-  // and its checksum, not something to smuggle in as art. One vehicle sits at
-  // each end so the two factions read as having staged the yard from opposite
-  // sides.
-  put("veh_armored_car", "veh_car", [{ position: new Vector3(-31, 0, -52), rotationY: 0.6 }]);
-  put("veh_technical", "veh_tech", [{ position: new Vector3(31, 0, 52), rotationY: -2.4 }]);
-
-  // Supply depots flanking each vehicle, plus a checkpoint line of T-wall
-  // barriers along each back wall behind the spawns.
-  put("prop_barrel_stack", "barrels_n", [
-    { position: new Vector3(-34.5, 0, -49.5), rotationY: 0.3 },
-  ]);
-  put("prop_barrel_stack", "barrels_s", [
-    { position: new Vector3(34.5, 0, 49.5), rotationY: -2.9 },
-  ]);
+  // The vehicles, T-walls, water tank and barrel pallets used to live here too,
+  // staged behind the spawns so they could never become cover a player trusts
+  // and then dies behind. That was the wrong trade: players run *into* the map,
+  // so props behind the spawn in unlit corners were assets nobody ever saw.
+  // They are now real collision volumes in `multiplayer-sim`'s map and are
+  // drawn from that data by the `prop` case above, which puts them in the lanes
+  // AND keeps rule 1 — what you see is what you collide with.
+  //
+  // These leftovers stay non-colliding because they are ankle-height clutter in
+  // a protected spawn, where nobody expects cover.
   put("prop_barrel", "barrel", [
     { position: new Vector3(-30, 0, -54), rotationY: 1.1 },
     { position: new Vector3(-28.5, 0, -52.5), rotationY: -0.4 },
@@ -543,60 +571,6 @@ export async function buildWorld(
     { position: new Vector3(-35, 0, -46), rotationY: -0.8 },
     { position: new Vector3(33, 0, 53), rotationY: -2.4 },
     { position: new Vector3(35, 0, 46), rotationY: 2.5 },
-  ]);
-  put("prop_water_tank", "watertank", [
-    { position: new Vector3(35, 0, -52), rotationY: -2.2 },
-    { position: new Vector3(-35, 0, 52), rotationY: 0.9 },
-  ]);
-  // --- skyline -----------------------------------------------------------
-  //
-  // Everything here stands OUTSIDE the perimeter, past |x| 40 / |z| 60, which
-  // is beyond the map bounds and therefore unreachable. That is the whole
-  // point: the collision map in `packages/multiplayer-sim/src/map.ts` is the
-  // authority on what is solid, and a building the player can see but walk
-  // through is worse than no building at all. Nothing out here can be entered,
-  // shot from, or hidden behind, so none of it touches the server map or its
-  // checksum.
-  //
-  // The perimeter wall is 12 m. Only what rises past that is visible from the
-  // yard, which is why the two towers earn their place unaided — 29.7 m and
-  // 27.2 m — and the hangar and guard towers are lifted onto a shelf so their
-  // rooflines clear it. Their bases sit below 12 m and are hidden by the wall
-  // that makes the trick necessary in the first place.
-  put("env_control_tower", "sky_control", [
-    { position: new Vector3(54, 0, -16), rotationY: -1.9 },
-    { position: new Vector3(-52, 0, 34), rotationY: 1.2 },
-  ]);
-  put("env_oil_tower", "sky_oil", [
-    { position: new Vector3(-56, 0, -6), rotationY: 0.4 },
-    { position: new Vector3(50, 0, 44), rotationY: 2.7 },
-  ]);
-  put("env_hangar", "sky_hangar", [
-    { position: new Vector3(-6, 5, -86), rotationY: 0 },
-    { position: new Vector3(14, 5, 88), rotationY: Math.PI },
-  ]);
-  put("env_guard_tower", "sky_guard", [
-    { position: new Vector3(45, 8, 8), rotationY: -1.6 },
-    { position: new Vector3(-45, 8, -28), rotationY: 1.6 },
-    { position: new Vector3(45, 8, -46), rotationY: -1.6 },
-  ]);
-
-  // Tents in the spawn ends, alongside the barrels and ammo boxes — the same
-  // cosmetic zones, for the same reason.
-  put("env_tent", "tent", [
-    { position: new Vector3(-31, 0, -44), rotationY: 0.5 },
-    { position: new Vector3(31, 0, 44), rotationY: -2.6 },
-  ]);
-
-  put("prop_barrier", "barrier", [
-    { position: new Vector3(-6, 0, -56), rotationY: 0 },
-    { position: new Vector3(-2, 0, -56), rotationY: 0 },
-    { position: new Vector3(2, 0, -56), rotationY: 0 },
-    { position: new Vector3(6, 0, -56), rotationY: 0 },
-    { position: new Vector3(-6, 0, 56), rotationY: Math.PI },
-    { position: new Vector3(-2, 0, 56), rotationY: Math.PI },
-    { position: new Vector3(2, 0, 56), rotationY: Math.PI },
-    { position: new Vector3(6, 0, 56), rotationY: Math.PI },
   ]);
 
   // Two cold accent lights mark the opposing spawn ends, echoing the split
