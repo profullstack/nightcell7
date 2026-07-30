@@ -176,6 +176,16 @@ export function createMaterials(scene: Scene): Map<string, PBRMaterial | Standar
   // Authored for neutral lighting; this yard runs a hot ambient, so the
   // contribution is trimmed the same way the weapon viewmodel's is.
   synty.environmentIntensity = 0.35;
+  // Every other material in this file raises the light cap and this one did
+  // not, which is the whole reason the Synty cover read as black slabs.
+  //
+  // Babylon defaults to four lights per mesh and drops the rest *silently*.
+  // The yard always spends three on the hemispheric fill and the two
+  // directionals, so these meshes were lit by at most one lamp — and the props
+  // that matter stand between pools, where the nearest lamp is not the one
+  // facing the player. The generated props never showed the bug because they
+  // were given six from the start.
+  synty.maxSimultaneousLights = 6;
   materials.set("synty_atlas", synty);
 
   // Synty vehicles share one Land_Vehicles atlas (a desert recolour that fits
