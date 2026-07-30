@@ -274,11 +274,11 @@ function main() {
   }
 
   if (wants("characters")) {
+    // Characters need the MoCap Online pack as well as the Synty one, so they
+    // stay behind a flag rather than failing a default run on a machine that
+    // only has Synty unpacked.
     if (!has("--with-characters")) {
-      console.log(
-        "characters: skipped (animation retarget unresolved — see docs/HANDOFF-synty.md)",
-      );
-      console.log("  pass --with-characters to run anyway\n");
+      console.log("characters: skipped (needs the MoCap pack; pass --with-characters)\n");
     } else {
       console.log("characters");
       for (const character of CHARACTERS) {

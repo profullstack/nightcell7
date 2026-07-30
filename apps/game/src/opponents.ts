@@ -138,15 +138,18 @@ export class Opponents {
     // One model per faction.
     //
     // Nightcell are irregulars: olive drab, boots, a pack — someone fighting
-    // Both sides use the generated character.
+    // One licensed Synty character per faction, animated by retargeting MoCap
+    // Online's rifle library onto Synty's skeleton — see docs/HANDOFF-synty.md
+    // for the two attempts that failed first and why this one works.
     //
-    // The licensed Synty characters would be a clear upgrade and are not ready:
-    // see docs/HANDOFF-synty.md for the two attempts and where each stops. They
-    // are told apart by team colour and weapon instead, which is what
-    // `brightenCharacter` and `weaponFor` below are for.
-    const enemyModel = assets.models.get("character");
-    const friendlyModel = assets.models.get("character");
-    const character = enemyModel;
+    // The generated character stays as the fallback. It is still built and
+    // shipped, so a failed licensed load degrades to a working bot rather than
+    // to no bot at all; `brightenCharacter` and `weaponFor` continue to carry
+    // the team read either way.
+    const fallback = assets.models.get("character");
+    const enemyModel = assets.models.get("fighter_insurgent") ?? fallback;
+    const friendlyModel = assets.models.get("fighter_soldier") ?? fallback;
+    const character = enemyModel ?? fallback;
     if (!character) throw new Error("no character model loaded");
 
     this.grenadeModel = assets.models.get("wep_grenade") ?? null;

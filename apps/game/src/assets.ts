@@ -55,15 +55,18 @@ export const MODELS = [
   "lamp_mast",
   "character",
   "carbine",
-  // The licensed Synty characters are deliberately NOT here.
+  // Licensed Synty characters, animated by retargeting MoCap Online's rifle
+  // library onto Synty's skeleton (`tools/art/blender/retarget_mocap.py`).
   //
-  // They convert, load and texture correctly, but neither route to animating
-  // them works yet — retargeting our clips onto Synty's skeleton leaves the
-  // arms in its T-pose, and skinning the mesh to our rig loses the arms in the
-  // bind (docs/HANDOFF-synty.md). Listing them anyway cost 1.24 MB of the shell
-  // download, fetched and parsed at every boot, for two models nothing drew.
-  // They are regenerated on demand by `tools/art/import-synty.mjs
-  // --with-characters` when there is something to ship.
+  // Two earlier attempts failed and are documented in docs/HANDOFF-synty.md.
+  // Both tried to move our own generated clips onto this skeleton, and both
+  // left the arms in a T-pose, because rest-relative retargeting only means
+  // anything when the two rigs share a reference pose — ours rests arms-down at
+  // 0.69 m, Synty binds at 2.03 m. MoCap Online's Biped rests in a T-pose at
+  // 1.95 m, so the same formula applies cleanly. Measured on the animated mesh:
+  // 1.72 m tall, 0.57 m across, arms down.
+  "fighter_insurgent",
+  "fighter_soldier",
   // Licensed Synty POLYGON Military static meshes. Vehicles bind the shared
   // `synty_vehicles` atlas; props reuse the character atlas (`synty_atlas`),
   // since both were authored against Synty's Texture_01_A. No new texture ships
