@@ -38,6 +38,8 @@ describe("tagged prop volumes", () => {
       "barrier",
       "water_tank",
       "barrel_stack",
+      "tent",
+      "guard_tower",
     ]);
     expect(props.length).toBeGreaterThan(0);
     for (const p of props) {
