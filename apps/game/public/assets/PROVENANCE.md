@@ -99,6 +99,42 @@ These carry their own rig, materials and animations, so they do not follow the
 material-slot or `COL_` conventions the generated props use;
 `apps/game/src/assets.test.ts` exempts them explicitly.
 
+## Character animation — MoCap Online
+
+| File                           | Animation source                                | Licence                       |
+| ------------------------------ | ----------------------------------------------- | ----------------------------- |
+| `models/fighter_insurgent.glb` | MoCap Online rifle library (`W2_*`), retargeted | **NOT CONFIRMED — see below** |
+| `models/fighter_soldier.glb`   | MoCap Online rifle library (`W2_*`), retargeted | **NOT CONFIRMED — see below** |
+
+Clips used, all from the pack's rifle set: `W2_Stand_Aim_Idle_v2` (idle),
+`W2_Walk_Aim_F_Loop_IPC` (walk), `W2_Jog_Aim_F_Loop_IPC` (run). The in-place
+(`IPC`) variants are used deliberately: the server owns movement, so a clip
+carrying root motion would fight the simulation.
+
+Retargeted onto Synty's skeleton by `tools/art/blender/retarget_mocap.py`. The
+mesh and textures are Synty's under the licence recorded below; only the
+animation comes from this pack.
+
+> **Licence status: unresolved, and it blocks commercial release.**
+>
+> The pack unpacked at `~/src/nightcell7-assets/mocap/` contains no licence,
+> EULA or terms file — only format notes. It appears to be MoCap Online's free
+> sample pack, but "appears to be" is not provenance, and CLAUDE.md requires
+> provenance for every public asset.
+>
+> This is fine for a development build and is **not** fine for a paid episode.
+> Before release, either obtain and record the pack's actual terms here, or
+> replace these three clips with animation whose licence is documented. Nothing
+> else in the character pipeline depends on which clips are used — the
+> retargeter takes `--clips name=file.fbx`, so swapping the source is a
+> command-line change, not a code change.
+
+**No death animation.** The pack ships locomotion, rifle handling, zombie and
+office clips, and nothing that reads as a death. `Opponents.play()` tolerates a
+missing clip by stopping every group, so a killed bot freezes in place rather
+than erroring — visibly imperfect, and the honest state until a death clip
+exists.
+
 ## Synty POLYGON Military
 
 | File                           | Source                                                      | Licence                         |

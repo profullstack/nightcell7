@@ -79,6 +79,11 @@ describe("generated models", () => {
    * a generator script.
    */
   const LICENSED = new Set([
+    // Licensed Synty characters. They carry their own rig, materials and
+    // retargeted animation, so the generated material-slot and COL_ conventions
+    // do not apply — see apps/game/public/assets/PROVENANCE.md.
+    "fighter_insurgent",
+    "fighter_soldier",
     // Synty POLYGON Military static meshes: licensed, and bound by their own
     // atlas slots (`synty_vehicles` / `synty_atlas`) rather than the generated
     // material set. Their provenance is the Synty licence in PROVENANCE.md, and

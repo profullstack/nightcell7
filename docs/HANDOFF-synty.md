@@ -5,23 +5,27 @@ re-deriving anything.
 
 ## Where things stand
 
-`/play` works and renders correctly. The bots use the **generated** character
-(`character.glb`), not the Synty ones — that is a deliberate fallback, not an
-oversight.
+`/play` works and renders correctly, and the bots now use the **Synty**
+characters — one per faction, animated. The generated `character.glb` is kept
+as a fallback so a failed licensed load degrades to a working bot rather than
+to none, and the firing-range targets still use it.
 
-The Synty characters are committed, load fine, are textured, and are **not
-shipped**, because their animation retarget is broken.
+The remaining gap is not technical: the animation comes from a MoCap Online
+pack whose licence terms are not in the pack and have not been confirmed. That
+is fine for a development build and blocks a paid release — see
+`apps/game/public/assets/PROVENANCE.md`.
 
-| Thing                                                 | State                                                                                                        |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `models/fighter_insurgent.glb`, `fighter_soldier.glb` | **not shipped** — convert and load, animation unsolved; regenerate with `import-synty.mjs --with-characters` |
-| `textures/synty_atlas.webp`                           | working, 388 KB, shared by characters + props                                                                |
-| `tools/art/blender/import_synty.py`                   | character converter; maths fixed, export broken                                                              |
-| `tools/art/blender/import_synty_prop.py`              | static-mesh converter; **working, shipped**                                                                  |
-| 2 vehicles + 5 props (`veh_*`, `prop_*`)              | **integrated** — converted, textured, placed                                                                 |
-| `textures/synty_vehicles.webp`                        | working, 76 KB, shared by all vehicles                                                                       |
-| 3 weapons (`wep_*`) + `synty_weapons.webp`            | **integrated** — player viewmodel and bot hands                                                              |
-| Shell budget                                          | 5.98 MB against a 9 MB guard                                                                                 |
+| Thing                                                 | State                                                                                                      |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `models/fighter_insurgent.glb`, `fighter_soldier.glb` | **shipped and animated** — MoCap Online clips retargeted by `retarget_mocap.py`; bots use them per faction |
+| `textures/synty_atlas.webp`                           | working, 388 KB, shared by characters + props                                                              |
+| `tools/art/blender/import_synty.py`                   | superseded by `retarget_mocap.py`; kept for its findings                                                   |
+| `tools/art/blender/retarget_mocap.py`                 | **working** — MoCap Online clips onto Synty's skeleton                                                     |
+| `tools/art/blender/import_synty_prop.py`              | static-mesh converter; **working, shipped**                                                                |
+| 2 vehicles + 5 props (`veh_*`, `prop_*`)              | **integrated** — converted, textured, placed                                                               |
+| `textures/synty_vehicles.webp`                        | working, 76 KB, shared by all vehicles                                                                     |
+| 3 weapons (`wep_*`) + `synty_weapons.webp`            | **integrated** — player viewmodel and bot hands                                                            |
+| Shell budget                                          | 7.84 MB against a 9 MB guard                                                                               |
 
 Source pack is at `~/src/nightcell7-assets/SourceFiles/` (406 MB, outside the
 repo, not committed).
@@ -90,13 +94,17 @@ Two bugs found on the way, both measurable:
 - Each imported FBX brings its own action, which the exporter shipped as extra
   bind-pose clips. Anything not explicitly baked is now dropped before export.
 
-**Still blocked on wiring, not on animation.** Putting the result into
-`Opponents` makes the bots invisible — they load, nothing errors, nothing draws.
-Tried and did not fix it: wrapping all root nodes from
-`instantiateModelsToScene` in one parent (the licensed GLB has armature and mesh
-as separate roots; the generated character has one `__root__`), and checking the
-clip-name lookup. Next step is to instrument what `placeAnimated` returns for
-this container.
+**Wired and shipped.** The instrumentation that was the recommended next step
+was done, with `NullEngine`, and it found no bug in `placeAnimated` at all: the
+retargeted container behaves identically to the generated character — one
+`__root__`, the picked root correct, `name.split("_").pop()` resolving to
+`idle`/`walk`/`run`, the mesh present beneath it.
+
+The multi-root theory was about the **old** `import_synty.py` output, not this
+one. `retarget_mocap.py` exports a single `target_rig` root, so the wiring that
+failed before simply works now. Measured on the _animated_ mesh: 1.72 m tall,
+0.57 m across — arms down, not the 2.03 m T-pose that broke both earlier
+attempts.
 
 The free pack has **no death animation** — locomotion, rifle handling, zombie
 and office clips only. A stand-in that tips the body over was written and
