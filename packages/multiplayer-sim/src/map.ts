@@ -36,7 +36,13 @@ export interface SpawnPoint {
  * cosmetic difference, while disagreeing about where the solid is is not.
  */
 export type VolumeTag =
-  "vehicle_armored_car" | "vehicle_technical" | "barrier" | "water_tank" | "barrel_stack";
+  | "vehicle_armored_car"
+  | "vehicle_technical"
+  | "barrier"
+  | "water_tank"
+  | "barrel_stack"
+  | "tent"
+  | "guard_tower";
 
 /** A collision volume, optionally naming what the client should draw for it. */
 export interface MapVolume extends Aabb {
@@ -166,6 +172,46 @@ export const ARDAVAN_YARD: CollisionMap = {
     // Barrel pallets: 1.3 m, so they are crouch cover only.
     prop("barrel_stack", -20.8, 0, 15.2, -19.2, 1.3, 16.8),
     prop("barrel_stack", 15.2, 0, -4.8, 16.8, 1.3, -3.2),
+    prop("barrel_stack", -12.8, 0, -1.8, -11.2, 1.3, -0.2),
+    prop("barrel_stack", 9.2, 0, -20.8, 10.8, 1.3, -19.2),
+    prop("barrel_stack", -9.8, 0, 28.2, -8.2, 1.3, 29.8),
+    // Under the east gantry, which starts at y=6 — no vertical overlap.
+    prop("barrel_stack", 24.2, 0, 8.2, 25.8, 1.3, 9.8),
+
+    prop("water_tank", -24.1, 0, -20.2, -21.9, 3.6, -17.8),
+    prop("water_tank", 20.9, 0, 16.8, 23.1, 3.6, 19.2),
+
+    // --- the walk out of spawn ----------------------------------------------
+    //
+    // The first version of this put nine props across an 80 x 120 m yard and
+    // called it done. From a spawn point at night they were specks 40 m away,
+    // and the map read as completely unchanged — which is what the operator
+    // reported, and they were right.
+    //
+    // Density where players actually are matters more than total count. These
+    // sit at the spawn exits, so they are the first thing in view when a round
+    // starts, and at the map corners, where a tall silhouette gives the yard
+    // depth against the dawn.
+
+    // Tents flanking both spawn exits. 4.9 m across and 3 m tall — mass you
+    // cannot miss on the way out.
+    prop("tent", -20, 0, -36.9, -15.1, 3.0, -32.0),
+    prop("tent", 15.1, 0, -36.9, 20, 3.0, -32.0),
+    prop("tent", -20, 0, 32.0, -15.1, 3.0, 36.9),
+    prop("tent", 15.1, 0, 32.0, 20, 3.0, 36.9),
+
+    // Guard towers in the four corners: 8.9 m, read as silhouettes against the
+    // false dawn from anywhere on the map.
+    prop("guard_tower", -35.5, 0, -35.9, -32.6, 8.8, -32.0),
+    prop("guard_tower", 32.6, 0, -35.9, 35.5, 8.8, -32.0),
+    prop("guard_tower", -35.5, 0, 32.0, -32.6, 8.8, 35.9),
+    prop("guard_tower", 32.6, 0, 32.0, 35.5, 8.8, 35.9),
+
+    // T-walls at the centre-lane mouths, right where players funnel out.
+    prop("barrier", -6.86, 0, -33.35, -5.14, 3.2, -32.65),
+    prop("barrier", 5.14, 0, -33.35, 6.86, 3.2, -32.65),
+    prop("barrier", -6.86, 0, 32.65, -5.14, 3.2, 33.35),
+    prop("barrier", 5.14, 0, 32.65, 6.86, 3.2, 33.35),
 
     // --- stairs / ramps: the "no one-way geometry" guarantee ----------------
     // West catwalk access ramp (stepped boxes, climbable by step height).

@@ -284,6 +284,8 @@ const PROP_MODELS = {
   barrier: { name: "prop_barrier" as const, rotationY: Math.PI / 2 },
   water_tank: { name: "prop_water_tank" as const, rotationY: 0 },
   barrel_stack: { name: "prop_barrel_stack" as const, rotationY: 0 },
+  tent: { name: "env_tent" as const, rotationY: 0 },
+  guard_tower: { name: "env_guard_tower" as const, rotationY: 0 },
 } satisfies Record<string, { name: ModelName; rotationY: number }>;
 
 /** Native footprint of each tiled model, in metres. Must match `tools/art`. */
