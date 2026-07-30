@@ -21,11 +21,33 @@ export interface SpawnPoint {
   readonly label: string;
 }
 
+/**
+ * What a volume is, for the client's benefit.
+ *
+ * The visual map classifies most volumes by their dimensions, which keeps the
+ * skinning stable when a box moves. That works while every volume is a wall, a
+ * deck or a container — shapes the yard has only one of. It breaks for props:
+ * an armoured car and a ramp step are both about 1.5 m tall, and telling them
+ * apart by footprint alone is exactly the silent mis-skin that heuristic was
+ * meant to avoid. So these say what they are.
+ *
+ * The tag is presentation metadata and is deliberately **not** part of
+ * `mapChecksum` — two clients disagreeing about which model to draw is a
+ * cosmetic difference, while disagreeing about where the solid is is not.
+ */
+export type VolumeTag =
+  "vehicle_armored_car" | "vehicle_technical" | "barrier" | "water_tank" | "barrel_stack";
+
+/** A collision volume, optionally naming what the client should draw for it. */
+export interface MapVolume extends Aabb {
+  readonly tag?: VolumeTag;
+}
+
 export interface CollisionMap {
   readonly id: string;
   readonly displayName: string;
   /** Solid, axis-aligned volumes. Floors are boxes too. */
-  readonly boxes: readonly Aabb[];
+  readonly boxes: readonly MapVolume[];
   readonly spawns: readonly SpawnPoint[];
   /** Playable volume; anything outside is out of bounds. */
   readonly bounds: Aabb;
@@ -42,6 +64,25 @@ function box(
   maxZ: number,
 ): Aabb {
   return { min: { x: minX, y: minY, z: minZ }, max: { x: maxX, y: maxY, z: maxZ } };
+}
+
+/**
+ * A collision volume that also tells the client what to draw.
+ *
+ * Dimensions come from measuring the shipped GLB, not from taste: a volume that
+ * does not match its model is either cover you cannot see or a model you walk
+ * through, and both are worse than having neither.
+ */
+function prop(
+  tag: VolumeTag,
+  minX: number,
+  minY: number,
+  minZ: number,
+  maxX: number,
+  maxY: number,
+  maxZ: number,
+): MapVolume {
+  return { ...box(minX, minY, minZ, maxX, maxY, maxZ), tag };
 }
 
 /**
@@ -89,6 +130,42 @@ export const ARDAVAN_YARD: CollisionMap = {
     box(22, 0, 22, 30, 8, 34),
     box(24, 6, -20, 32, 6.4, 20), // gantry deck
     box(20, 0, -6, 24, 3, 6), // cross-link block into centre
+
+    // --- prop cover: solid, and drawn as what it is -------------------------
+    //
+    // These are the licensed Synty vehicles and barriers. They were originally
+    // placed as art only, tucked behind the spawns and outside the lanes so
+    // they could not become cover a player trusts and then dies behind. The
+    // result was assets nobody ever saw: players run *into* the map, and the
+    // props were behind them in unlit corners.
+    //
+    // Making them real collision instead fixes both problems at once — they sit
+    // in the lanes where they are useful, and the yard keeps its rule that what
+    // you see is what you collide with. Heights are the model's body, not its
+    // aerial or its gun barrel: being stopped by a thin antenna is worse than
+    // clipping one.
+    //
+    // Every extent below is measured from the shipped GLB.
+
+    // Armoured car, west-centre open ground. 2.5 x 4.65 body, 1.9 m of cover.
+    prop("vehicle_armored_car", -17.3, 0, -12.4, -14.7, 1.9, -7.6),
+    // Technical, east-centre. Longer at 5.87 m, so it breaks a longer sightline.
+    prop("vehicle_technical", 12.7, 0, 9.0, 15.3, 1.9, 15.0),
+
+    // T-walls flanking the centre lane on both approaches. Offset in pairs
+    // rather than a continuous line: cover to fight from, not a wall that
+    // closes the lane.
+    prop("barrier", -4.86, 0, -26.35, -3.14, 3.2, -25.65),
+    prop("barrier", 3.14, 0, -26.35, 4.86, 3.2, -25.65),
+    prop("barrier", -4.86, 0, 25.65, -3.14, 3.2, 26.35),
+    prop("barrier", 3.14, 0, 25.65, 4.86, 3.2, 26.35),
+
+    // Full-height water tank on the east approach.
+    prop("water_tank", 16.9, 0, -15.2, 19.1, 3.6, -12.8),
+
+    // Barrel pallets: 1.3 m, so they are crouch cover only.
+    prop("barrel_stack", -20.8, 0, 15.2, -19.2, 1.3, 16.8),
+    prop("barrel_stack", 15.2, 0, -4.8, 16.8, 1.3, -3.2),
 
     // --- stairs / ramps: the "no one-way geometry" guarantee ----------------
     // West catwalk access ramp (stepped boxes, climbable by step height).
