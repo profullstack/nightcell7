@@ -82,7 +82,7 @@ export const VANTAGES: readonly Vantage[] = [
     name: "pipe-rack-run",
     caption:
       "The west lane pipe rack, looking south under the catwalk. Cover here is continuous but low, so the lane rewards movement over holding an angle.",
-    position: [-24, 1.7, -18],
+    position: [-20, 1.7, -22],
     yaw: 0,
     pitch: 0.04,
     fovDegrees: 80,
