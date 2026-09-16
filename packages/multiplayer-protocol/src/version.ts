@@ -33,7 +33,8 @@ export const MIN_SUPPORTED_PROTOCOL_VERSION = 2 as const;
  * spawn points and weapon tuning. It is deliberately separate from the visual
  * asset pack version — art can ship without invalidating a match.
  */
-export const CONTENT_VERSION = "1.0.0" as const;
+// 1.1.0 adds four low concrete cover volumes to Ardavan Yard.
+export const CONTENT_VERSION = "1.1.0" as const;
 
 export interface BuildIdentity {
   /** Human-facing build string, e.g. "0.1.0+2026.07.25.1". */

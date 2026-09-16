@@ -42,7 +42,7 @@ export function CaptureGallery() {
 
 /** The lead capture, used full-bleed behind the hero. */
 export function heroCapture(): Shot | undefined {
-  return SHOTS.find((s) => s.name === "west-catwalk") ?? SHOTS[0];
+  return SHOTS.find((s) => s.name === "yard-approach") ?? SHOTS[0];
 }
 
 export function captureByName(name: string): Shot | undefined {

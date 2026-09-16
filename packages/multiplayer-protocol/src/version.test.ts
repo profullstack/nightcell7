@@ -51,6 +51,8 @@ describe("protocol compatibility", () => {
 
   it("pins the content version to an exact match", () => {
     expect(isContentCompatible(CONTENT_VERSION)).toBe(true);
+    // Clients without the low cover would predict movement and shots through it.
+    expect(isContentCompatible("1.0.0")).toBe(false);
     expect(isContentCompatible(`${CONTENT_VERSION}-dev`)).toBe(false);
   });
 });

@@ -1,75 +1,59 @@
 # Asset provenance
 
-Every file in this directory is **generated**, not authored by hand and not
-obtained from anywhere. CLAUDE.md requires provenance for any public asset; for
-this set the provenance is a commit, a script and a seed.
+The `full-art-1` release replaces all 28 previous runtime GLBs and adds the three
+approved C7 assets: **31 models total**. This is a coordinated military art pass,
+with original weapon geometry and equipment, refitted scenery, and retained
+licensed character rigs. It is not a claim that the licensed base meshes became
+original work.
 
-## How to rebuild
+| Runtime asset group                                                                              | Source and treatment                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `carbine`, `wep_rifle`, `wep_smg`, `wep_sniper`, `wep_grenade`, `nc7_carbine_v1`                 | Original fictional weapon geometry from `tools/art/tactical-sample/generate.py` and `tools/art/full-set/overhaul.py`. No Synty weapon geometry remains.                                          |
+| `nc7_equipment_case_v1`, `nc7_concrete_cover_v1`                                                 | Original modeled equipment and concrete cover.                                                                                                                                                   |
+| `container`, `tank`, `deck`, `pipe_rack`, `wall`, `hardpoint`, `stair`, `lamp_mast`, `character` | Repository procedural base geometry, refitted with surface detail, hardware, markings, chamfers, and updated material/UV treatment.                                                              |
+| `fighter_insurgent`, `fighter_soldier`                                                           | Licensed Synty base geometry and previously retargeted MoCap Online clips. New equipment, smoothed normals, PBR regions, and bone-attached weapon/head sockets. The source licenses still apply. |
+| `veh_*`, `prop_*`, `env_*`                                                                       | Licensed Synty base geometry from the pinned conversion, refitted with hardware, service details, markings, chamfers, and shared PBR materials. The source license still applies.                |
+| 21 surface maps and `env_sky.webp`                                                               | Original procedural textures regenerated with finer relief, restrained paint, and updated seeds. Seven 1024² albedo/normal/ORM sets; one environment map.                                        |
+
+`art-manifest.json` records every model's baseline hash, shipped hash, triangle
+count, clips, and material slots. `manifest.json` records the actual model,
+texture, and effect-audio byte totals. Streamed music remains outside that total.
+
+## Rebuild and verify
 
 ```sh
-pnpm assets:build              # models + textures
-pnpm assets:build --previews   # ...and render a preview PNG per model
+npm ci --prefix tools/art/full-set --workspaces=false --ignore-scripts
+BLENDER=/path/to/blender pnpm assets:build --models-only
+BLENDER=/path/to/blender pnpm assets:build --textures-only
+node tools/art/full-set/validate.mjs
+pnpm exec vitest run apps/game/src/assets.test.ts apps/game/src/asset-placement.test.ts
 ```
 
-Requires Blender 4.5+ on `PATH` or in `$BLENDER`. Blender's bundled Python
-supplies numpy, so there is no pip dependency. `manifest.json` records the
-Blender version and commit each build came from.
+Requires Blender 4.5 LTS, Node 22+, ffmpeg, and a Git checkout containing baseline
+commit `e5b3dae25a607ddc731111454e3dee93aa982b97`. The generator reads only the
+already-converted baseline GLBs and palette maps from Git. It never opens raw
+licensed packs or replaces raw masters. A shallow checkout must fetch that commit.
+Editable Blender masters and preview renders are build artifacts under `build/`.
+The committed generators recreate them.
 
-## Sources
+Models use meter units, shared named PBR slots, one world-space UV set, `COL_`
+proxies for scenery, and `SOCKET_` attachment anchors. Weapons have muzzle
+sockets. The runtime removes collision proxies and uses the shared simulation
+map for collision. An outer placement node preserves glTF handedness and mesh
+quantization transforms. Compact vertex storage uses `KHR_mesh_quantization`,
+which the existing Babylon loader supports; no remote decoder is needed.
 
-| Output                                                                            | Generator                                    |
-| --------------------------------------------------------------------------------- | -------------------------------------------- |
-| `models/container.glb`                                                            | `tools/art/blender/container.py`             |
-| `models/tank.glb`, `deck`, `pipe_rack`, `wall`, `hardpoint`, `stair`, `lamp_mast` | `tools/art/blender/yard.py`                  |
-| `models/character.glb`                                                            | `tools/art/blender/character.py`             |
-| `models/carbine.glb`                                                              | `tools/art/blender/weapon.py`                |
-| `textures/*_{albedo,normal,orm}.webp`                                             | `tools/art/textures/generate.py`             |
-| `textures/env_sky.webp`                                                           | `tools/art/textures/generate.py` (`env_sky`) |
+The three old Synty palette atlases are build inputs only, recovered from the
+baseline commit, and are no longer shipped or requested by the game. The full
+set still uses the existing 9 MiB asset guard. No source Blender masters,
+third-party packs, generated concept imagery, or remote asset URLs are shipped.
 
-Shared modelling helpers live in `tools/art/blender/_lib.py`; the orchestrator
-is `tools/art/build-assets.mjs`.
+## Historical license and conversion records
 
-## Licence
-
-Original work, © NIGHTCELL 7. No third-party assets, no photographic sources,
-no scanned or traced material, and nothing derived from another game
-(CLAUDE.md). Nothing here was produced by a generative image or 3D model.
-
-## Conventions
-
-These are contracts, not style preferences, and `apps/game/src/assets.test.ts`
-enforces them:
-
-- **One Blender metre is one game metre.** Props are sized against the collision
-  volumes in `packages/multiplayer-sim/src/map.ts`, which is the authority.
-- **Models ship no embedded textures.** A GLB carries geometry, UVs and a
-  _named_ material slot; `apps/game/src/assets.ts` binds the shared PBR maps to
-  that name. Embedding would ship the same steel texture once per model and
-  push the shell past its 15 MB download budget (PRD §30).
-- **UVs are in world units** at a fixed texel density (one tile per 4 m), so
-  adjacent props always agree on texture scale.
-- **`COL_` prefixes collision proxies**, exported so each GLB is
-  self-describing. The engine collides against the server's map, not against
-  art, so these are not rendered.
-- **`SOCKET_` prefixes attachment points.** Every weapon has `SOCKET_MUZZLE`.
-- **Deterministic.** All randomness is seeded. Rebuilding on the same commit
-  produces the same bytes, so a dirty `git status` after a rebuild means a
-  generator picked up an unseeded source of randomness.
-
-## Textures
-
-Seven materials — concrete, steel, rust, paint_red, paint_cyan, grating,
-rubber — each with albedo, tangent-space normal, and an ORM pack
-(R = occlusion, G = roughness, B = metallic), at 1024², encoded as WebP q88.
-
-`env_sky.webp` is an equirectangular environment map for image-based lighting.
-It is **required**, not decorative: a physically-based metal is lit almost
-entirely by what it reflects, and with no `scene.environmentTexture` every
-steel, rust and grating surface in the yard renders pure black.
-
-Lossy WebP is deliberate. The same set encoded losslessly is 12.5 MB against
-1.9 MB here — it would consume nearly the whole shell budget and force smaller,
-worse textures.
+The following sections document the inputs and earlier conversion attempts at
+the pinned baseline. Their atlas bindings and old file lists describe that
+baseline, not the current tactical material system. Retained licensed geometry
+and animation remain subject to these licenses.
 
 ## Licensed third-party assets
 

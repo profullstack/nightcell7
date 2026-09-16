@@ -1,21 +1,22 @@
 {
   "generator": "tools/art/capture.mjs",
   "source": "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
-  "license": "Original work, © NIGHTCELL 7. No third-party assets.",
-  "commit": "fae10c13fb39b93d0d4d66f67a506d9d9078487d",
-  "capturedAt": "2026-07-26T09:48:30.981Z",
+  "license": "NIGHTCELL 7 in-engine captures; scene includes refitted licensed Synty geometry. See apps/game/public/assets/PROVENANCE.md.",
+  "commit": "e6ae9b89b6f47e12173ffd61f75b4ccd8c508140",
+  "capturedAt": "2026-09-16T11:09:13.779Z",
   "viewport": {
-    "width": 2560,
-    "height": 1440
+    "width": 1600,
+    "height": 900
   },
   "shots": [
     {
       "name": "yard-approach",
-      "caption": "The approach from the Nightcell muster point, looking north up the centre lane toward the false dawn.",
+      "caption": "The C7 carbine at the Nightcell muster point, looking north through the updated container yard toward the false dawn.",
+      "showWeapon": true,
       "position": [0, 1.7, 44],
       "yaw": 3.141592653589793,
       "pitch": 0.02,
-      "file": "yard-approach.webp"
+      "file": "yard-approach-e3ce8e12f9.webp"
     },
     {
       "name": "west-catwalk",
@@ -23,7 +24,7 @@
       "position": [-28, 8.1, 24],
       "yaw": 2.701769682087222,
       "pitch": 0.14,
-      "file": "west-catwalk.webp"
+      "file": "west-catwalk-0b582be591.webp"
     },
     {
       "name": "tank-row",
@@ -32,15 +33,16 @@
       "yaw": 3.141592653589793,
       "pitch": 0.03,
       "fovDegrees": 78,
-      "file": "tank-row.webp"
+      "file": "tank-row-e532c3b931.webp"
     },
     {
       "name": "central-hardpoint",
-      "caption": "Pushing north off the central hard point. Container colour encodes the contested axis — cyan is Directorate ground — so the lane is legible without a minimap.",
+      "caption": "The C7 carbine beside the central hard point, with weathered containers and the refinery structures beyond.",
+      "showWeapon": true,
       "position": [-17, 1.7, 15],
       "yaw": 2.764601535159018,
       "pitch": 0.02,
-      "file": "central-hardpoint.webp"
+      "file": "central-hardpoint-310b15b029.webp"
     },
     {
       "name": "gantry-overlook",
@@ -49,7 +51,7 @@
       "yaw": 4.1469023027385274,
       "pitch": 0.2,
       "fovDegrees": 82,
-      "file": "gantry-overlook.webp"
+      "file": "gantry-overlook-b3a0910095.webp"
     },
     {
       "name": "north-gate",
@@ -57,7 +59,7 @@
       "position": [0, 1.7, -22],
       "yaw": 3.141592653589793,
       "pitch": 0.06,
-      "file": "north-gate.webp"
+      "file": "north-gate-d036c53aff.webp"
     },
     {
       "name": "pipe-rack-run",
@@ -66,7 +68,7 @@
       "yaw": 0,
       "pitch": 0.04,
       "fovDegrees": 80,
-      "file": "pipe-rack-run.webp"
+      "file": "pipe-rack-run-91ce4b3f58.webp"
     },
     {
       "name": "container-alley",
@@ -75,7 +77,7 @@
       "yaw": 3.141592653589793,
       "pitch": 0,
       "fovDegrees": 74,
-      "file": "container-alley.webp"
+      "file": "container-alley-30da3b2f69.webp"
     },
     {
       "name": "muster-point",
@@ -84,7 +86,7 @@
       "yaw": 3.141592653589793,
       "pitch": 0.05,
       "fovDegrees": 84,
-      "file": "muster-point.webp"
+      "file": "muster-point-8c3e26f628.webp"
     },
     {
       "name": "under-the-gantry",
@@ -93,7 +95,7 @@
       "yaw": 3.267256359733385,
       "pitch": 0.22,
       "fovDegrees": 80,
-      "file": "under-the-gantry.webp"
+      "file": "under-the-gantry-1b9f955bb4.webp"
     }
   ]
 }

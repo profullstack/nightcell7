@@ -2,14 +2,10 @@
 /**
  * Asset build.
  *
- * Regenerates every model and texture in the game from the generator scripts
- * in this directory. Nothing here is hand-authored and nothing is downloaded,
- * which is what makes the whole asset set satisfy CLAUDE.md's provenance rule:
- * the provenance of any file is "this commit, this script, this seed".
- *
- * The build is deterministic. Running it twice on the same commit produces the
- * same bytes, so `git status` after a rebuild is the regression test — if the
- * tree is dirty, a generator picked up an unseeded source of randomness.
+ * Builds the complete tactical model pass and shared PBR textures.
+ * Licensed base meshes and animation are recovered from a pinned repository
+ * commit; raw asset packs are never read or redistributed. See PROVENANCE.md.
+ * Exported files are checked with the asset tests and glTF validator.
  *
  * Usage:
  *   node tools/art/build-assets.mjs                # models + textures
@@ -23,7 +19,15 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,8 +42,7 @@ const PREVIEWS_OUT = join(ROOT, "build/asset-previews");
 const args = process.argv.slice(2);
 const has = (flag) => args.includes(flag);
 
-/** Model generators, in the order they are built. */
-const MODEL_SCRIPTS = ["yard.py", "container.py", "character.py", "weapon.py"];
+const FULL_OUT = join(ROOT, "build/full-art/output");
 
 /** Texture resolution. 1024 keeps the whole set near 2 MB as WebP. */
 const TEXTURE_SIZE = 1024;
@@ -143,7 +146,8 @@ function main() {
   const version = execFileSync(blender, ["--version"], { encoding: "utf8" }).split("\n")[0].trim();
   console.log(`NIGHTCELL 7 asset build\n  ${version}\n`);
 
-  const only = has("--textures-only") || has("--models-only") || has("--audio-only");
+  const only =
+    has("--textures-only") || has("--models-only") || has("--audio-only") || has("--manifest-only");
   const doModels = !only || has("--models-only");
   const doTextures = !only || has("--textures-only");
   const doAudio = !only || has("--audio-only");
@@ -151,21 +155,34 @@ function main() {
   if (doModels) {
     console.log("models");
     mkdirSync(MODELS_OUT, { recursive: true });
-    for (const script of MODEL_SCRIPTS) {
+    for (const [script, out] of [
+      ["tactical-sample/generate.py", join(ROOT, "build/tactical-sample")],
+      ["full-set/overhaul.py", FULL_OUT],
+    ]) {
       run(
         blender,
         [
           "--background",
           "--factory-startup",
+          "--threads",
+          "4",
+          "--python-exit-code",
+          "1",
           "--python",
-          join(HERE, "blender", script),
+          join(HERE, script),
           "--",
-          "--output",
-          MODELS_OUT,
+          "--out",
+          out,
         ],
         script,
       );
     }
+    run(
+      process.execPath,
+      [join(HERE, "full-set/optimize.mjs"), FULL_OUT, MODELS_OUT],
+      "compact GLBs",
+    );
+    copyFileSync(join(FULL_OUT, "runtime-manifest.json"), join(OUT, "art-manifest.json"));
   }
 
   if (doTextures) {
@@ -231,26 +248,21 @@ function main() {
   if (has("--previews")) {
     console.log("\npreviews");
     mkdirSync(PREVIEWS_OUT, { recursive: true });
-    for (const file of readdirSync(MODELS_OUT).sort()) {
-      if (!file.endsWith(".glb")) continue;
-      run(
-        blender,
-        [
-          "--background",
-          "--factory-startup",
-          "--python",
-          join(HERE, "blender/preview.py"),
-          "--",
-          "--glb",
-          join(MODELS_OUT, file),
-          "--out",
-          join(PREVIEWS_OUT, file.replace(/\.glb$/, ".png")),
-          "--samples",
-          "40",
-        ],
-        file,
-      );
-    }
+    run(
+      blender,
+      [
+        "--background",
+        "--factory-startup",
+        "--python-exit-code",
+        "1",
+        "--python",
+        join(HERE, "full-set/preview.py"),
+        "--",
+        "--pack",
+        FULL_OUT,
+      ],
+      "preview all 31 models",
+    );
   }
 
   // -------------------------------------------------------------- manifest
@@ -296,10 +308,10 @@ function main() {
         generator: "tools/art/build-assets.mjs",
         blender: version,
         commit,
-        license: "Original work, © NIGHTCELL 7. No third-party assets.",
+        license:
+          "Original NIGHTCELL 7 work plus refitted Synty geometry and MoCap Online animation; see PROVENANCE.md.",
         source:
-          "Generated procedurally from the scripts in tools/art. No asset is " +
-          "downloaded, photographed, traced, or derived from another game.",
+          "Full tactical art pass from tools/art/full-set and tools/art/tactical-sample, with pinned licensed inputs. See art-manifest.json for per-model hashes and materials.",
         textureSize: TEXTURE_SIZE,
         webpQuality: WEBP_QUALITY,
         models,

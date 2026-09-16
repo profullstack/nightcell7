@@ -1,4 +1,4 @@
-import type { AnimationGroup, AssetContainer, Mesh, Scene } from "@babylonjs/core";
+import type { AnimationGroup, AssetContainer, Mesh, Scene, Vector3 } from "@babylonjs/core";
 import {
   Color3,
   EquiRectangularCubeTexture,
@@ -7,9 +7,9 @@ import {
   StandardMaterial,
   Texture,
   TransformNode,
-  Vector3,
 } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
+import { bindTacticalMaterials, TACTICAL_WORLD_ALBEDO_SCALE } from "./tactical-materials";
 
 /**
  * Runtime asset loading for the generated art set.
@@ -55,22 +55,14 @@ export const MODELS = [
   "lamp_mast",
   "character",
   "carbine",
-  // Licensed Synty characters, animated by retargeting MoCap Online's rifle
-  // library onto Synty's skeleton (`tools/art/blender/retarget_mocap.py`).
-  //
-  // Two earlier attempts failed and are documented in docs/HANDOFF-synty.md.
-  // Both tried to move our own generated clips onto this skeleton, and both
-  // left the arms in a T-pose, because rest-relative retargeting only means
-  // anything when the two rigs share a reference pose — ours rests arms-down at
-  // 0.69 m, Synty binds at 2.03 m. MoCap Online's Biped rests in a T-pose at
-  // 1.95 m, so the same formula applies cleanly. Measured on the animated mesh:
-  // 1.72 m tall, 0.57 m across, arms down.
+  // Original tactical art: viewmodel, spawn equipment and low cover.
+  "nc7_carbine_v1",
+  "nc7_equipment_case_v1",
+  "nc7_concrete_cover_v1",
+  // Refitted licensed character rigs retain their retargeted clips.
   "fighter_insurgent",
   "fighter_soldier",
-  // Licensed Synty POLYGON Military static meshes. Vehicles bind the shared
-  // `synty_vehicles` atlas; props reuse the character atlas (`synty_atlas`),
-  // since both were authored against Synty's Texture_01_A. No new texture ships
-  // for the props at all — see apps/game/public/assets/PROVENANCE.md.
+  // Refitted vehicles and scenery share the tactical PBR palette.
   "veh_armored_car",
   "veh_technical",
   "prop_barrel",
@@ -78,10 +70,7 @@ export const MODELS = [
   "prop_ammo_box",
   "prop_barrier",
   "prop_water_tank",
-  // Licensed Synty weapons, bound to the shared `synty_weapons` atlas. The
-  // rifle is the player's viewmodel and every fighter's world model; the SMG
-  // and sniper distinguish opponents at a glance. The generated `carbine`
-  // above is kept as a working fallback.
+  // Original C7 weapon family, with preserved attachment conventions.
   "wep_rifle",
   "wep_smg",
   "wep_sniper",
@@ -163,75 +152,6 @@ export function createMaterials(scene: Scene): Map<string, PBRMaterial | Standar
 
     materials.set(name, material);
   }
-
-  // Synty characters share one 4096 atlas across every model in the pack, so
-  // it is bound once here rather than embedded in each GLB.
-  const synty = new PBRMaterial("synty_atlas", scene);
-  synty.albedoTexture = loadTexture(scene, "synty_atlas.webp", true);
-  synty.metallic = 0;
-  synty.roughness = 0.9;
-  // `albedoColor` multiplies the atlas. Synty authors for neutral lighting at
-  // roughly 0.5 mid-tone; this yard runs hemispheric 4.05 at exposure 2.05, so
-  // the unscaled atlas clips past the 0.62 bloom threshold and the characters
-  // render white. 0.36 lands them near 0.18 effective, which is where the
-  // yard's own concrete and steel sit.
-  synty.albedoColor = new Color3(0.36, 0.36, 0.36);
-  // Authored for neutral lighting; this yard runs a hot ambient, so the
-  // contribution is trimmed the same way the weapon viewmodel's is.
-  synty.environmentIntensity = 0.35;
-  // Every other material in this file raises the light cap and this one did
-  // not, which is the whole reason the Synty cover read as black slabs.
-  //
-  // Babylon defaults to four lights per mesh and drops the rest *silently*.
-  // The yard always spends three on the hemispheric fill and the two
-  // directionals, so these meshes were lit by at most one lamp — and the props
-  // that matter stand between pools, where the nearest lamp is not the one
-  // facing the player. The generated props never showed the bug because they
-  // were given six from the start.
-  synty.maxSimultaneousLights = 6;
-  materials.set("synty_atlas", synty);
-
-  // Synty vehicles share one Land_Vehicles atlas (a desert recolour that fits
-  // the Kaviran setting), bound once here the same way the character atlas is.
-  // The pack's vehicle glass was authored against Texture_01_A, so those meshes
-  // are bound to `synty_atlas` at convert time rather than here.
-  const vehicles = new PBRMaterial("synty_vehicles", scene);
-  vehicles.albedoTexture = loadTexture(scene, "synty_vehicles.webp", true);
-  // Painted sheet metal: matte, barely metallic. The camo reads as diffuse.
-  vehicles.metallic = 0.05;
-  vehicles.roughness = 0.8;
-  // Same hot-yard correction as the character atlas: the unscaled tan would
-  // clip past the 0.62 bloom threshold under hemispheric 4.05 / exposure 2.05.
-  vehicles.albedoColor = new Color3(0.36, 0.36, 0.36);
-  vehicles.environmentIntensity = 0.35;
-  vehicles.maxSimultaneousLights = 6;
-  materials.set("synty_vehicles", vehicles);
-
-  // Synty weapons share one 512px atlas — the whole armoury costs 2 KB, because
-  // the pack colours by UV region rather than by detail. The pack ships ten
-  // recolours over that one layout; `Weapons_01` is the neutral gunmetal, since
-  // the camo and tiger-stripe variants would tie every weapon to one faction.
-  const weapons = new PBRMaterial("synty_weapons", scene);
-  weapons.albedoTexture = loadTexture(scene, "synty_weapons.webp", true);
-  // Barely metallic, on purpose.
-  //
-  // "Gun metal, so make it metallic" is the obvious reading and it renders the
-  // weapon black. A metallic surface in Babylon is lit almost entirely by what
-  // it reflects, and this atlas ships no metallic or roughness map — so a flat
-  // 0.55 metallic over a flat colour, with the environment contribution turned
-  // down for close-range work, leaves nothing to light it at all. Synty paint
-  // their metal into the albedo instead; the other two atlases already sit at
-  // 0 and 0.05 for the same reason.
-  weapons.metallic = 0.15;
-  weapons.roughness = 0.5;
-  // Same hot-yard correction as the other two atlases — see `synty_atlas`.
-  weapons.albedoColor = new Color3(0.36, 0.36, 0.36);
-  // Lower than the other atlases: the viewmodel is held 30 cm from the camera,
-  // where a metallic surface reflecting the yard's 2.9 environment blows out to
-  // white across the bottom third of the screen.
-  weapons.environmentIntensity = 0.25;
-  weapons.maxSimultaneousLights = 6;
-  materials.set("synty_weapons", weapons);
 
   // Lamp lenses are the one unlit surface: they are a light source, and
   // shading them would make the fitting darker than the pool of light it casts.
@@ -322,6 +242,12 @@ async function loadModel(
   materials: ReadonlyMap<string, PBRMaterial | StandardMaterial>,
 ): Promise<AssetContainer> {
   const container = await LoadAssetContainerAsync(`${ASSET_BASE}models/${name}.glb`, scene);
+  {
+    bindTacticalMaterials(container, scene, ASSET_BASE, {
+      albedoScale: TACTICAL_WORLD_ALBEDO_SCALE,
+      environmentIntensity: 0.35,
+    });
+  }
 
   for (const mesh of [...container.meshes]) {
     if (mesh.name.startsWith("COL_")) {
@@ -413,12 +339,11 @@ export function placeAnimated(
     doNotInstantiate: true,
   });
 
-  const root = entry.rootNodes.find((n): n is TransformNode => n instanceof TransformNode);
-  if (!root) return null;
-
-  root.position = placement.position.clone();
-  if (placement.rotationY !== undefined) root.rotation = new Vector3(0, placement.rotationY, 0);
-  if (placement.scaling) root.scaling = placement.scaling.clone();
+  const importedRoots = entry.rootNodes.filter(
+    (n): n is TransformNode => n instanceof TransformNode,
+  );
+  if (!importedRoots.length) return null;
+  const root = placementRoot(importedRoots, name, placement);
 
   const clips = new Map<string, AnimationGroup>();
   for (const group of entry.animationGroups) {
@@ -461,21 +386,28 @@ export function placeAll(
       { doNotInstantiate: options.unique === true },
     );
 
-    // `rootNodes` is typed as the base `Node`; only transform nodes can be
-    // positioned, and in practice that is all a glTF import produces at the
-    // root.
-    for (const node of entry.rootNodes) {
-      if (!(node instanceof TransformNode)) continue;
-      node.position = placement.position.clone();
-      if (placement.rotationY !== undefined) {
-        node.rotation = new Vector3(0, placement.rotationY, 0);
-      }
-      if (placement.scaling) node.scaling = placement.scaling.clone();
-      roots.push(node);
-    }
+    const importedRoots = entry.rootNodes.filter(
+      (n): n is TransformNode => n instanceof TransformNode,
+    );
+    if (importedRoots.length)
+      roots.push(placementRoot(importedRoots, `${name}_${index}`, placement));
   });
 
   return roots;
+}
+
+/** Keep glTF handedness and quantization transforms below an editable placement node. */
+function placementRoot(
+  imported: TransformNode[],
+  name: string,
+  placement: Placement,
+): TransformNode {
+  const root = new TransformNode(`${name}_placement`, imported[0]!.getScene());
+  for (const node of imported) node.parent = root;
+  root.position.copyFrom(placement.position);
+  root.rotation.y = placement.rotationY ?? 0;
+  if (placement.scaling) root.scaling.copyFrom(placement.scaling);
+  return root;
 }
 
 /** Every mesh under a set of instantiated roots, for shadow registration. */

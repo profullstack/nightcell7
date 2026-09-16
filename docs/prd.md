@@ -164,3 +164,19 @@ Encoded in `CLAUDE.md` and enforced by review:
 | Railway production readiness checklist                     | Engineering | See `infra/railway/README.md` |
 | Security review                                            | Engineering | Not started                   |
 | Visual QA against signed-off design                        | Design      | Design not signed off         |
+
+## Tactical art integration — 2026-09-16
+
+All 31 runtime models receive the full tactical art pass documented in
+`docs/art/full-tactical-overhaul.md`. Original C7 weapons replace the legacy
+weapon geometry. Licensed character rigs/animation and scenery base meshes
+remain licensed inputs; the provenance manifest distinguishes them from original
+work. Shared surface textures are regenerated and the three palette atlases are
+removed from runtime loading. The 9 MiB asset guard remains in force.
+
+Four mirrored low-cover volumes at x ±10, z ±31 match the new concrete cover.
+They are part of the authoritative map, so content compatibility advances to
+1.1.0 while the wire protocol remains 2. Both game and multiplayer service must
+ship this content revision together. Placement preserves the imported glTF
+coordinate transforms, including quarter-turn cover orientation and weapon
+muzzle direction. The website gallery is recaptured from the integrated game.
