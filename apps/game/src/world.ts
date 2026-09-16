@@ -221,12 +221,20 @@ function skyTexture(scene: Scene): DynamicTexture {
     // Azimuth: strongest to the north, falling away toward the flanks.
     // A periodic azimuth mask has equal values at the sphere's UV seam.
     // A clipped linear gradient left a visible vertical split in the sky.
-    dctx.globalCompositeOperation = "destination-in";
+    const mask = document.createElement("canvas");
+    mask.width = w;
+    mask.height = 1;
+    const maskContext = mask.getContext("2d")!;
+    const alphaRow = maskContext.createImageData(w, 1);
     for (let x = 0; x < w; x += 1) {
       const alpha = Math.pow(0.5 + 0.5 * Math.cos(((x - centreU) / w) * Math.PI * 2), 2);
-      dctx.fillStyle = `rgba(0,0,0,${alpha})`;
-      dctx.fillRect(x, 0, 1, bandHeight);
+      alphaRow.data[x * 4 + 3] = Math.round(alpha * 255);
     }
+    maskContext.putImageData(alphaRow, 0, 0);
+    // Apply the complete mask once: separate destination-in strokes would
+    // erase every column painted by the preceding stroke.
+    dctx.globalCompositeOperation = "destination-in";
+    dctx.drawImage(mask, 0, 0, w, bandHeight);
 
     ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = 0.85;
@@ -411,7 +419,9 @@ export async function buildWorld(
         ground.position = v.centre;
         ground.isPickable = false;
         ground.receiveShadows = true;
-        ground.material = createTiledMaterial(scene, "concrete", v.size.x / 4, v.size.z / 4);
+        const groundMaterial = createTiledMaterial(scene, "concrete", v.size.x / 4, v.size.z / 4);
+        groundMaterial.albedoColor = new Color3(0.7, 0.72, 0.7);
+        ground.material = groundMaterial;
         ground.freezeWorldMatrix();
         break;
       }

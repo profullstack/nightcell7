@@ -5,7 +5,7 @@
 import { PBRMaterial, Texture, type AssetContainer, type Scene } from "@babylonjs/core";
 
 export const TACTICAL_WORLD_ALBEDO_SCALE = 0.6;
-export const TACTICAL_VIEW_ALBEDO_SCALE = 0.8;
+export const TACTICAL_VIEW_ALBEDO_SCALE = 0.55;
 
 export const TACTICAL_MATERIALS = [
   "nc7_coating",
