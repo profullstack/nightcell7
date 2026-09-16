@@ -73,6 +73,8 @@ function isGameMode(value: string | null): value is GameMode {
 export function preferredMode(search: string, storage?: Storage): GameMode {
   const requested = new URLSearchParams(search).get("mode");
   if (isGameMode(requested)) return requested;
+  // The public Play Free Demo link promises combat, even after a visit to Free Roam.
+  if (requested === "demo") return GAME_MODE.DEATHMATCH;
 
   try {
     const remembered = storage?.getItem(STORAGE_KEY) ?? null;

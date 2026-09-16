@@ -37,6 +37,7 @@ export default defineConfig({
         // precached, so an install does not pull a gigabyte unasked.
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/api\//],
+        importScripts: ["retire-legacy-cache.js"],
         runtimeCaching: [
           {
             // Authenticated APIs, tickets and matchmaking are NEVER cached
@@ -48,7 +49,7 @@ export default defineConfig({
             urlPattern: /\.(?:ktx2|glb|webp|webm|mp3|bin)$/,
             handler: "CacheFirst",
             options: {
-              cacheName: "nc7-content",
+              cacheName: "nc7-content-m2",
               expiration: { maxEntries: 2000 },
             },
           },

@@ -2,7 +2,7 @@
  * Call after LoadAssetContainerAsync and before instantiation.
  * baseUrl must contain the textures/ directory and end in '/'.
  */
-import { PBRMaterial, Texture, type AssetContainer, type Scene } from "@babylonjs/core";
+import { Color3, PBRMaterial, Texture, type AssetContainer, type Scene } from "@babylonjs/core";
 
 export const TACTICAL_WORLD_ALBEDO_SCALE = 0.6;
 export const TACTICAL_VIEW_ALBEDO_SCALE = 0.55;
@@ -22,9 +22,17 @@ export const TACTICAL_MATERIALS = [
   "nc7_sand",
   "nc7_skin",
   "nc7_team",
+  "nc7_panel",
+  "nc7_fabric",
+  "nc7_glass",
+  "nc7_light",
+  "nc7_camo",
 ] as const;
 
 const detail: Record<string, { source: string; scale: number; bump: number }> = {
+  nc7_panel: { source: "steel", scale: 2, bump: 0.12 },
+  nc7_fabric: { source: "rubber", scale: 5, bump: 0.12 },
+  nc7_camo: { source: "rubber", scale: 5, bump: 0.12 },
   nc7_coating: { source: "steel", scale: 2, bump: 0.12 },
   nc7_polymer: { source: "rubber", scale: 6, bump: 0.12 },
   nc7_alloy: { source: "steel", scale: 3, bump: 0.12 },
@@ -33,7 +41,7 @@ const detail: Record<string, { source: string; scale: number; bump: number }> = 
   nc7_olive: { source: "rubber", scale: 2, bump: 0.12 },
   nc7_cloth: { source: "rubber", scale: 5, bump: 0.12 },
   nc7_sand: { source: "rubber", scale: 5, bump: 0.12 },
-  nc7_rust: { source: "rust", scale: 1, bump: 0.12 },
+  nc7_rust: { source: "steel", scale: 1, bump: 0.12 },
 };
 
 export function bindTacticalMaterials(
@@ -48,11 +56,34 @@ export function bindTacticalMaterials(
     material.environmentIntensity = options.environmentIntensity ?? 1;
     material.maxSimultaneousLights = 6;
     material.enableSpecularAntiAliasing = true;
+    const fabric = ["nc7_fabric", "nc7_cloth", "nc7_sand", "nc7_camo"].includes(material.name);
+    const coated = ["nc7_coating", "nc7_alloy", "nc7_edge", "nc7_panel", "nc7_olive"].includes(
+      material.name,
+    );
+    if (fabric || coated) {
+      const albedo = new Texture(
+        `${baseUrl}textures/m2_${fabric ? "fabric" : "coating"}_albedo.webp`,
+        scene,
+        false,
+        false,
+      );
+      albedo.gammaSpace = true;
+      albedo.uScale = albedo.vScale = fabric ? 6.7 : 3;
+      albedo.anisotropicFilteringLevel = 8;
+      material.albedoTexture = albedo;
+      if (fabric) {
+        material.albedoColor =
+          material.name === "nc7_sand" ? new Color3(0.9, 0.77, 0.56) : new Color3(0.63, 0.75, 0.6);
+      } else {
+        // The neutral generated wear texture modulates the authored paint tint.
+        material.albedoColor.scaleInPlace(2.3);
+      }
+    }
     const spec = detail[material.name];
     if (!spec) continue;
     const texture = (suffix: string): Texture => {
       const tex = new Texture(
-        `${baseUrl}textures/${spec.source}_${suffix}.webp`,
+        `${baseUrl}textures/m2_${spec.source}_${suffix}.webp`,
         scene,
         false,
         false,

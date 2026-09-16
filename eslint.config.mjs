@@ -22,7 +22,12 @@ export default [
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    files: ["apps/game/**/*.ts", "apps/site/**/*.ts", "apps/site/**/*.tsx"],
+    files: [
+      "apps/game/**/*.ts",
+      "apps/game/public/*.js",
+      "apps/site/**/*.ts",
+      "apps/site/**/*.tsx",
+    ],
     languageOptions: { globals: { ...globals.browser } },
   },
   {

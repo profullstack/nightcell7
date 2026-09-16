@@ -2,9 +2,8 @@
 /**
  * Asset build.
  *
- * Builds the complete tactical model pass and shared PBR textures.
- * Licensed base meshes and animation are recovered from a pinned repository
- * commit; raw asset packs are never read or redistributed. See PROVENANCE.md.
+ * Builds M2 original models, rigs, animations and shared PBR textures.
+ * No legacy meshes or licensed packs are read. See PROVENANCE.md.
  * Exported files are checked with the asset tests and glTF validator.
  *
  * Usage:
@@ -42,7 +41,7 @@ const PREVIEWS_OUT = join(ROOT, "build/asset-previews");
 const args = process.argv.slice(2);
 const has = (flag) => args.includes(flag);
 
-const FULL_OUT = join(ROOT, "build/full-art/output");
+const FULL_OUT = join(ROOT, "build/modern-art");
 
 /** Texture resolution. 1024 keeps the whole set near 2 MB as WebP. */
 const TEXTURE_SIZE = 1024;
@@ -114,7 +113,7 @@ function toWebp(pngDir, outDir) {
         "-i",
         join(pngDir, file),
         "-quality",
-        String(WEBP_QUALITY),
+        String(file.endsWith("_orm.png") ? 70 : WEBP_QUALITY),
         target,
       ],
       { stdio: "pipe" },
@@ -155,10 +154,7 @@ function main() {
   if (doModels) {
     console.log("models");
     mkdirSync(MODELS_OUT, { recursive: true });
-    for (const [script, out] of [
-      ["tactical-sample/generate.py", join(ROOT, "build/tactical-sample")],
-      ["full-set/overhaul.py", FULL_OUT],
-    ]) {
+    for (const [script, out] of [["modern/generate.py", FULL_OUT]]) {
       run(
         blender,
         [
@@ -177,6 +173,8 @@ function main() {
         script,
       );
     }
+    for (const file of readdirSync(MODELS_OUT).filter((f) => f.endsWith(".glb")))
+      rmSync(join(MODELS_OUT, file));
     run(
       process.execPath,
       [join(HERE, "full-set/optimize.mjs"), FULL_OUT, MODELS_OUT],
@@ -199,7 +197,19 @@ function main() {
     );
 
     process.stdout.write("  encoding webp\n");
-    const bytes = toWebp(staging, TEXTURES_OUT);
+    for (const file of readdirSync(staging)) {
+      if (!/^(concrete|steel|rubber)_|^env_sky/.test(file)) rmSync(join(staging, file));
+    }
+    const encoded = join(ROOT, "build/modern-textures");
+    rmSync(encoded, { recursive: true, force: true });
+    const bytes = toWebp(staging, encoded);
+    mkdirSync(TEXTURES_OUT, { recursive: true });
+    for (const file of readdirSync(TEXTURES_OUT).filter((f) => f.endsWith(".webp")))
+      rmSync(join(TEXTURES_OUT, file));
+    for (const file of readdirSync(encoded))
+      copyFileSync(join(encoded, file), join(TEXTURES_OUT, `m2_${file}`));
+    for (const file of readdirSync(join(HERE, "modern/textures")))
+      copyFileSync(join(HERE, "modern/textures", file), join(TEXTURES_OUT, file));
     rmSync(staging, { recursive: true, force: true });
     process.stdout.write(`    ${(bytes / 1048576).toFixed(2)} MB of WebP\n`);
   }
@@ -256,12 +266,12 @@ function main() {
         "--python-exit-code",
         "1",
         "--python",
-        join(HERE, "full-set/preview.py"),
+        join(HERE, "modern/preview.py"),
         "--",
         "--pack",
         FULL_OUT,
       ],
-      "preview all 31 models",
+      "preview all 28 modern models",
     );
   }
 
@@ -309,9 +319,9 @@ function main() {
         blender: version,
         commit,
         license:
-          "Original NIGHTCELL 7 work plus refitted Synty geometry and MoCap Online animation; see PROVENANCE.md.",
+          "Original NIGHTCELL 7 geometry, rigging, animation and generated surfaces; see PROVENANCE.md.",
         source:
-          "Full tactical art pass from tools/art/full-set and tools/art/tactical-sample, with pinned licensed inputs. See art-manifest.json for per-model hashes and materials.",
+          "M2 original asset set from tools/art/modern; all legacy graphics retired. See art-manifest.json for per-model hashes and materials.",
         textureSize: TEXTURE_SIZE,
         webpQuality: WEBP_QUALITY,
         models,

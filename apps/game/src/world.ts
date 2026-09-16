@@ -292,14 +292,14 @@ function tileAlong(
  * the volume it was measured against.
  */
 const PROP_MODELS = {
-  vehicle_armored_car: { name: "veh_armored_car" as const, rotationY: 0 },
-  vehicle_technical: { name: "veh_technical" as const, rotationY: 0 },
-  barrier: { name: "prop_barrier" as const, rotationY: Math.PI / 2 },
-  concrete_cover: { name: "nc7_concrete_cover_v1" as const, rotationY: Math.PI / 2 },
-  water_tank: { name: "prop_water_tank" as const, rotationY: 0 },
-  barrel_stack: { name: "prop_barrel_stack" as const, rotationY: 0 },
-  tent: { name: "env_tent" as const, rotationY: 0 },
-  guard_tower: { name: "env_guard_tower" as const, rotationY: 0 },
+  vehicle_armored_car: { name: "m2_patrol_vehicle" as const, rotationY: 0 },
+  vehicle_technical: { name: "m2_utility_vehicle" as const, rotationY: 0 },
+  barrier: { name: "m2_blast_wall" as const, rotationY: Math.PI / 2 },
+  concrete_cover: { name: "m2_low_cover" as const, rotationY: Math.PI / 2 },
+  water_tank: { name: "m2_water_unit" as const, rotationY: 0 },
+  barrel_stack: { name: "m2_drum_pallet" as const, rotationY: 0 },
+  tent: { name: "m2_field_shelter" as const, rotationY: 0 },
+  guard_tower: { name: "m2_guard_post" as const, rotationY: 0 },
 } satisfies Record<string, { name: ModelName; rotationY: number }>;
 
 /** Native footprint of each tiled model, in metres. Must match `tools/art`. */
@@ -421,6 +421,7 @@ export async function buildWorld(
         ground.receiveShadows = true;
         const groundMaterial = createTiledMaterial(scene, "concrete", v.size.x / 4, v.size.z / 4);
         groundMaterial.albedoColor = new Color3(0.7, 0.72, 0.7);
+        if (groundMaterial.bumpTexture) groundMaterial.bumpTexture.level = 0.25;
         ground.material = groundMaterial;
         ground.freezeWorldMatrix();
         break;
@@ -429,31 +430,31 @@ export async function buildWorld(
       case "perimeter": {
         // Walls run along whichever horizontal axis is longer.
         const axis = v.size.x >= v.size.z ? "x" : "z";
-        put("wall", `wall_${index}`, tileAlong(axis, v, SECTION.wall).placements);
+        put("m2_security_wall", `wall_${index}`, tileAlong(axis, v, SECTION.wall).placements);
         break;
       }
 
       case "deck": {
         const axis = v.size.x >= v.size.z ? "x" : "z";
-        put("deck", `deck_${index}`, tileAlong(axis, v, SECTION.deck).placements);
+        put("m2_catwalk", `deck_${index}`, tileAlong(axis, v, SECTION.deck).placements);
         break;
       }
 
       case "pipe_rack": {
         const axis = v.size.x >= v.size.z ? "x" : "z";
-        put("pipe_rack", `pipes_${index}`, tileAlong(axis, v, SECTION.pipe_rack).placements);
+        put("m2_pipe_plant", `pipes_${index}`, tileAlong(axis, v, SECTION.pipe_rack).placements);
         break;
       }
 
       case "tank": {
-        put("tank", `tank_${index}`, [
+        put("m2_fuel_reservoir", `tank_${index}`, [
           { position: new Vector3(v.centre.x, v.box.min.y, v.centre.z) },
         ]);
         break;
       }
 
       case "hardpoint": {
-        put("hardpoint", `hardpoint_${index}`, [
+        put("m2_command_bunker", `hardpoint_${index}`, [
           { position: new Vector3(v.centre.x, v.box.min.y, v.centre.z) },
         ]);
         break;
@@ -465,7 +466,7 @@ export async function buildWorld(
         // This is map-specific on purpose — deriving the direction would need
         // the neighbouring steps, and the collision map is the thing that
         // defines "up" here.
-        put("stair", `stair_${index}`, [
+        put("m2_access_stair", `stair_${index}`, [
           {
             position: new Vector3(v.centre.x, v.box.min.y, v.centre.z),
             rotationY: v.centre.z > 0 ? 0 : Math.PI,
@@ -518,7 +519,7 @@ export async function buildWorld(
             });
           }
         }
-        put("container", `container_${index}`, placements);
+        put("m2_cargo_module", `container_${index}`, placements);
         break;
       }
     }
@@ -544,7 +545,7 @@ export async function buildWorld(
   ];
 
   put(
-    "lamp_mast",
+    "m2_floodlight",
     "lamp",
     lampSpots.map(([x, z]) => ({ position: new Vector3(x, 0, z) })),
   );
@@ -578,18 +579,23 @@ export async function buildWorld(
   //
   // These leftovers stay non-colliding because they are small supply props in
   // a protected spawn, where nobody expects cover.
-  put("prop_barrel", "barrel", [
+  put("m2_fuel_drum", "barrel", [
     { position: new Vector3(-30, 0, -54), rotationY: 1.1 },
     { position: new Vector3(-28.5, 0, -52.5), rotationY: -0.4 },
     { position: new Vector3(29, 0, 54), rotationY: 2.2 },
     { position: new Vector3(27.5, 0, 52.5), rotationY: 0.7 },
   ]);
-  put("nc7_equipment_case_v1", "field-case", [
+  put("m2_field_case", "field-case", [
     { position: new Vector3(-22, 0, -44), rotationY: 0.5 },
     { position: new Vector3(22, 0, -44), rotationY: -0.8 },
     { position: new Vector3(22, 0, 44), rotationY: -2.4 },
     { position: new Vector3(-22, 0, 44), rotationY: 2.5 },
   ]);
+
+  // Unreachable industrial skyline: all three backdrop models are now used.
+  put("m2_control_tower", "operations-tower", [{ position: new Vector3(46, 0, -43) }]);
+  put("m2_refinery", "refinery", [{ position: new Vector3(-47, 0, -12) }]);
+  put("m2_maintenance_hangar", "maintenance", [{ position: new Vector3(0, 0, 77) }]);
 
   // Two cold accent lights mark the opposing spawn ends, echoing the split
   // palette the whole product is built on.

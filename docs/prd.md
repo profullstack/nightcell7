@@ -180,3 +180,16 @@ They are part of the authoritative map, so content compatibility advances to
 ship this content revision together. Placement preserves the imported glTF
 coordinate transforms, including quarter-turn cover orientation and weapon
 muzzle direction. The website gallery is recaptured from the integrated game.
+
+### 2026-09-16 — M2 graphics and public demo repair
+
+M2 retires every legacy runtime model/texture filename and consolidates 31 former
+model entries into 28 original tactical GLBs. No licensed legacy meshes, rigs or
+animation clips remain in the active art build. The approved C7 rifle, field case
+and low cover stay in the unified inventory. Content revision advances to 1.2.0;
+wire protocol 2 and collision volumes stay unchanged. The public demo link always
+opens Team Deathmatch, combat pauses behind the menu, and a single simulation
+clock owns bot respawn. New character rigs, faction-safe roster construction,
+visibility-aware navigation and corrected aim restore visible opponents and
+return fire. Competitive server TDM limits remain unchanged. Details and full
+coverage are in `docs/art/modern-assets-and-demo.md`.

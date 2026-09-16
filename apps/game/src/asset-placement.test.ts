@@ -18,7 +18,7 @@ describe("runtime GLB placement", () => {
     const engine = new NullEngine();
     const scene = new Scene(engine);
     try {
-      const container = await load(scene, "nc7_concrete_cover_v1");
+      const container = await load(scene, "m2_low_cover");
       for (const mesh of [...container.meshes])
         if (mesh.name.startsWith("COL_")) {
           container.meshes.splice(container.meshes.indexOf(mesh), 1);
@@ -45,7 +45,7 @@ describe("runtime GLB placement", () => {
     const engine = new NullEngine();
     const scene = new Scene(engine);
     try {
-      const [root] = placeAll(await load(scene, "nc7_carbine_v1"), "view", [
+      const [root] = placeAll(await load(scene, "m2_carbine_fp"), "view", [
         { position: new Vector3(0.21, -0.185, 0.324), scaling: new Vector3(0.525, 0.525, 0.525) },
       ]);
       const muzzle = root!
@@ -63,7 +63,11 @@ describe("runtime GLB placement", () => {
     const engine = new NullEngine();
     const scene = new Scene(engine);
     try {
-      for (const name of ["character", "fighter_insurgent", "fighter_soldier"]) {
+      for (const name of [
+        "m2_operator_directorate",
+        "m2_operator_directorate",
+        "m2_operator_nightcell",
+      ]) {
         const placed = placeAnimated(await load(scene, name), name, {
           position: new Vector3(4, 0, 5),
           rotationY: 0.7,

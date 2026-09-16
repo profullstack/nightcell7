@@ -88,15 +88,15 @@ describe("generated models", () => {
     // and never collide with anything, so a COL_ hull on one would be geometry
     // that exists only to satisfy a rule.
     const NO_COLLIDER = new Set([
-      "character",
-      "fighter_insurgent",
-      "fighter_soldier",
-      "carbine",
-      "nc7_carbine_v1",
-      "wep_rifle",
-      "wep_smg",
-      "wep_sniper",
-      "wep_grenade",
+      "m2_operator_directorate",
+      "m2_operator_directorate",
+      "m2_operator_nightcell",
+      "m2_rifle",
+      "m2_carbine_fp",
+      "m2_rifle",
+      "m2_smg",
+      "m2_marksman",
+      "m2_grenade",
     ]);
 
     for (const model of MODELS) {
@@ -118,12 +118,12 @@ describe("generated models", () => {
     // rather than modelled, so this is the one convention most likely to break
     // silently when a new weapon is converted.
     for (const weapon of [
-      "carbine",
-      "nc7_carbine_v1",
-      "wep_rifle",
-      "wep_smg",
-      "wep_sniper",
-      "wep_grenade",
+      "m2_rifle",
+      "m2_carbine_fp",
+      "m2_rifle",
+      "m2_smg",
+      "m2_marksman",
+      "m2_grenade",
     ]) {
       const nodes = names(glbJson(join(MODELS_DIR, `${weapon}.glb`)).nodes);
       expect(
@@ -145,11 +145,10 @@ describe("generated models", () => {
     // catches a flipped weapon; guarding the distance catches a socket left at
     // the origin, which is what a mis-parented empty produces.
     const MUZZLES: Record<string, number> = {
-      carbine: 0.492,
-      nc7_carbine_v1: 0.612,
-      wep_rifle: 0.72,
-      wep_smg: 0.506,
-      wep_sniper: 1.163,
+      m2_carbine_fp: 0.612,
+      m2_rifle: 0.72,
+      m2_smg: 0.506,
+      m2_marksman: 1.163,
     };
 
     for (const [weapon, expected] of Object.entries(MUZZLES)) {
@@ -166,7 +165,11 @@ describe("generated models", () => {
   });
 
   it("retains skinned characters and locomotion clips", () => {
-    for (const model of ["character", "fighter_insurgent", "fighter_soldier"]) {
+    for (const model of [
+      "m2_operator_directorate",
+      "m2_operator_directorate",
+      "m2_operator_nightcell",
+    ]) {
       const doc = glbJson(join(MODELS_DIR, `${model}.glb`)) as {
         skins?: unknown[];
         animations?: { name: string }[];
@@ -182,9 +185,24 @@ describe("generated models", () => {
   });
 
   it("keeps the character's weapon and head sockets", () => {
-    const nodes = names(glbJson(join(MODELS_DIR, "character.glb")).nodes);
+    const nodes = names(glbJson(join(MODELS_DIR, "m2_operator_directorate.glb")).nodes);
     expect(nodes.some((n) => n.startsWith("SOCKET_WEAPON"))).toBe(true);
     expect(nodes.some((n) => n.startsWith("SOCKET_HEAD"))).toBe(true);
+  });
+});
+
+describe("retired graphics", () => {
+  it("ships exactly the modern inventory with no old files or fallback meshes", () => {
+    expect(
+      readdirSync(MODELS_DIR)
+        .filter((f) => f.endsWith(".glb"))
+        .sort(),
+    ).toEqual(MODELS.map((name) => `${name}.glb`).sort());
+    expect(MODELS.every((name) => name.startsWith("m2_"))).toBe(true);
+    expect(readdirSync(TEXTURES_DIR).every((name) => name.startsWith("m2_"))).toBe(true);
+    const provenance = JSON.parse(readFileSync(join(ASSETS, "art-manifest.json"), "utf8"));
+    expect(provenance.legacyGeometry).toBe(false);
+    expect(provenance.originalGeometry).toBe(true);
   });
 });
 
@@ -192,7 +210,7 @@ describe("generated textures", () => {
   it("ships a full PBR set for every material", () => {
     for (const material of MATERIALS) {
       for (const map of ["albedo", "normal", "orm"]) {
-        const file = join(TEXTURES_DIR, `${material}_${map}.webp`);
+        const file = join(TEXTURES_DIR, `m2_${material}_${map}.webp`);
         expect(() => statSync(file), `missing ${material}_${map}.webp`).not.toThrow();
       }
     }
@@ -200,7 +218,7 @@ describe("generated textures", () => {
 
   it("ships the IBL environment", () => {
     // Without this every metal in the yard renders black, and nothing throws.
-    expect(() => statSync(join(TEXTURES_DIR, "env_sky.webp"))).not.toThrow();
+    expect(() => statSync(join(TEXTURES_DIR, "m2_env_sky.webp"))).not.toThrow();
   });
 });
 
@@ -294,6 +312,6 @@ describe("download budget", () => {
     for (const model of MODELS) {
       expect(manifest.models, `manifest missing ${model}`).toContain(`${model}.glb`);
     }
-    expect(manifest.textures).toContain("env_sky.webp");
+    expect(manifest.textures).toContain("m2_env_sky.webp");
   });
 });
