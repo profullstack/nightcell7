@@ -1,32 +1,18 @@
-# Asset provenance — M2
+# Asset provenance — IRON RAIN
 
-The current runtime contains **28 original NIGHTCELL 7 GLBs and 12 texture files**.
-All previous runtime graphics filenames are retired. No Synty/Quaternius meshes,
-palette atlases, imported character rigs or MoCap Online clips remain in this
-release. Raw asset packs were not modified. Historical licensing records below
-are retained to document earlier releases.
+The current runtime contains **28 original NIGHTCELL 7 GLBs and 5 texture files**. All 27 non-approved models are newly built `m3_` assets. The approved `m2_carbine_fp.glb` and its three surface maps are retained. All other M2 runtime geometry and nine obsolete texture maps are removed.
 
-| Current content                                                        | Origin                                                                                                     |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Structural kit, vehicles, equipment, backdrop structures               | Original geometry from `tools/art/modern/generate.py`                                                      |
-| Two operators, skeletons, idle/walk/run/death clips, hand/head sockets | Original metre-scale rig and geometry; no retargeting or imported actions                                  |
-| C7 first-person rifle, field case, low cover                           | Approved original designs from `tools/art/tactical-sample/generate.py`, carried into the modern inventory  |
-| C7 world rifle/SMG/marksman and grenade                                | Original procedural weapon family in the M2 generator                                                      |
-| Camouflage fabric and neutral worn coating                             | Original built-in image-generation outputs; prompts, date and reusable WebP sources in `tools/art/modern/` |
-| Concrete, steel, rubber normal/albedo/ORM maps and environment         | Original procedural shared surfaces from `tools/art/textures/generate.py`                                  |
-| Sound effects and streamed soundtrack                                  | Unchanged; existing records below apply                                                                    |
+| Content                                                       | Origin                                                                                                                    |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Structures, vehicles, equipment, two operator bodies and rigs | Original geometry and animation in `tools/art/iron-rain/generate.py`                                                      |
+| World rifle variants                                          | Original approved C7 design family, regenerated for world scale                                                           |
+| Approved first-person rifle                                   | Unmodified original `m2_carbine_fp.glb`                                                                                   |
+| Concrete, blue paint, asphalt and ripstop atlas               | Built-in image generation, 2026-09-16; reusable source and recorded direction in `tools/art/iron-rain/texture-prompts.md` |
+| Environment image                                             | Original deterministic `tools/art/iron-rain/environment.py`                                                               |
+| Retained C7 coating and steel/rubber normals                  | Existing original M2 surface sources; historical prompt and procedural generator records retained                         |
+| Sound effects and streamed soundtrack                         | Unchanged; existing records below apply                                                                                   |
 
-`art-manifest.json` records actual shipped hashes, triangle counts, clips and
-material names. `manifest.json` records the complete inventory and byte totals.
-`tools/art/modern/replacements.json` maps every one of the 31 former GLBs to its
-replacement; the old fallback character, duplicate carbine and ammo-box mesh are
-consolidated into the operators, world rifle and approved field case.
-
-Build and verification instructions: `tools/art/modern/README.md`.
-The build does not need a pinned historical Git commit or licensed source pack.
-The existing 9 MiB model/texture/effect-audio budget remains enforced. Music is
-streamed on demand and excluded as before. All files are served locally; there
-is no remote decoder or third-party asset URL.
+No third-party character mesh, animation or palette atlas is used by this runtime. Shared primitive helpers and the approved weapon builder are reused; previous environment and character assemblies are not. Original NIGHTCELL 7 work. `art-manifest.json` records shipped hashes and geometry; `manifest.json` records the complete inventory and budget. Build and validation instructions are in `tools/art/iron-rain/README.md`. Historical records below describe earlier releases, not the current inventory.
 
 ## Historical license and conversion records
 

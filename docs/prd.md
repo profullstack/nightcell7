@@ -55,6 +55,23 @@ commit as the code (CLAUDE.md).
 
 ---
 
+## Current game art direction — IRON RAIN (2026-09-16)
+
+The Ardavan runtime uses original modern military industrial scenery: pale concrete,
+slate-blue equipment, orange utility markings, dark asphalt and cool daylight.
+This replaces the earlier night/sodium presentation. All 27 scenery, vehicle,
+prop, world-weapon and operator models are rebuilt; the approved first-person
+C7 and its coating/normal maps remain unchanged. Two original animated operators,
+new environmental surfaces, lighting, effects, deployment menu and field HUD ship
+as one runtime set. Obsolete model and texture files are removed.
+
+The episode title remains FALSE DAWN. The map collision layout, combat rules and
+budgets remain unchanged. Reproduction and verification are documented in
+`tools/art/iron-rain/README.md`; every website capture identifies its source commit
+in `apps/site/public/media/yard/manifest.json`.
+
+---
+
 ## Section index
 
 | PRD §    | Requirement                                                    | Implementation                                                                                 |

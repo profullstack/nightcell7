@@ -2,7 +2,7 @@
 /**
  * Asset build.
  *
- * Builds M2 original models, rigs, animations and shared PBR textures.
+ * Builds IRON RAIN original models, rigs, animations and shared PBR textures.
  * No legacy meshes or licensed packs are read. See PROVENANCE.md.
  * Exported files are checked with the asset tests and glTF validator.
  *
@@ -20,6 +20,7 @@
 import { execFileSync } from "node:child_process";
 import {
   copyFileSync,
+  readFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -41,7 +42,7 @@ const PREVIEWS_OUT = join(ROOT, "build/asset-previews");
 const args = process.argv.slice(2);
 const has = (flag) => args.includes(flag);
 
-const FULL_OUT = join(ROOT, "build/modern-art");
+const FULL_OUT = join(ROOT, "build/iron-rain");
 
 /** Texture resolution. 1024 keeps the whole set near 2 MB as WebP. */
 const TEXTURE_SIZE = 1024;
@@ -154,7 +155,7 @@ function main() {
   if (doModels) {
     console.log("models");
     mkdirSync(MODELS_OUT, { recursive: true });
-    for (const [script, out] of [["modern/generate.py", FULL_OUT]]) {
+    for (const [script, out] of [["iron-rain/generate.py", FULL_OUT]]) {
       run(
         blender,
         [
@@ -173,14 +174,20 @@ function main() {
         script,
       );
     }
-    for (const file of readdirSync(MODELS_OUT).filter((f) => f.endsWith(".glb")))
+    for (const file of readdirSync(MODELS_OUT).filter(
+      (f) => f.endsWith(".glb") && f !== "m2_carbine_fp.glb",
+    ))
       rmSync(join(MODELS_OUT, file));
     run(
       process.execPath,
       [join(HERE, "full-set/optimize.mjs"), FULL_OUT, MODELS_OUT],
       "compact GLBs",
     );
-    copyFileSync(join(FULL_OUT, "runtime-manifest.json"), join(OUT, "art-manifest.json"));
+    const runtime = JSON.parse(readFileSync(join(FULL_OUT, "runtime-manifest.json"), "utf8"));
+    const previous = JSON.parse(readFileSync(join(OUT, "art-manifest.json"), "utf8"));
+    runtime.models.m2_carbine_fp = previous.models.m2_carbine_fp;
+    runtime.approvedWeapon = "m2_carbine_fp preserved byte for byte";
+    writeFileSync(join(OUT, "art-manifest.json"), JSON.stringify(runtime, null, 2) + "\n");
   }
 
   if (doTextures) {
@@ -198,7 +205,7 @@ function main() {
 
     process.stdout.write("  encoding webp\n");
     for (const file of readdirSync(staging)) {
-      if (!/^(concrete|steel|rubber)_|^env_sky/.test(file)) rmSync(join(staging, file));
+      if (!/^(steel|rubber)_normal/.test(file)) rmSync(join(staging, file));
     }
     const encoded = join(ROOT, "build/modern-textures");
     rmSync(encoded, { recursive: true, force: true });
@@ -208,8 +215,25 @@ function main() {
       rmSync(join(TEXTURES_OUT, file));
     for (const file of readdirSync(encoded))
       copyFileSync(join(encoded, file), join(TEXTURES_OUT, `m2_${file}`));
-    for (const file of readdirSync(join(HERE, "modern/textures")))
+    for (const file of readdirSync(join(HERE, "modern/textures")).filter(
+      (f) => f === "m2_coating_albedo.webp",
+    ))
       copyFileSync(join(HERE, "modern/textures", file), join(TEXTURES_OUT, file));
+    run(python, [join(HERE, "iron-rain/environment.py")], "dawn IBL");
+    execFileSync("ffmpeg", [
+      "-y",
+      "-loglevel",
+      "error",
+      "-i",
+      join(FULL_OUT, "environment.png"),
+      "-quality",
+      "95",
+      join(TEXTURES_OUT, "ir_env_sky.webp"),
+    ]);
+    copyFileSync(
+      join(HERE, "iron-rain/textures/ir_surface_atlas.webp"),
+      join(TEXTURES_OUT, "ir_surface_atlas.webp"),
+    );
     rmSync(staging, { recursive: true, force: true });
     process.stdout.write(`    ${(bytes / 1048576).toFixed(2)} MB of WebP\n`);
   }
@@ -266,7 +290,7 @@ function main() {
         "--python-exit-code",
         "1",
         "--python",
-        join(HERE, "modern/preview.py"),
+        join(HERE, "iron-rain/preview.py"),
         "--",
         "--pack",
         FULL_OUT,
@@ -321,7 +345,7 @@ function main() {
         license:
           "Original NIGHTCELL 7 geometry, rigging, animation and generated surfaces; see PROVENANCE.md.",
         source:
-          "M2 original asset set from tools/art/modern; all legacy graphics retired. See art-manifest.json for per-model hashes and materials.",
+          "IRON RAIN original environment and operators; approved C7 first-person rifle retained. See art-manifest.json for per-model hashes and materials.",
         textureSize: TEXTURE_SIZE,
         webpQuality: WEBP_QUALITY,
         models,

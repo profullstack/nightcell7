@@ -1,3 +1,5 @@
+> Archived M2 release. Current runtime builds use `tools/art/iron-rain/README.md`. This source remains for historical provenance and shared primitive/approved weapon helpers only.
+
 # M2 original tactical asset set
 
 M2 replaces the legacy geometry and character rigs with original NIGHTCELL 7

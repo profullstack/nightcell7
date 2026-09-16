@@ -242,7 +242,7 @@ async function main() {
           generator: "tools/art/capture.mjs",
           source: "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
           license:
-            "NIGHTCELL 7 in-engine captures of the original M2 geometry and generated surface textures. See apps/game/public/assets/PROVENANCE.md.",
+            "NIGHTCELL 7 in-engine captures of the original IRON RAIN geometry and generated surface textures. See apps/game/public/assets/PROVENANCE.md.",
           commit,
           capturedAt: new Date().toISOString(),
           viewport: { width: WIDTH, height: HEIGHT },

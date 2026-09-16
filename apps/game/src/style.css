@@ -16,8 +16,8 @@
   --bone-100: #ece8df;
   --bone-300: #c6c1b7;
   --signal-red: #d33a3f;
-  --signal-cyan: #54bdca;
-  --dust-gold: #ad9365;
+  --signal-cyan: #9dc8d6;
+  --dust-gold: #c4a36c;
 
   --font-display: "Barlow Condensed", "Archivo Narrow", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -84,7 +84,7 @@ body {
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0;
   mix-blend-mode: overlay;
   background-image: repeating-linear-gradient(
     to bottom,
@@ -100,7 +100,7 @@ body {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+  background: radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(0, 0, 0, 0.12) 100%);
 }
 
 /* ------------------------------------------------------------------- HUD */
@@ -630,4 +630,90 @@ body {
   background: #ece8df;
   border-color: #ece8df;
   color: #07090c;
+}
+
+/* IRON RAIN field display. */
+.hud {
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 5px #08131c;
+}
+.hud__frame {
+  display: none;
+}
+.hud__label {
+  letter-spacing: 0.16em;
+  color: #bfd0d8;
+}
+.hud__block--tl .hud__value {
+  font-size: 1.15rem;
+}
+.hud__block--tr {
+  opacity: 0.72;
+}
+.hud__block--tr .hud__value {
+  font-size: 1rem;
+}
+.hud__block--bl,
+.hud__block--br,
+.hud__block--bc {
+  padding: 8px 12px;
+  border-bottom: 2px solid #adc6d0;
+  background: linear-gradient(90deg, #10222dcc, #10222d40);
+}
+.hud p {
+  margin: 2px 0;
+}
+.gate {
+  justify-items: start;
+  place-content: center start;
+  text-align: left;
+  padding: clamp(24px, 7vw, 120px);
+  gap: 1.3rem;
+  background: linear-gradient(90deg, #09151ef2 0%, #112433d9 36%, #11243330 75%, transparent);
+  backdrop-filter: none;
+}
+.gate__mark {
+  font-size: clamp(3rem, 7vw, 7rem);
+  letter-spacing: -0.025em;
+}
+.gate__mark i {
+  color: #c4a36c;
+}
+.gate__sub {
+  color: #b8cbd3;
+  letter-spacing: 0.22em;
+}
+.gate__hint {
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.025em;
+  color: #b8c7cf;
+  max-width: 43ch;
+}
+.gate .modes,
+.gate .keys {
+  justify-content: start;
+  max-width: 500px;
+}
+.gate__button {
+  min-width: 280px;
+  background: #cfb27c;
+  color: #12202a;
+  border: 0;
+  padding: 1.1rem 2rem;
+}
+.gate__button:hover {
+  background: #e8cea0;
+  color: #12202a;
+}
+@media (max-width: 600px) {
+  .gate {
+    justify-items: center;
+    text-align: center;
+    padding: 22px;
+    background: #0c1a28df;
+  }
+  .hud__block--tr {
+    display: none;
+  }
 }

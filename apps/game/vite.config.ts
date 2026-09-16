@@ -49,7 +49,7 @@ export default defineConfig({
             urlPattern: /\.(?:ktx2|glb|webp|webm|mp3|bin)$/,
             handler: "CacheFirst",
             options: {
-              cacheName: "nc7-content-m2",
+              cacheName: "nc7-content-iron-rain-3",
               expiration: { maxEntries: 2000 },
             },
           },

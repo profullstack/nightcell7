@@ -29,7 +29,7 @@ async function fixture() {
   new FreeCamera("test-camera", new Vector3(0, 2, 20), scene);
   const models: AssetSet["models"] = new Map(
     await Promise.all(
-      ["m2_operator_directorate", "m2_operator_nightcell", "m2_rifle", "m2_smg", "m2_grenade"].map(
+      ["m3_operator_directorate", "m3_operator_nightcell", "m3_rifle", "m3_smg", "m3_grenade"].map(
         async (name) => {
           const container = await LoadAssetContainerAsync(
             new Uint8Array(readFileSync(join(__dirname, "../public/assets/models", `${name}.glb`))),
@@ -163,11 +163,15 @@ describe("public combat demo with shipped operator models", () => {
     const f = await fixture();
     try {
       let shots = 0;
+      const start = f.inspect.views.get("bot-e0")!.root.position.clone();
+      let moved = false;
       for (let tick = 0; tick < 1800; tick++) {
         f.opponents.update(TICK_MS, { x: -11, y: 0, z: 18 }, 0);
         shots += f.opponents.drainShots().length;
+        if (Vector3.Distance(start, f.inspect.views.get("bot-e0")!.root.position) > 1) moved = true;
       }
       expect(shots).toBeGreaterThan(5);
+      expect(moved).toBe(true);
       expect(f.inspect.sim.phase).toBe("live");
       expect(
         [...f.inspect.sim.players.values()].filter((p) => p.isBot && p.alive).length,

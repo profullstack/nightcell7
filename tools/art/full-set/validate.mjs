@@ -11,7 +11,7 @@ for (const [name, entry] of Object.entries(manifest.models)) {
   const doc = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString());
   const report = await validateBytes(bytes, { uri: `${name}.glb`, maxIssues: 100 });
   assert.equal(createHash("sha256").update(bytes).digest("hex"), entry.sha256, `${name} hash`);
-  assert.ok(name.startsWith("m2_"), `${name} is a retired asset`);
+  assert.ok(name.startsWith("m3_") || name === "m2_carbine_fp", `${name} is a retired asset`);
   assert.equal(doc.images?.length ?? 0, 0, `${name} embeds textures`);
   assert.equal(report.issues.numErrors, 0, `${name}: ${JSON.stringify(report.issues)}`);
   for (const mesh of doc.meshes)
@@ -31,10 +31,7 @@ for (const [name, entry] of Object.entries(manifest.models)) {
 }
 assert.equal(result.length, 28);
 assert.equal(manifest.legacyGeometry, false);
-await writeFile(
-  resolve("build/modern-art/validation.json"),
-  JSON.stringify(result, null, 2) + "\n",
-);
+await writeFile(resolve("build/iron-rain/validation.json"), JSON.stringify(result, null, 2) + "\n");
 console.log(
   JSON.stringify({
     models: result.length,
