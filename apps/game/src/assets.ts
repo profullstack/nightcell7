@@ -31,57 +31,41 @@ import { bindTacticalMaterials, TACTICAL_WORLD_ALBEDO_SCALE } from "./tactical-m
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
 
 /** Material slot names shared with `tools/art/blender/_lib.py`. */
-export const MATERIALS = [
-  "concrete",
-  "steel",
-  "rust",
-  "paint_red",
-  "paint_cyan",
-  "grating",
-  "rubber",
-] as const;
+export const MATERIALS = ["concrete", "steel", "rubber"] as const;
 
 export type MaterialName = (typeof MATERIALS)[number] | "lamp_glass";
 
 /** Models built by the asset pipeline. */
+/** M2 runtime inventory. Legacy GLBs are retired, including fallback characters. */
 export const MODELS = [
-  "container",
-  "tank",
-  "deck",
-  "pipe_rack",
-  "wall",
-  "hardpoint",
-  "stair",
-  "lamp_mast",
-  "character",
-  "carbine",
-  // Original tactical art: viewmodel, spawn equipment and low cover.
-  "nc7_carbine_v1",
-  "nc7_equipment_case_v1",
-  "nc7_concrete_cover_v1",
-  // Refitted licensed character rigs retain their retargeted clips.
-  "fighter_insurgent",
-  "fighter_soldier",
-  // Refitted vehicles and scenery share the tactical PBR palette.
-  "veh_armored_car",
-  "veh_technical",
-  "prop_barrel",
-  "prop_barrel_stack",
-  "prop_ammo_box",
-  "prop_barrier",
-  "prop_water_tank",
-  // Original C7 weapon family, with preserved attachment conventions.
-  "wep_rifle",
-  "wep_smg",
-  "wep_sniper",
-  "wep_grenade",
-  // Licensed Synty environment. Backdrop structures standing outside the
-  // perimeter walls, plus tents inside the spawn ends — see `world.ts`.
-  "env_control_tower",
-  "env_oil_tower",
-  "env_hangar",
-  "env_guard_tower",
-  "env_tent",
+  "m2_cargo_module",
+  "m2_fuel_reservoir",
+  "m2_catwalk",
+  "m2_pipe_plant",
+  "m2_security_wall",
+  "m2_command_bunker",
+  "m2_access_stair",
+  "m2_floodlight",
+  "m2_operator_directorate",
+  "m2_operator_nightcell",
+  "m2_patrol_vehicle",
+  "m2_utility_vehicle",
+  "m2_fuel_drum",
+  "m2_drum_pallet",
+  "m2_blast_wall",
+  "m2_water_unit",
+  "m2_rifle",
+  "m2_smg",
+  "m2_marksman",
+  "m2_grenade",
+  "m2_control_tower",
+  "m2_refinery",
+  "m2_maintenance_hangar",
+  "m2_guard_post",
+  "m2_field_shelter",
+  "m2_carbine_fp",
+  "m2_field_case",
+  "m2_low_cover",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];
@@ -95,7 +79,7 @@ export interface AssetSet {
 
 function loadTexture(scene: Scene, file: string, srgb: boolean): Texture {
   const texture = new Texture(
-    `${ASSET_BASE}textures/${file}`,
+    `${ASSET_BASE}textures/m2_${file}`,
     scene,
     // Mipmaps on, and NOT inverted in Y: the generator writes conventional
     // top-left-origin images.
@@ -179,7 +163,7 @@ export function createMaterials(scene: Scene): Map<string, PBRMaterial | Standar
  */
 export function createEnvironment(scene: Scene): EquiRectangularCubeTexture {
   const environment = new EquiRectangularCubeTexture(
-    `${ASSET_BASE}textures/env_sky.webp`,
+    `${ASSET_BASE}textures/m2_env_sky.webp`,
     scene,
     256,
   );

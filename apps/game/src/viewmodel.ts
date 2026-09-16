@@ -46,7 +46,7 @@ const BASE_YAW = 0;
 const VIEW_SCALE = 0.525;
 
 /** Original C7 viewmodel; opponents use the simplified C7 world variants. */
-const WEAPON = "nc7_carbine_v1" as const;
+const WEAPON = "m2_carbine_fp" as const;
 
 /** How far the weapon may trail the view, in radians of camera rotation. */
 const SWAY_LIMIT = 0.045;
@@ -113,8 +113,6 @@ export class Viewmodel {
             clone.albedoColor.scaleInPlace(
               TACTICAL_VIEW_ALBEDO_SCALE / TACTICAL_WORLD_ALBEDO_SCALE,
             );
-          } else if (source.name === "synty_weapons") {
-            clone.albedoColor = new Color3(0.62, 0.62, 0.62);
           }
         }
         localised.set(source, clone);

@@ -4,6 +4,7 @@ import {
   type AssetContainer,
   type Mesh,
   type Scene,
+  type ShadowGenerator,
   type TransformNode,
 } from "@babylonjs/core";
 import {
@@ -20,6 +21,7 @@ import {
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
+import { TDM_RULES } from "@nightcell7/game-core";
 import { TEAM_PALETTE, brightenCharacter } from "./targets";
 
 /** Enemies on the Directorate side, and friendlies on the player's. */
@@ -37,6 +39,8 @@ export interface OpponentOptions {
    */
   readonly enemies?: number;
   readonly friendlies?: number;
+  /** Dynamic character and weapon shadows in the game renderer. */
+  readonly shadows?: ShadowGenerator;
 }
 
 /** Speed above which the run cycle replaces the walk cycle, m/s. */
@@ -115,43 +119,16 @@ export class Opponents {
   private accumulatorMs = 0;
   /** Shots fired by bots since the last drain, for the renderer to draw. */
   private readonly shots: BotShot[] = [];
-  private readonly deadUntil = new Map<string, number>();
   private readonly grenadeViews = new Map<string, GrenadeView>();
   private readonly explosions: Explosion[] = [];
   private readonly grenadeModel: AssetContainer | null;
 
   constructor(_scene: Scene, assets: AssetSet, options: OpponentOptions = {}) {
-    // Back on the generated character.
-    //
-    // The Synty models are committed and load, but the animation retarget
-    // splays their limbs — measured at 1.90 x 2.00 x 2.47 m against an
-    // expected 0.6 x 0.4 x 1.8. The cause is understood (see import_synty.py:
-    // the rest-pose difference between the two skeletons) and the corrected
-    // rest-relative maths is written, but its baked actions do not survive the
-    // glTF export yet, so the models cannot be shipped animated.
-    //
-    // Shipping a figure that renders correctly beats shipping a better model
-    // that does not. Swapping back is these two lines once the export is fixed:
-    //   assets.models.get("fighter_soldier") / ("fighter_insurgent")
-    //
-    // One model per faction.
-    //
-    // Nightcell are irregulars: olive drab, boots, a pack — someone fighting
-    // One licensed Synty character per faction, animated by retargeting MoCap
-    // Online's rifle library onto Synty's skeleton — see docs/HANDOFF-synty.md
-    // for the two attempts that failed first and why this one works.
-    //
-    // The generated character stays as the fallback. It is still built and
-    // shipped, so a failed licensed load degrades to a working bot rather than
-    // to no bot at all; `brightenCharacter` and `weaponFor` continue to carry
-    // the team read either way.
-    const fallback = assets.models.get("character");
-    const enemyModel = assets.models.get("fighter_insurgent") ?? fallback;
-    const friendlyModel = assets.models.get("fighter_soldier") ?? fallback;
-    const character = enemyModel ?? fallback;
-    if (!character) throw new Error("no character model loaded");
+    const enemyModel = assets.models.get("m2_operator_directorate");
+    const friendlyModel = assets.models.get("m2_operator_nightcell");
+    if (!enemyModel || !friendlyModel) throw new Error("modern operator models not loaded");
 
-    this.grenadeModel = assets.models.get("wep_grenade") ?? null;
+    this.grenadeModel = assets.models.get("m2_grenade") ?? null;
 
     // Weapons for the bots.
     //
@@ -160,9 +137,20 @@ export class Opponents {
     // rifle, Nightcell the SMG, so which side a figure is on is legible before
     // the tint confirms it.
     const weaponFor = (team: number) =>
-      assets.models.get(team === TEAM_IDS.DIRECTORATE ? "wep_rifle" : "wep_smg") ?? null;
+      assets.models.get(team === TEAM_IDS.DIRECTORATE ? "m2_rifle" : "m2_smg") ?? null;
 
-    this.sim = new MatchSimulation({ matchId: "sandbox", map: ARDAVAN_YARD });
+    this.sim = new MatchSimulation({
+      matchId: "sandbox",
+      map: ARDAVAN_YARD,
+      // The public sandbox has no results screen or match rotation. Keep it
+      // playable; competitive server rooms retain the normal TDM limits.
+      rules: {
+        ...TDM_RULES,
+        durationMs: Number.MAX_SAFE_INTEGER,
+        scoreLimit: Number.MAX_SAFE_INTEGER,
+        respawnDelayMs: RESPAWN_MS,
+      },
+    });
 
     // The player, so the bots have someone to fight.
     this.sim.addPlayer({
@@ -175,21 +163,32 @@ export class Opponents {
     const enemyCount = options.enemies ?? ENEMY_COUNT;
     const friendlyCount = options.friendlies ?? FRIENDLY_COUNT;
 
-    const roster = [
-      ...Array.from({ length: enemyCount }, (_, i) => ({
-        id: `bot-e${i}`,
-        team: TEAM_IDS.DIRECTORATE,
-        model: enemyModel,
-        name: `Directorate ${i + 1}`,
-      })),
-      ...Array.from({ length: friendlyCount }, (_, i) => ({
-        id: `bot-f${i}`,
-        team: TEAM_IDS.NIGHTCELL,
-        model: friendlyModel,
-        name: `Nightcell ${i + 1}`,
-      })),
-    ];
+    // Alternate joins so authoritative balancing honors the intended factions.
+    // Adding four enemies in a row silently moved e2 onto the player's team.
+    const roster = Array.from({ length: Math.max(enemyCount, friendlyCount) }, (_, i) => [
+      ...(i < enemyCount
+        ? [
+            {
+              id: `bot-e${i}`,
+              team: TEAM_IDS.DIRECTORATE,
+              model: enemyModel,
+              name: `Directorate ${i + 1}`,
+            },
+          ]
+        : []),
+      ...(i < friendlyCount
+        ? [
+            {
+              id: `bot-f${i}`,
+              team: TEAM_IDS.NIGHTCELL,
+              model: friendlyModel,
+              name: `Nightcell ${i + 1}`,
+            },
+          ]
+        : []),
+    ]).flat();
 
+    const spawnOffsets = new Map<number, number>();
     roster.forEach((entry, i) => {
       const id = entry.id;
       this.sim.addPlayer({
@@ -203,20 +202,23 @@ export class Opponents {
       // the same decision on the same tick.
       this.controllers.push(new BotController(id, 1000 + i * 37));
 
-      // Put them on a real spawn pad. `addPlayer` initialises movement to the
-      // origin and nothing else places them, so every bot stood on top of the
-      // central hard point in a single pile — which reads as "they all appear
-      // where I am" the moment the player walks into the middle.
-      const player = this.sim.players.get(id);
-      const spawns = spawnsForTeam(ARDAVAN_YARD, entry.team);
-      const spawn = spawns[i % Math.max(1, spawns.length)];
-      if (player && spawn) {
-        player.movement.position = { ...spawn.position };
-        player.movement.yaw = spawn.yaw;
+      // Initial spawn scoring ties before the first tick. Spread the roster
+      // across its real faction pads rather than stacking every mesh together.
+      const player = this.sim.players.get(id)!;
+      const pads = spawnsForTeam(ARDAVAN_YARD, player.team);
+      const offset = spawnOffsets.get(player.team) ?? 0;
+      spawnOffsets.set(player.team, offset + 1);
+      const pad = pads[offset % pads.length];
+      if (pad) {
+        player.movement.position = { ...pad.position };
+        player.movement.yaw = pad.yaw;
       }
-
-      const placed = placeAnimated(entry.model ?? character, id, {
-        position: new Vector3(0, -50, 0), // moved to the spawn on the first sync
+      const placed = placeAnimated(entry.model, id, {
+        position: new Vector3(
+          player.movement.position.x,
+          player.movement.position.y,
+          player.movement.position.z,
+        ),
         rotationY: 0,
       });
       if (!placed) return;
@@ -228,10 +230,13 @@ export class Opponents {
       // it holds — invisible from the front, and at any range that matters.
       brightenCharacter(
         placed.root,
-        entry.team === TEAM_IDS.NIGHTCELL ? TEAM_PALETTE.friendly : TEAM_PALETTE.enemy,
+        player.team === TEAM_IDS.NIGHTCELL ? TEAM_PALETTE.friendly : TEAM_PALETTE.enemy,
       );
 
-      attachWeapon(placed.root, weaponFor(entry.team), id);
+      attachWeapon(placed.root, weaponFor(player.team), id);
+      for (const mesh of placed.root.getChildMeshes()) {
+        if (mesh.getTotalVertices() > 0) options.shadows?.addShadowCaster(mesh, false);
+      }
 
       this.views.set(id, {
         id,
@@ -239,11 +244,12 @@ export class Opponents {
         clips: placed.clips,
         current: "",
         dead: false,
-        friendly: entry.team === TEAM_IDS.NIGHTCELL,
+        friendly: player.team === TEAM_IDS.NIGHTCELL,
       });
     });
 
     this.sim.startNow();
+    for (const [id, view] of this.views) this.syncView(view, this.sim.players.get(id)!);
   }
 
   /**
@@ -288,7 +294,9 @@ export class Opponents {
     if (nearest.health <= 0) {
       nearest.health = 0;
       nearest.alive = false;
-      this.deadUntil.set(nearest.id, performance.now() + RESPAWN_MS);
+      nearest.respawnAtMs = this.sim.elapsedMs + RESPAWN_MS;
+      nearest.pendingInputs.length = 0;
+      nearest.triggerHeld = false;
     }
 
     return { point: nearestPoint };
@@ -348,8 +356,6 @@ export class Opponents {
       for (const controller of this.controllers) controller.update(this.sim);
       this.consume(this.sim.step());
     }
-
-    this.respawn();
 
     for (const [id, view] of this.views) {
       const player = this.sim.players.get(id);
@@ -413,7 +419,6 @@ export class Opponents {
         if (view && !view.dead) {
           view.dead = true;
           this.play(view, "death", false);
-          this.deadUntil.set(event.victimId, performance.now() + RESPAWN_MS);
         }
         continue;
       }
@@ -453,31 +458,6 @@ export class Opponents {
     }
   }
 
-  /** Put downed bots back on their feet. */
-  private respawn(): void {
-    const now = performance.now();
-    for (const [id, at] of this.deadUntil) {
-      if (now < at) continue;
-      this.deadUntil.delete(id);
-
-      const player = this.sim.players.get(id);
-      const view = this.views.get(id);
-      if (!player || !view) continue;
-
-      const spawns = spawnsForTeam(ARDAVAN_YARD, player.team);
-      const spawn = spawns[Math.floor(Math.random() * spawns.length)] ?? spawns[0];
-      if (spawn) {
-        player.movement.position = { ...spawn.position };
-        player.movement.yaw = spawn.yaw;
-      }
-      player.movement.velocity = { x: 0, y: 0, z: 0 };
-      player.health = 100;
-      player.alive = true;
-      view.dead = false;
-      view.current = "";
-    }
-  }
-
   private syncView(view: BotView, player: SimPlayer): void {
     if (!player.alive) {
       if (!view.dead) {
@@ -498,7 +478,7 @@ export class Opponents {
       player.movement.position.y,
       player.movement.position.z,
     );
-    // The model faces -Z; the simulation measures yaw from +Z.
+    // M2 operators face the same forward axis as the simulation.
     view.root.rotation.set(0, player.movement.yaw, 0);
 
     const speed = Math.hypot(player.movement.velocity.x, player.movement.velocity.z);

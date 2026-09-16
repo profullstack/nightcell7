@@ -1,52 +1,32 @@
-# Asset provenance
+# Asset provenance — M2
 
-The `full-art-1` release replaces all 28 previous runtime GLBs and adds the three
-approved C7 assets: **31 models total**. This is a coordinated military art pass,
-with original weapon geometry and equipment, refitted scenery, and retained
-licensed character rigs. It is not a claim that the licensed base meshes became
-original work.
+The current runtime contains **28 original NIGHTCELL 7 GLBs and 12 texture files**.
+All previous runtime graphics filenames are retired. No Synty/Quaternius meshes,
+palette atlases, imported character rigs or MoCap Online clips remain in this
+release. Raw asset packs were not modified. Historical licensing records below
+are retained to document earlier releases.
 
-| Runtime asset group                                                                              | Source and treatment                                                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `carbine`, `wep_rifle`, `wep_smg`, `wep_sniper`, `wep_grenade`, `nc7_carbine_v1`                 | Original fictional weapon geometry from `tools/art/tactical-sample/generate.py` and `tools/art/full-set/overhaul.py`. No Synty weapon geometry remains.                                          |
-| `nc7_equipment_case_v1`, `nc7_concrete_cover_v1`                                                 | Original modeled equipment and concrete cover.                                                                                                                                                   |
-| `container`, `tank`, `deck`, `pipe_rack`, `wall`, `hardpoint`, `stair`, `lamp_mast`, `character` | Repository procedural base geometry, refitted with surface detail, hardware, markings, chamfers, and updated material/UV treatment.                                                              |
-| `fighter_insurgent`, `fighter_soldier`                                                           | Licensed Synty base geometry and previously retargeted MoCap Online clips. New equipment, smoothed normals, PBR regions, and bone-attached weapon/head sockets. The source licenses still apply. |
-| `veh_*`, `prop_*`, `env_*`                                                                       | Licensed Synty base geometry from the pinned conversion, refitted with hardware, service details, markings, chamfers, and shared PBR materials. The source license still applies.                |
-| 21 surface maps and `env_sky.webp`                                                               | Original procedural textures regenerated with finer relief, restrained paint, and updated seeds. Seven 1024² albedo/normal/ORM sets; one environment map.                                        |
+| Current content                                                        | Origin                                                                                                     |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Structural kit, vehicles, equipment, backdrop structures               | Original geometry from `tools/art/modern/generate.py`                                                      |
+| Two operators, skeletons, idle/walk/run/death clips, hand/head sockets | Original metre-scale rig and geometry; no retargeting or imported actions                                  |
+| C7 first-person rifle, field case, low cover                           | Approved original designs from `tools/art/tactical-sample/generate.py`, carried into the modern inventory  |
+| C7 world rifle/SMG/marksman and grenade                                | Original procedural weapon family in the M2 generator                                                      |
+| Camouflage fabric and neutral worn coating                             | Original built-in image-generation outputs; prompts, date and reusable WebP sources in `tools/art/modern/` |
+| Concrete, steel, rubber normal/albedo/ORM maps and environment         | Original procedural shared surfaces from `tools/art/textures/generate.py`                                  |
+| Sound effects and streamed soundtrack                                  | Unchanged; existing records below apply                                                                    |
 
-`art-manifest.json` records every model's baseline hash, shipped hash, triangle
-count, clips, and material slots. `manifest.json` records the actual model,
-texture, and effect-audio byte totals. Streamed music remains outside that total.
+`art-manifest.json` records actual shipped hashes, triangle counts, clips and
+material names. `manifest.json` records the complete inventory and byte totals.
+`tools/art/modern/replacements.json` maps every one of the 31 former GLBs to its
+replacement; the old fallback character, duplicate carbine and ammo-box mesh are
+consolidated into the operators, world rifle and approved field case.
 
-## Rebuild and verify
-
-```sh
-npm ci --prefix tools/art/full-set --workspaces=false --ignore-scripts
-BLENDER=/path/to/blender pnpm assets:build --models-only
-BLENDER=/path/to/blender pnpm assets:build --textures-only
-node tools/art/full-set/validate.mjs
-pnpm exec vitest run apps/game/src/assets.test.ts apps/game/src/asset-placement.test.ts
-```
-
-Requires Blender 4.5 LTS, Node 22+, ffmpeg, and a Git checkout containing baseline
-commit `e5b3dae25a607ddc731111454e3dee93aa982b97`. The generator reads only the
-already-converted baseline GLBs and palette maps from Git. It never opens raw
-licensed packs or replaces raw masters. A shallow checkout must fetch that commit.
-Editable Blender masters and preview renders are build artifacts under `build/`.
-The committed generators recreate them.
-
-Models use meter units, shared named PBR slots, one world-space UV set, `COL_`
-proxies for scenery, and `SOCKET_` attachment anchors. Weapons have muzzle
-sockets. The runtime removes collision proxies and uses the shared simulation
-map for collision. An outer placement node preserves glTF handedness and mesh
-quantization transforms. Compact vertex storage uses `KHR_mesh_quantization`,
-which the existing Babylon loader supports; no remote decoder is needed.
-
-The three old Synty palette atlases are build inputs only, recovered from the
-baseline commit, and are no longer shipped or requested by the game. The full
-set still uses the existing 9 MiB asset guard. No source Blender masters,
-third-party packs, generated concept imagery, or remote asset URLs are shipped.
+Build and verification instructions: `tools/art/modern/README.md`.
+The build does not need a pinned historical Git commit or licensed source pack.
+The existing 9 MiB model/texture/effect-audio budget remains enforced. Music is
+streamed on demand and excluded as before. All files are served locally; there
+is no remote decoder or third-party asset URL.
 
 ## Historical license and conversion records
 

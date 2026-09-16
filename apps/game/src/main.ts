@@ -155,7 +155,7 @@ async function boot(): Promise<void> {
   // configuration, not a degenerate one.
   const gameMode = preferredMode(window.location.search, safeStorage());
   const roster = gameMode === GAME_MODE.DEATHMATCH ? {} : ({ enemies: 0, friendlies: 0 } as const);
-  const opponents = new Opponents(scene, world.assets, roster);
+  const opponents = new Opponents(scene, world.assets, { ...roster, shadows: world.shadows });
 
   // Stationary targets, for the range only. They are presentation-only hit
   // volumes; nothing here is scored.
@@ -192,6 +192,13 @@ async function boot(): Promise<void> {
     });
   };
   hud.setLocked(false);
+
+  // Local visual regression harness; removed from production bundles by Vite.
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("inspect")) {
+    Object.assign(window, {
+      __NC7_DEV__: { scene, engine, camera, opponents, player, assets: world.assets },
+    });
+  }
 
   const dynamicResolution = new DynamicResolution(engine);
   let lastShotAt = 0;
@@ -247,7 +254,7 @@ async function boot(): Promise<void> {
       }
     }
     effects.update();
-    opponents.update(deltaMs, status.position, camera.rotation.y);
+    if (status.locked) opponents.update(deltaMs, status.position, camera.rotation.y);
     targets?.update();
     // Draw whatever the bots shot at this tick, so incoming fire is visible.
     for (const shot of opponents.drainShots()) {

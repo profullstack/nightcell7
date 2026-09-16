@@ -1,3 +1,5 @@
+> Superseded by M2. The refit pipeline and its legacy GLBs are retired. See `tools/art/modern/README.md` and `docs/art/modern-assets-and-demo.md`.
+
 # Full tactical art pipeline
 
 This pipeline rebuilds the entire 31-model runtime inventory. The three original

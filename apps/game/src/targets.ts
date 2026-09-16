@@ -137,8 +137,8 @@ export class TrainingTargets {
   private readonly targets: Target[] = [];
 
   constructor(scene: Scene, assets: AssetSet) {
-    const character = assets.models.get("character");
-    const carbine = assets.models.get("carbine");
+    const character = assets.models.get("m2_operator_directorate");
+    const carbine = assets.models.get("m2_rifle");
     if (!character) throw new Error("character model not loaded");
 
     POSITIONS.forEach(([x, z], index) => {

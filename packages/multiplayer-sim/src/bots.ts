@@ -1,7 +1,9 @@
 import { BUTTON, type InputFrame } from "@nightcell7/multiplayer-protocol";
+import { rayAabb } from "./hitscan";
+import { navigatorFor } from "./navigation";
 import { TICK_MS } from "./constants";
 import type { MatchSimulation, SimPlayer } from "./simulation";
-import { distance, horizontalLength, sub } from "./vec";
+import { distance, horizontalLength, normalize, sub, type Vec3 } from "./vec";
 
 /**
  * Bot controller (PRD §18.11).
@@ -70,6 +72,9 @@ export class BotController {
   private readonly rng: Lcg;
   private targetId: string | null = null;
   private targetAcquiredAtMs = 0;
+  private route: Vec3[] = [];
+  private routeGoal: Vec3 | null = null;
+  private nextRouteAtMs = 0;
 
   constructor(
     readonly playerId: string,
@@ -96,7 +101,12 @@ export class BotController {
     if (target) {
       const toTarget = sub(target.movement.position, self.movement.position);
       const desiredYaw = Math.atan2(toTarget.x, toTarget.z);
-      const eyeDelta = toTarget.y + 0.9;
+      // Both movement positions are feet. Aim from our eye down to their chest.
+      // Adding 0.9 aimed above the target, so visible bots rarely landed a shot.
+      const eyeDelta =
+        toTarget.y +
+        (target.movement.crouching ? 0.7 : 1.15) -
+        (self.movement.crouching ? 1.05 : 1.65);
       const desiredPitch = -Math.atan2(eyeDelta, Math.max(0.001, horizontalLength(toTarget)));
 
       const maxTurn = this.tuning.turnRate * (dtMs / 1000);
@@ -108,6 +118,18 @@ export class BotController {
       );
 
       const range = distance(self.movement.position, target.movement.position);
+      const eye = {
+        ...self.movement.position,
+        y: self.movement.position.y + (self.movement.crouching ? 1.05 : 1.65),
+      };
+      const chest = {
+        ...target.movement.position,
+        y: target.movement.position.y + (target.movement.crouching ? 0.7 : 1.15),
+      };
+      const direction = normalize(sub(chest, eye));
+      const visible = !sim.map.boxes.some((box) =>
+        rayAabb(eye, direction, box, distance(eye, chest)),
+      );
       // Close the gap, then hold a working distance rather than sprinting into
       // contact — this reads as "cautious", not "melee-seeking".
       if (range > this.tuning.preferredRangeM + 3) {
@@ -121,7 +143,12 @@ export class BotController {
 
       const acquiredFor = sim.elapsedMs - this.targetAcquiredAtMs;
       const aimed = Math.abs(angleDelta(yaw, desiredYaw)) < 0.09;
-      if (acquiredFor >= this.tuning.reactionMs && aimed && range <= this.tuning.engageRangeM) {
+      if (
+        visible &&
+        acquiredFor >= this.tuning.reactionMs &&
+        aimed &&
+        range <= this.tuning.engageRangeM
+      ) {
         buttons |= BUTTON.FIRE;
       }
 
@@ -129,6 +156,7 @@ export class BotController {
       // decides whether there is one left and where it leaves from, so a bot
       // gets no more than a player would.
       if (
+        visible &&
         acquiredFor >= this.tuning.reactionMs &&
         range >= this.tuning.grenadeMinRangeM &&
         range <= this.tuning.grenadeMaxRangeM &&
@@ -140,16 +168,32 @@ export class BotController {
         self.movement.pitch = pitch;
         sim.throwGrenade(this.playerId);
       }
+      // Route around cover while closing. A blocked ray must never consume the
+      // entire magazine or hold a fighter behind a wall for the whole demo.
+      if (!visible || range > this.tuning.preferredRangeM + 3) {
+        const waypoint = this.navigate(sim, self.movement.position, target.movement.position);
+        if (waypoint) {
+          const heading = Math.atan2(
+            waypoint.x - self.movement.position.x,
+            waypoint.z - self.movement.position.z,
+          );
+          const relative = angleDelta(yaw, heading);
+          moveX = Math.sin(relative);
+          moveZ = Math.cos(relative);
+        }
+      }
     } else {
-      // Patrol: wander toward the middle of the map so bots do not idle in spawn.
-      const toCentre = sub({ x: 0, y: 0, z: 0 }, self.movement.position);
-      if (horizontalLength(toCentre) > 6) {
-        yaw = approachAngle(
-          yaw,
-          Math.atan2(toCentre.x, toCentre.z),
-          this.tuning.turnRate * (dtMs / 1000),
+      // Patrol past the central bunker toward the opposing approach.
+      const goal = { x: 0, y: 0, z: self.team === 0 ? -10 : 10 };
+      const waypoint = this.navigate(sim, self.movement.position, goal);
+      if (waypoint && distance(self.movement.position, waypoint) > 0.4) {
+        const heading = Math.atan2(
+          waypoint.x - self.movement.position.x,
+          waypoint.z - self.movement.position.z,
         );
-        moveZ = 1;
+        yaw = approachAngle(yaw, heading, (this.tuning.turnRate * dtMs) / 1000);
+        moveX = Math.sin(angleDelta(yaw, heading));
+        moveZ = Math.cos(angleDelta(yaw, heading));
       }
     }
 
@@ -166,6 +210,22 @@ export class BotController {
     };
 
     sim.queueInput(this.playerId, [frame]);
+  }
+
+  private navigate(sim: MatchSimulation, from: Vec3, goal: Vec3): Vec3 | null {
+    const navigator = navigatorFor(sim.map);
+    if (navigator.clear(from, goal)) return goal;
+    if (
+      sim.elapsedMs >= this.nextRouteAtMs ||
+      !this.routeGoal ||
+      distance(this.routeGoal, goal) > 4
+    ) {
+      this.route = navigator.path(from, goal);
+      this.routeGoal = { ...goal };
+      this.nextRouteAtMs = sim.elapsedMs + 1200;
+    }
+    while (this.route[0] && horizontalLength(sub(this.route[0], from)) < 0.42) this.route.shift();
+    return this.route[0] ?? null;
   }
 
   private pickTarget(sim: MatchSimulation, self: SimPlayer): SimPlayer | null {

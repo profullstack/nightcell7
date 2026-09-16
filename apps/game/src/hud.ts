@@ -230,8 +230,10 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
       }
 
       // Average the frame rate over ~0.5 s; a per-frame number is unreadable.
-      fpsAccumulator += fps;
-      fpsFrames += 1;
+      if (Number.isFinite(fps) && fps > 0) {
+        fpsAccumulator += fps;
+        fpsFrames += 1;
+      }
       if (fpsFrames >= 30) {
         const text = `${Math.round(fpsAccumulator / fpsFrames)} FPS`;
         if (text !== lastFps) {

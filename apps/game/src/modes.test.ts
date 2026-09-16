@@ -66,7 +66,16 @@ describe("game mode selection", () => {
     expect(preferredMode("", memoryStorage({ "nc7.mode": "nonsense" }))).toBe(DEFAULT_GAME_MODE);
   });
 
-  it("ignores the access-mode values, which share the parameter name", () => {
+  it("opens combat from the public demo link after a previous Free Roam visit", () => {
+    expect(preferredMode("?mode=demo", memoryStorage({ "nc7.mode": GAME_MODE.ROAM }))).toBe(
+      GAME_MODE.DEATHMATCH,
+    );
+    expect(preferredMode("?mode=demo", memoryStorage({ "nc7.mode": GAME_MODE.RANGE }))).toBe(
+      GAME_MODE.DEATHMATCH,
+    );
+  });
+
+  it("defaults non-scene access modes to deathmatch with no saved preference", () => {
     // `access.ts` reads `?mode=` too, for demo/campaign/multiplayer. Those are
     // never scene ids, so they must fall through here rather than matching.
     for (const access of ["demo", "campaign", "multiplayer", "sandbox"]) {
