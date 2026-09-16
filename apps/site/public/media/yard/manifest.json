@@ -1,9 +1,9 @@
 {
   "generator": "tools/art/capture.mjs",
   "source": "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
-  "license": "NIGHTCELL 7 in-engine captures of the original M2 geometry and generated surface textures. See apps/game/public/assets/PROVENANCE.md.",
-  "commit": "2272d6eb7d4ae070b3f3a99a50405afb429c10c5",
-  "capturedAt": "2026-09-16T14:13:28.939Z",
+  "license": "NIGHTCELL 7 in-engine captures of the original IRON RAIN geometry and generated surface textures. See apps/game/public/assets/PROVENANCE.md.",
+  "commit": "f2f77774c6ebe54d4a8421653f4025da175d90a8",
+  "capturedAt": "2026-09-16T17:40:09.504Z",
   "viewport": {
     "width": 1600,
     "height": 900
@@ -11,12 +11,12 @@
   "shots": [
     {
       "name": "yard-approach",
-      "caption": "The C7 carbine at the Nightcell muster point, looking north through the updated container yard toward the false dawn.",
+      "caption": "The C7 carbine at the Nightcell muster point, looking north through the IRON RAIN cargo yard in cool industrial daylight.",
       "showWeapon": true,
       "position": [0, 1.7, 44],
       "yaw": 3.141592653589793,
       "pitch": 0.02,
-      "file": "yard-approach-e6ee7125ea.webp"
+      "file": "yard-approach-7e405f4de3.webp"
     },
     {
       "name": "west-catwalk",
@@ -24,7 +24,7 @@
       "position": [-28, 8.1, 24],
       "yaw": 2.701769682087222,
       "pitch": 0.14,
-      "file": "west-catwalk-e797baf055.webp"
+      "file": "west-catwalk-2c25b5b2b8.webp"
     },
     {
       "name": "tank-row",
@@ -33,51 +33,51 @@
       "yaw": 3.141592653589793,
       "pitch": 0.03,
       "fovDegrees": 78,
-      "file": "tank-row-31f6a4d380.webp"
+      "file": "tank-row-9a415abb5f.webp"
     },
     {
       "name": "central-hardpoint",
-      "caption": "The C7 carbine beside the central hard point, with weathered containers and the refinery structures beyond.",
+      "caption": "The C7 carbine beside the central hard point, with pale concrete cargo modules and the refinery structures beyond.",
       "showWeapon": true,
       "position": [-17, 1.7, 15],
       "yaw": 2.764601535159018,
       "pitch": 0.02,
-      "file": "central-hardpoint-32d90efcdc.webp"
+      "file": "central-hardpoint-72f6771aa3.webp"
     },
     {
       "name": "gantry-overlook",
-      "caption": "From the east gantry, looking back across the container yard under the sodium masts.",
+      "caption": "From the east gantry, looking back across the container yard under the white floodlight masts.",
       "position": [30, 8.1, -14],
       "yaw": 4.1469023027385274,
       "pitch": 0.2,
       "fovDegrees": 82,
-      "file": "gantry-overlook-6be4c30b4c.webp"
+      "file": "gantry-overlook-da899625e2.webp"
     },
     {
       "name": "north-gate",
-      "caption": "The Directorate end of the yard, looking into the first light beyond the north wall.",
+      "caption": "The Directorate end of the yard, looking toward the operations buildings beyond the north wall.",
       "position": [0, 1.7, -22],
       "yaw": 3.141592653589793,
       "pitch": 0.06,
-      "file": "north-gate-dd5530559b.webp"
+      "file": "north-gate-b696b92cad.webp"
     },
     {
       "name": "pipe-rack-run",
       "caption": "The west lane pipe rack, looking south under the catwalk. Cover here is continuous but low, so the lane rewards movement over holding an angle.",
-      "position": [-24, 1.7, -18],
+      "position": [-20, 1.7, -22],
       "yaw": 0,
       "pitch": 0.04,
       "fovDegrees": 80,
-      "file": "pipe-rack-run-48a202b172.webp"
+      "file": "pipe-rack-run-739482debd.webp"
     },
     {
       "name": "container-alley",
-      "caption": "Between the northern container stacks. The corrugation and corner castings are the only cover in the centre lane, and both sides can reach it in the opening seconds.",
+      "caption": "Between the northern container stacks. The concrete panels and reinforced corners provide cover in the centre lane, and both sides can reach it in the opening seconds.",
       "position": [0, 1.7, -8],
       "yaw": 3.141592653589793,
       "pitch": 0,
       "fovDegrees": 74,
-      "file": "container-alley-6169e0def6.webp"
+      "file": "container-alley-d007a21255.webp"
     },
     {
       "name": "muster-point",
@@ -86,7 +86,7 @@
       "yaw": 3.141592653589793,
       "pitch": 0.05,
       "fovDegrees": 84,
-      "file": "muster-point-c52dcbb674.webp"
+      "file": "muster-point-acbd3e7102.webp"
     },
     {
       "name": "under-the-gantry",
@@ -95,7 +95,7 @@
       "yaw": 3.267256359733385,
       "pitch": 0.22,
       "fovDegrees": 80,
-      "file": "under-the-gantry-f918dd4414.webp"
+      "file": "under-the-gantry-24096b48f2.webp"
     }
   ]
 }
