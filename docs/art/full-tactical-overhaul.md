@@ -29,7 +29,9 @@ GLBs contain no embedded textures. Streamed music remains outside the shell.
 
 - Khronos glTF validator: all 31 files, zero errors. Three advisory warnings remain for inherited non-root skinned meshes; the Babylon skin/animation and placement checks pass.
 - 268 repository tests pass, including loaded-GLB placement tests for cover dimensions, forward muzzle position, and cloned character clips/sockets.
-- Game TypeScript check and production build pass.
+- Game and website TypeScript checks and production builds pass.
+- Repository ESLint and Prettier checks pass after excluding generated build artifacts.
+- All ten 1600 × 900 captures have content-hashed filenames; the built homepage and OpenGraph metadata reference the new hero image.
 - Headless Chromium/WebGL2 loads all 31 models without page or rendering errors; first-person orientation was checked in the actual game.
 - Every exported model is rendered for visual review. Character preview plates include their held world weapon; triangle counts below describe the character alone.
 

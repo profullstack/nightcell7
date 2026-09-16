@@ -19,6 +19,7 @@
  *   --chrome <path> Explicit Chromium/Chrome binary
  */
 
+import { format } from "prettier";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { createReadStream } from "node:fs";
@@ -220,20 +221,23 @@ async function main() {
 
   await writeFile(
     join(OUT, "manifest.json"),
-    `${JSON.stringify(
-      {
-        generator: "tools/art/capture.mjs",
-        source: "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
-        license:
-          "NIGHTCELL 7 in-engine captures; scene includes refitted licensed Synty geometry. See apps/game/public/assets/PROVENANCE.md.",
-        commit,
-        capturedAt: new Date().toISOString(),
-        viewport: { width: WIDTH, height: HEIGHT },
-        shots: captured,
-      },
-      null,
-      2,
-    )}\n`,
+    await format(
+      JSON.stringify(
+        {
+          generator: "tools/art/capture.mjs",
+          source: "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
+          license:
+            "NIGHTCELL 7 in-engine captures; scene includes refitted licensed Synty geometry. See apps/game/public/assets/PROVENANCE.md.",
+          commit,
+          capturedAt: new Date().toISOString(),
+          viewport: { width: WIDTH, height: HEIGHT },
+          shots: captured,
+        },
+        null,
+        2,
+      ),
+      { parser: "json" },
+    ),
     "utf8",
   );
 

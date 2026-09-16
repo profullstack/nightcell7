@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 import { fileURLToPath } from "node:url";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 const repo = fileURLToPath(new URL("../../../", import.meta.url)).replace(/\/$/, "");
 const manifest = JSON.parse(

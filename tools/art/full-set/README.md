@@ -42,3 +42,8 @@ node tools/art/capture.mjs --chrome /path/to/chromium --width 1600 --height 900
 The gallery is actual Babylon gameplay geometry. Studio model renders are separate
 review images. See `docs/art/full-tactical-overhaul.md` and
 `apps/game/public/assets/PROVENANCE.md` for coverage and retained licenses.
+
+The capture tool writes content-hashed WebP filenames, updates the manifest, and
+removes only superseded files from the previous capture manifest. `--only`
+requires a separate `--out` preview directory. The site derives gallery, hero,
+and social-share paths from this manifest, so cached old URLs are not reused.
