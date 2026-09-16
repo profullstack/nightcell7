@@ -79,11 +79,20 @@ See [all model renders](modern-art-overview.webp), `art-manifest.json` and the
 runtime provenance file. The studio images are model reviews. The combat frame
 was captured with the M2 game renderer.
 
-The website's ten-image gallery still contains the previous release's captures.
-The M2 gallery refresh started, but the execution environment disconnected before
-all ten captures could be completed and published. Re-run `tools/art/capture.mjs`
-against this revision and build the site before claiming the website gallery is
-updated. This does not affect the game runtime's complete M2 asset inventory.
+The website's ten-image gallery is regenerated from the merged M2 game revision
+`2272d6eb7d4ae070b3f3a99a50405afb429c10c5`, at 1600 × 900. Its manifest records
+the source revision and capture time; every WebP filename includes its content
+hash, and the previous ten image files are removed. The capture harness pauses
+frame scheduling after warm-up so screenshot readback can finish without
+competing with the continuous photo renderer. This affects capture sessions only.
+
+Live deployment verification on 2026-09-16 found that all 28 model files and all
+12 texture files served by `nightcell7.com/play/assets/` matched this repository
+revision byte-for-byte. The live game bundle referenced the M2 inventory. At that
+time the website gallery still referenced the earlier release; this gallery
+refresh addresses that separate mismatch. An existing browser session was not
+inspected, so stale local caching is a possibility rather than a proven cause of
+any individual user's display.
 
 ## Validation and release
 

@@ -19,11 +19,17 @@ accounted for here.
   The scene is deterministic apart from procedural noise seeds, so a given
   commit reproduces the same framings. `yard/manifest.json` records the commit,
   capture timestamp, viewport and per-shot camera transform.
-- **Licence:** original work, © NIGHTCELL 7. No third-party assets, textures,
-  models or photographs are involved — all surface texture is generated at
-  runtime in `apps/game/src/world.ts`.
-- **Status:** these are greybox frames. The site labels them as such, and that
-  label must survive any copy edit until the map ships final art.
+- **Licence:** original work, © NIGHTCELL 7. The current captures use the M2
+  original geometry, rigs and generated surface textures. Model generation is
+  in `tools/art/modern/generate.py`; texture sources and prompts are recorded
+  in `tools/art/modern/texture-prompts.md`. See
+  `apps/game/public/assets/PROVENANCE.md` for the complete asset record.
+- **Status:** in-engine M2 alpha art from merged game revision
+  `2272d6eb7d4ae070b3f3a99a50405afb429c10c5`. These images show the multiplayer
+  arena; they do not depict completed campaign locations.
+- **Capture environment:** Chromium 143.0.7499.0 with SwiftShader, at 1600 × 900.
+  The capture harness pauses the warmed-up photo renderer before screenshot
+  readback. Normal gameplay rendering is unaffected.
 
 ## Vector art
 

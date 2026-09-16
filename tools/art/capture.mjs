@@ -185,6 +185,15 @@ async function main() {
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
 
+    // Wrap scheduling before Babylon can cache requestAnimationFrame. This
+    // lets the capture harness pause after warm-up without changing the game.
+    await page.addInitScript(`{
+      const schedule = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = (callback) => schedule((time) => {
+        if (!window.__NC7_CAPTURE_PAUSED) callback(time);
+      });
+    }`);
+
     const url = `http://127.0.0.1:${PORT}/play/?photo=${vantage.name}`;
     await page.goto(url, { waitUntil: "load", timeout: 60_000 });
     // Passed as a string: this expression is evaluated in the page, not in
@@ -192,6 +201,12 @@ async function main() {
     // in this file's scope.
     await page.waitForFunction("window.__NC7_PHOTO_READY === true", null, { timeout: 60_000 });
     // A few extra frames so the animated grain and bloom settle.
+    await page.waitForTimeout(600);
+
+    // Quiesce the photo renderer before reading its compositor surface. A
+    // continuous 8x-MSAA loop can starve screenshot readback on SwiftShader.
+    // One already queued frame may finish; no game source or pose is changed.
+    await page.evaluate("window.__NC7_CAPTURE_PAUSED = true");
     await page.waitForTimeout(600);
 
     const png = join(OUT, `${vantage.name}.png`);
