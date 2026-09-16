@@ -284,7 +284,7 @@ def mat_concrete(size: int, seed: int) -> dict:
     )
 
     # Wider tonal spread than the first pass, which came out nearly flat.
-    base = 0.15 + mottle * 0.14 + aggregate * 0.06 + grain * 0.04
+    base = 0.18 + mottle * 0.10 + aggregate * 0.025 + grain * 0.018
     base = base - cracks * 0.10 - pits * 0.05
     # Concrete is faintly warm; a pure grey reads as untextured plastic.
     albedo = np.stack([base * 1.03, base, base * 0.94], axis=-1)
@@ -296,7 +296,7 @@ def mat_concrete(size: int, seed: int) -> dict:
 
     return {
         "albedo": albedo,
-        "normal": height_to_normal(height, strength=1.6),
+        "normal": height_to_normal(height, strength=0.40),
         "orm": np.stack([ao, roughness, metallic], axis=-1),
     }
 
@@ -354,7 +354,7 @@ def mat_steel(size: int, seed: int) -> dict:
 
     return {
         "albedo": np.clip(albedo, 0, 1),
-        "normal": height_to_normal(height, strength=1.0),
+        "normal": height_to_normal(height, strength=0.24),
         "orm": np.stack([ao, roughness, metallic], axis=-1),
     }
 
@@ -399,7 +399,7 @@ def mat_rust(size: int, seed: int) -> dict:
 
     return {
         "albedo": albedo,
-        "normal": height_to_normal(height, strength=1.5),
+        "normal": height_to_normal(height, strength=0.38),
         "orm": np.stack([ao, roughness, metallic], axis=-1),
     }
 
@@ -452,17 +452,17 @@ def _painted_metal(size: int, seed: int, colour: tuple[float, float, float]) -> 
 
     return {
         "albedo": albedo,
-        "normal": height_to_normal(height, strength=1.2),
+        "normal": height_to_normal(height, strength=0.32),
         "orm": np.stack([ao, roughness, metallic], axis=-1),
     }
 
 
 def mat_paint_red(size: int, seed: int) -> dict:
-    return _painted_metal(size, seed, (0.62, 0.17, 0.18))
+    return _painted_metal(size, seed, (0.36, 0.17, 0.12))
 
 
 def mat_paint_cyan(size: int, seed: int) -> dict:
-    return _painted_metal(size, seed, (0.16, 0.44, 0.47))
+    return _painted_metal(size, seed, (0.12, 0.29, 0.27))
 
 
 def mat_grating(size: int, seed: int) -> dict:
@@ -489,7 +489,7 @@ def mat_grating(size: int, seed: int) -> dict:
 
     return {
         "albedo": np.clip(albedo, 0, 1),
-        "normal": height_to_normal(height, strength=2.2),
+        "normal": height_to_normal(height, strength=1.25),
         "orm": np.stack([ao, roughness, metallic], axis=-1),
     }
 
@@ -512,7 +512,7 @@ def mat_rubber(size: int, seed: int) -> dict:
     albedo = np.stack([base, base, base * 1.06], axis=-1)
     return {
         "albedo": np.clip(albedo, 0, 1),
-        "normal": height_to_normal(height, strength=0.8),
+        "normal": height_to_normal(height, strength=0.26),
         "orm": np.stack(
             [
                 cavity_ao(height, radius=3),
@@ -605,7 +605,7 @@ def main() -> None:
     for name, (fn, seed) in MATERIALS.items():
         if name not in wanted:
             continue
-        maps = fn(args.size, seed)
+        maps = fn(args.size, seed + 207)
         for kind, data in maps.items():
             path = os.path.join(args.out, f"{name}_{kind}.png")
             write_png(path, data)
@@ -614,7 +614,7 @@ def main() -> None:
     if "env" in wanted:
         # Half resolution: an environment map is only ever sampled blurred, so
         # detail here is wasted bytes.
-        for kind, data in env_sky(max(512, args.size // 2), 1808).items():
+        for kind, data in env_sky(max(512, args.size // 2), 2015).items():
             path = os.path.join(args.out, f"env_{kind}.png")
             write_png(path, data)
             print(f"TEXTURE env_{kind}.png {os.path.getsize(path)}")

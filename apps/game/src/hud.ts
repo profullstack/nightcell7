@@ -75,7 +75,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   const tr = el("div", "hud__block hud__block--tr");
   tr.append(el("p", "hud__label", "Map integrity"));
   tr.append(el("p", "hud__value hud__value--cyan", options.mapChecksum.toUpperCase()));
-  tr.append(el("p", "hud__sub", `${options.renderer.toUpperCase()} · GREYBOX`));
+  tr.append(el("p", "hud__sub", `${options.renderer.toUpperCase()} · ALPHA`));
   hud.append(tr);
 
   // Bottom-left: movement telemetry.

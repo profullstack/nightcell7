@@ -1,9 +1,9 @@
 {
   "generator": "tools/art/build-assets.mjs",
-  "blender": "Blender 4.5.12 LTS",
-  "commit": "378c3ae685761a5892bad8c6cd73b7558774df2a",
-  "license": "Original work, © NIGHTCELL 7. No third-party assets.",
-  "source": "Generated procedurally from the scripts in tools/art. No asset is downloaded, photographed, traced, or derived from another game.",
+  "blender": "Blender 4.5.3 LTS",
+  "commit": "e5b3dae25a607ddc731111454e3dee93aa982b97",
+  "license": "Original NIGHTCELL 7 work plus refitted Synty geometry and MoCap Online animation; see PROVENANCE.md.",
+  "source": "Full tactical art pass from tools/art/full-set and tools/art/tactical-sample, with pinned licensed inputs. See art-manifest.json for per-model hashes and materials.",
   "textureSize": 1024,
   "webpQuality": 88,
   "models": [
@@ -20,6 +20,9 @@
     "fighter_soldier.glb",
     "hardpoint.glb",
     "lamp_mast.glb",
+    "nc7_carbine_v1.glb",
+    "nc7_concrete_cover_v1.glb",
+    "nc7_equipment_case_v1.glb",
     "pipe_rack.glb",
     "prop_ammo_box.glb",
     "prop_barrel.glb",
@@ -58,10 +61,7 @@
     "rust_orm.webp",
     "steel_albedo.webp",
     "steel_normal.webp",
-    "steel_orm.webp",
-    "synty_atlas.webp",
-    "synty_vehicles.webp",
-    "synty_weapons.webp"
+    "steel_orm.webp"
   ],
   "audio": [
     "ambience_yard.mp3",
@@ -100,9 +100,9 @@
     "throngva/the-wolf-called-want.mp3"
   ],
   "bytes": {
-    "models": 5369940,
-    "textures": 2447388,
+    "models": 6997884,
+    "textures": 1286858,
     "audio": 402789,
-    "total": 8220117
+    "total": 8687531
   }
 }

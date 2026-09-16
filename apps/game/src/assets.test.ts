@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MATERIALS, MODELS } from "./assets";
+import { TACTICAL_MATERIALS } from "./tactical-materials";
 
 /**
  * Guards for the generated art set.
@@ -70,49 +71,12 @@ describe("generated models", () => {
     }
   });
 
-  /**
-   * Licensed third-party models.
-   *
-   * They ship their own rig, materials and animations, so the conventions the
-   * generated props follow — our material slot names, a COL_ proxy — do not
-   * apply. Their provenance is a licence recorded in PROVENANCE.md rather than
-   * a generator script.
-   */
-  const LICENSED = new Set([
-    // Licensed Synty characters. They carry their own rig, materials and
-    // retargeted animation, so the generated material-slot and COL_ conventions
-    // do not apply — see apps/game/public/assets/PROVENANCE.md.
-    "fighter_insurgent",
-    "fighter_soldier",
-    // Synty POLYGON Military static meshes: licensed, and bound by their own
-    // atlas slots (`synty_vehicles` / `synty_atlas`) rather than the generated
-    // material set. Their provenance is the Synty licence in PROVENANCE.md, and
-    // they are cosmetic set-dressing that never collides, so no COL_ proxy.
-    "veh_armored_car",
-    "veh_technical",
-    "prop_barrel",
-    "prop_barrel_stack",
-    "prop_ammo_box",
-    "prop_barrier",
-    "prop_water_tank",
-    "wep_rifle",
-    "wep_smg",
-    "wep_sniper",
-    "wep_grenade",
-    "env_control_tower",
-    "env_oil_tower",
-    "env_hangar",
-    "env_guard_tower",
-    "env_tent",
-  ]);
-
   it("only uses material slots the engine can bind", () => {
     // A slot the engine does not know about is not an error at load time: the
     // mesh simply keeps its untextured placeholder material and renders flat.
-    const known = new Set<string>([...MATERIALS, "lamp_glass"]);
+    const known = new Set<string>([...MATERIALS, ...TACTICAL_MATERIALS, "lamp_glass"]);
 
     for (const model of MODELS) {
-      if (LICENSED.has(model)) continue;
       for (const material of names(glbJson(join(MODELS_DIR, `${model}.glb`)).materials)) {
         expect(known, `${model}.glb uses unknown material slot "${material}"`).toContain(material);
       }
@@ -123,7 +87,17 @@ describe("generated models", () => {
     // Weapons are exempt: they are held at the camera or in a fighter's hands
     // and never collide with anything, so a COL_ hull on one would be geometry
     // that exists only to satisfy a rule.
-    const NO_COLLIDER = new Set(["carbine", ...LICENSED]);
+    const NO_COLLIDER = new Set([
+      "character",
+      "fighter_insurgent",
+      "fighter_soldier",
+      "carbine",
+      "nc7_carbine_v1",
+      "wep_rifle",
+      "wep_smg",
+      "wep_sniper",
+      "wep_grenade",
+    ]);
 
     for (const model of MODELS) {
       if (NO_COLLIDER.has(model)) continue;
@@ -143,7 +117,14 @@ describe("generated models", () => {
     // from the model conventions: their sockets are *placed by a heuristic*
     // rather than modelled, so this is the one convention most likely to break
     // silently when a new weapon is converted.
-    for (const weapon of ["carbine", "wep_rifle", "wep_smg", "wep_sniper"]) {
+    for (const weapon of [
+      "carbine",
+      "nc7_carbine_v1",
+      "wep_rifle",
+      "wep_smg",
+      "wep_sniper",
+      "wep_grenade",
+    ]) {
       const nodes = names(glbJson(join(MODELS_DIR, `${weapon}.glb`)).nodes);
       expect(
         nodes.some((n) => n.startsWith("SOCKET_MUZZLE")),
@@ -165,6 +146,7 @@ describe("generated models", () => {
     // the origin, which is what a mis-parented empty produces.
     const MUZZLES: Record<string, number> = {
       carbine: 0.492,
+      nc7_carbine_v1: 0.612,
       wep_rifle: 0.72,
       wep_smg: 0.506,
       wep_sniper: 1.163,
@@ -180,6 +162,22 @@ describe("generated models", () => {
       const along = node?.translation?.[2] ?? 0;
       expect(along, `${weapon}.glb muzzle is on the wrong end`).toBeGreaterThan(0);
       expect(Math.abs(along - expected), `${weapon}.glb muzzle moved`).toBeLessThan(0.02);
+    }
+  });
+
+  it("retains skinned characters and locomotion clips", () => {
+    for (const model of ["character", "fighter_insurgent", "fighter_soldier"]) {
+      const doc = glbJson(join(MODELS_DIR, `${model}.glb`)) as {
+        skins?: unknown[];
+        animations?: { name: string }[];
+      };
+      expect(doc.skins?.length, `${model} lost its skin`).toBeGreaterThan(0);
+      const clips = names(doc.animations).map((name) => name.toLowerCase());
+      for (const clip of ["idle", "walk", "run"])
+        expect(
+          clips.some((name) => name.includes(clip)),
+          `${model} missing ${clip}`,
+        ).toBe(true);
     }
   });
 
@@ -262,6 +260,30 @@ describe("download budget", () => {
       `generated assets are ${(manifest.bytes.total / 1048576).toFixed(2)} MB, ` +
         `over the ${(ASSET_BUDGET_BYTES / 1048576).toFixed(0)} MB guard`,
     ).toBeLessThan(ASSET_BUDGET_BYTES);
+  });
+
+  it("manifest byte totals match the shipped files", () => {
+    const manifest = JSON.parse(readFileSync(join(ASSETS, "manifest.json"), "utf8"));
+    for (const [kind, dir] of [
+      ["models", MODELS_DIR],
+      ["textures", TEXTURES_DIR],
+      ["audio", join(__dirname, "../public/audio")],
+    ] as const) {
+      expect(manifest.bytes[kind]).toBe(
+        manifest[kind].reduce(
+          (total: number, file: string) => total + statSync(join(dir, file)).size,
+          0,
+        ),
+      );
+    }
+    expect(manifest.bytes.total).toBe(
+      manifest.bytes.models + manifest.bytes.textures + manifest.bytes.audio,
+    );
+    expect([...manifest.models].sort()).toEqual(
+      readdirSync(MODELS_DIR)
+        .filter((f) => f.endsWith(".glb"))
+        .sort(),
+    );
   });
 
   it("manifest lists exactly what is on disk", () => {

@@ -99,6 +99,8 @@ async function boot(): Promise<void> {
     camera.rotation.set(vantage.pitch, vantage.yaw, 0);
     if (vantage.fovDegrees) camera.fov = (vantage.fovDegrees * Math.PI) / 180;
 
+    if (vantage.showWeapon) new Viewmodel(scene, camera, world.assets);
+
     // A still is not bound by the frame budget gameplay is. Push MSAA and
     // render at native scale so edges and the grating pattern survive the
     // downscale into the page.

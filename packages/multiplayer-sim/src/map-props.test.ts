@@ -36,6 +36,7 @@ describe("tagged prop volumes", () => {
       "vehicle_armored_car",
       "vehicle_technical",
       "barrier",
+      "concrete_cover",
       "water_tank",
       "barrel_stack",
       "tent",

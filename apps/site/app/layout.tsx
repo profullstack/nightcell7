@@ -1,6 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
+import captures from "../public/media/yard/manifest.json";
+
+const shareShot =
+  captures.shots.find((shot) => shot.name === "yard-approach") ?? captures.shots[0]!;
+const shareImage = `/media/yard/${shareShot.file}`;
 
 /**
  * Canonical origin.
@@ -33,10 +38,10 @@ export const metadata: Metadata = {
     siteName: "NIGHTCELL 7",
     images: [
       {
-        url: "/media/yard/west-catwalk.webp",
-        width: 1920,
-        height: 1080,
-        alt: "Ardavan Yard at first light, seen from the west catwalk.",
+        url: shareImage,
+        width: captures.viewport.width,
+        height: captures.viewport.height,
+        alt: shareShot.caption,
       },
     ],
   },
@@ -44,7 +49,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "NIGHTCELL 7: FALSE DAWN",
     description: "One theater. Two campaigns. $9.99.",
-    images: ["/media/yard/west-catwalk.webp"],
+    images: [shareImage],
   },
   robots: { index: true, follow: true },
 };

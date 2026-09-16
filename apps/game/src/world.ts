@@ -175,13 +175,19 @@ function skyTexture(scene: Scene): DynamicTexture {
   ctx.fillStyle = "#2f3038";
   ctx.fillRect(0, horizon, w, h - horizon);
 
+  // Seeded stars keep the sky stable across captures and sessions.
+  let skySeed = 71609;
+  const random = () => {
+    skySeed = (Math.imul(skySeed, 1664525) + 1013904223) >>> 0;
+    return skySeed / 4294967296;
+  };
   // Sparse cold stars, thinning toward the lit horizon.
   for (let i = 0; i < 700; i += 1) {
-    const y = Math.pow(Math.random(), 1.6) * horizon * 0.94;
-    const x = Math.random() * w;
-    const a = 0.3 + Math.random() * 0.55;
+    const y = Math.pow(random(), 1.6) * horizon * 0.94;
+    const x = random() * w;
+    const a = 0.15 + random() * 0.25;
     ctx.fillStyle = `rgba(214, 228, 244, ${a * (1 - y / horizon)})`;
-    ctx.fillRect(x, y, 1 + (Math.random() > 0.93 ? 1 : 0), 1);
+    ctx.fillRect(x, y, 1 + (random() > 0.93 ? 1 : 0), 1);
   }
 
   // The false dawn itself: a wide warm lobe hugging the horizon. Drawn as
@@ -213,15 +219,14 @@ function skyTexture(scene: Scene): DynamicTexture {
     dctx.fillRect(0, 0, w, bandHeight);
 
     // Azimuth: strongest to the north, falling away toward the flanks.
-    const azimuth = dctx.createLinearGradient(centreU - w * 0.5, 0, centreU + w * 0.5, 0);
-    azimuth.addColorStop(0.0, "rgba(0, 0, 0, 0)");
-    azimuth.addColorStop(0.28, "rgba(0, 0, 0, 0.35)");
-    azimuth.addColorStop(0.5, "rgba(0, 0, 0, 1)");
-    azimuth.addColorStop(0.72, "rgba(0, 0, 0, 0.35)");
-    azimuth.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+    // A periodic azimuth mask has equal values at the sphere's UV seam.
+    // A clipped linear gradient left a visible vertical split in the sky.
     dctx.globalCompositeOperation = "destination-in";
-    dctx.fillStyle = azimuth;
-    dctx.fillRect(0, 0, w, bandHeight);
+    for (let x = 0; x < w; x += 1) {
+      const alpha = Math.pow(0.5 + 0.5 * Math.cos(((x - centreU) / w) * Math.PI * 2), 2);
+      dctx.fillStyle = `rgba(0,0,0,${alpha})`;
+      dctx.fillRect(x, 0, 1, bandHeight);
+    }
 
     ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = 0.85;
@@ -282,6 +287,7 @@ const PROP_MODELS = {
   vehicle_armored_car: { name: "veh_armored_car" as const, rotationY: 0 },
   vehicle_technical: { name: "veh_technical" as const, rotationY: 0 },
   barrier: { name: "prop_barrier" as const, rotationY: Math.PI / 2 },
+  concrete_cover: { name: "nc7_concrete_cover_v1" as const, rotationY: Math.PI / 2 },
   water_tank: { name: "prop_water_tank" as const, rotationY: 0 },
   barrel_stack: { name: "prop_barrel_stack" as const, rotationY: 0 },
   tent: { name: "env_tent" as const, rotationY: 0 },
@@ -342,15 +348,15 @@ export async function buildWorld(
   // silhouettes and the lanes stop reading as space you can move through.
   const ambient = new HemisphericLight("ambient", new Vector3(0.1, 1, 0.05), scene);
   ambient.intensity = 4.05;
-  ambient.diffuse = new Color3(0.34, 0.45, 0.66);
-  ambient.groundColor = new Color3(0.22, 0.16, 0.12);
+  ambient.diffuse = new Color3(0.62, 0.7, 0.82);
+  ambient.groundColor = new Color3(0.34, 0.29, 0.24);
   ambient.specular = new Color3(0.16, 0.2, 0.26);
 
   // The false dawn: a low, warm key raking from the north. Low elevation is
   // what produces the long shadows the yard reads by.
   const key = new DirectionalLight("false-dawn", new Vector3(0.12, -0.2, 1), scene);
   key.position = new Vector3(-10, 26, -95);
-  key.intensity = 5.4;
+  key.intensity = 4.4;
   key.diffuse = PALETTE.dustGold;
   key.specular = new Color3(0.9, 0.75, 0.5);
 
@@ -372,7 +378,7 @@ export async function buildWorld(
 
   // --------------------------------------------------------------- glow
   const glow = new GlowLayer("glow", scene, { blurKernelSize: 48 });
-  glow.intensity = 0.85;
+  glow.intensity = 0.55;
 
   // ------------------------------------------------------------- geometry
 
@@ -550,7 +556,7 @@ export async function buildWorld(
   // ------------------------------------------------- cosmetic set-dressing
   //
   // What remains here is small scatter with no collision: loose barrels and
-  // ammo boxes dressing the two spawn ends.
+  // equipment cases dressing the two spawn ends.
   //
   // The vehicles, T-walls, water tank and barrel pallets used to live here too,
   // staged behind the spawns so they could never become cover a player trusts
@@ -560,7 +566,7 @@ export async function buildWorld(
   // drawn from that data by the `prop` case above, which puts them in the lanes
   // AND keeps rule 1 — what you see is what you collide with.
   //
-  // These leftovers stay non-colliding because they are ankle-height clutter in
+  // These leftovers stay non-colliding because they are small supply props in
   // a protected spawn, where nobody expects cover.
   put("prop_barrel", "barrel", [
     { position: new Vector3(-30, 0, -54), rotationY: 1.1 },
@@ -568,11 +574,11 @@ export async function buildWorld(
     { position: new Vector3(29, 0, 54), rotationY: 2.2 },
     { position: new Vector3(27.5, 0, 52.5), rotationY: 0.7 },
   ]);
-  put("prop_ammo_box", "ammo", [
-    { position: new Vector3(-33, 0, -53), rotationY: 0.5 },
-    { position: new Vector3(-35, 0, -46), rotationY: -0.8 },
-    { position: new Vector3(33, 0, 53), rotationY: -2.4 },
-    { position: new Vector3(35, 0, 46), rotationY: 2.5 },
+  put("nc7_equipment_case_v1", "field-case", [
+    { position: new Vector3(-22, 0, -44), rotationY: 0.5 },
+    { position: new Vector3(22, 0, -44), rotationY: -0.8 },
+    { position: new Vector3(22, 0, 44), rotationY: -2.4 },
+    { position: new Vector3(-22, 0, 44), rotationY: 2.5 },
   ]);
 
   // Two cold accent lights mark the opposing spawn ends, echoing the split
@@ -605,8 +611,8 @@ export async function buildWorld(
 
   // Bloom carries the sodium lamps and the false-dawn horizon.
   pipeline.bloomEnabled = true;
-  pipeline.bloomThreshold = 0.62;
-  pipeline.bloomWeight = 0.42;
+  pipeline.bloomThreshold = 0.9;
+  pipeline.bloomWeight = 0.2;
   pipeline.bloomKernel = 64;
   pipeline.bloomScale = 0.6;
 
@@ -615,21 +621,21 @@ export async function buildWorld(
   pipeline.imageProcessingEnabled = true;
   pipeline.imageProcessing.toneMappingEnabled = true;
   pipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-  pipeline.imageProcessing.exposure = 2.05;
-  pipeline.imageProcessing.contrast = 1.25;
+  pipeline.imageProcessing.exposure = 1.85;
+  pipeline.imageProcessing.contrast = 1.12;
   pipeline.imageProcessing.vignetteEnabled = true;
-  pipeline.imageProcessing.vignetteWeight = 1.35;
+  pipeline.imageProcessing.vignetteWeight = 0.55;
   pipeline.imageProcessing.vignetteStretch = 0.4;
   pipeline.imageProcessing.vignetteColor = new Color4(0, 0, 0, 0);
 
   // Subtle lens character. Kept low: this is a competitive shooter, not a
   // photo mode, and heavy aberration hurts target acquisition.
   pipeline.chromaticAberrationEnabled = true;
-  pipeline.chromaticAberration.aberrationAmount = 7;
+  pipeline.chromaticAberration.aberrationAmount = 0.9;
   pipeline.chromaticAberration.radialIntensity = 0.55;
 
   pipeline.grainEnabled = true;
-  pipeline.grain.intensity = 8;
+  pipeline.grain.intensity = 2;
   pipeline.grain.animated = true;
 
   pipeline.sharpenEnabled = true;

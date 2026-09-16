@@ -114,60 +114,18 @@ export function brightenCharacter(root: TransformNode, palette?: TeamPalette): v
     if (!clone) {
       clone = source.clone(`target_${source.name}`) ?? source;
       if (clone instanceof PBRMaterial) {
-        const isTeam = source.name.includes("paint");
-
-        // `albedoColor` MULTIPLIES the albedo texture. The first attempt used
-        // 2.3 to drag the figures out of the dark, which pushed every texel
-        // past white and erased the texture entirely — the result read as a
-        // featureless white stormtrooper, not a fighter in field clothing.
-        //
-        // A moderate, *warm* multiplier lifts them without flattening them:
-        // the weave, the dirt and the wear all survive, and the colour lands
-        // on worn khaki rather than bleached plastic.
-        // A tint *below* one, not above it.
-        //
-        // The original "dark blobs" were diagnosed when the yard's ambient
-        // was 2.15. It is 4.05 now — raised in the brightness pass — so a
-        // multiplier over 1 on top of that clipped every texel to white at
-        // exposure 2.05 and produced a featureless pale figure. The characters
-        // stopped needing any lift the moment the scene got brighter; what
-        // they need is colour.
+        const isTeam = source.name.includes("paint") || source.name.includes("nc7_team");
         const team = palette ?? TEAM_PALETTE.enemy;
-
         if (isTeam) {
-          // Replace the band's texture, do not tint it.
-          //
-          // `albedoColor` MULTIPLIES, and this material's texture is
-          // `paint_red`. Multiplying red by cyan is near-black, so the friendly
-          // band came out unlit black while only the enemy's red survived —
-          // which is why the two teams still read the same on screen. A flat
-          // colour with no texture is the only way to get a saturated hue the
-          // source does not already contain.
           clone.albedoTexture = null;
-          clone.albedoColor = team.band;
-        } else {
+          clone.albedoColor = team.band.scale(0.55);
+        } else if (!source.name.includes("nc7_")) {
           clone.albedoColor = team.cloth;
         }
-
-        // Metallic and roughness are left to the ORM texture. Overriding them
-        // to flat values was the other half of the plastic look: it removed
-        // every difference between cloth, webbing and boot leather.
-        clone.environmentIntensity = 0.85;
-
-        // A little self-illumination so the silhouette separates from an unlit
-        // background without washing the surface out. The team band gets more,
-        // because it is the thing that has to be identifiable at range.
-        // No self-illumination on cloth — it is lit plenty. Only the team band
-        // gets a trace, and only enough to survive the bloom threshold rather
-        // than glow through it.
-        // The band self-illuminates, and generously.
-        //
-        // This is the one thing that has to be readable across a dark yard at
-        // 40 m, and a diffuse surface at that distance is a grey smudge however
-        // it is coloured. Emissive puts it above the scene's bloom threshold so
-        // the GlowLayer picks it up, which is what turns a colour into a marker.
-        // A previous 0.06 was invisible in play.
-        clone.emissiveColor = isTeam ? team.band.scale(0.85) : new Color3(0, 0, 0);
+        // Preserve the authored cloth, skin and equipment colors on tactical
+        // characters. Only the unit patch changes with the player's team.
+        clone.environmentIntensity = 0.65;
+        clone.emissiveColor = isTeam ? team.band.scale(0.35) : new Color3(0, 0, 0);
       }
       localised.set(source, clone);
     }
@@ -200,7 +158,7 @@ export class TrainingTargets {
           .getDescendants()
           .find((node) => node.name.includes("SOCKET_WEAPON")) as TransformNode | undefined;
         const [weapon] = placeAll(carbine, `target${index}_weapon`, [
-          { position: new Vector3(0, 0, 0), rotationY: Math.PI },
+          { position: new Vector3(0, 0, 0), rotationY: 0 },
         ]);
         if (weapon) weapon.parent = socket ?? placed.root;
       }

@@ -83,10 +83,9 @@ export interface BotShot {
  * it inherits the hand bone's transform, so it swings with a walk cycle and
  * drops with a death instead of hanging in the air where the body used to be.
  *
- * The yaw matches the viewmodel's: the weapons are modelled barrel-along--Y,
- * and Babylon's glTF loader flips handedness, so an unrotated weapon points
- * back at its owner. Failing to find the socket is not fatal — an unarmed bot
- * is worse-looking, not broken — so this returns quietly.
+ * The imported handedness conversion remains below the placement root, so
+ * the C7 family points along local +Z. The socket is attached to the hand
+ * bone by the full-set exporter and follows each animation clip.
  */
 function attachWeapon(root: TransformNode, model: AssetContainer | null, id: string): void {
   if (!model) return;
@@ -101,7 +100,7 @@ function attachWeapon(root: TransformNode, model: AssetContainer | null, id: str
 
   weapon.parent = socket;
   weapon.position = Vector3.Zero();
-  weapon.rotation = new Vector3(0, Math.PI, 0);
+  weapon.rotation = Vector3.Zero();
 
   for (const mesh of weapon.getChildMeshes() as Mesh[]) {
     // A weapon is never shot at directly; hits resolve against the body.
@@ -500,7 +499,7 @@ export class Opponents {
       player.movement.position.z,
     );
     // The model faces -Z; the simulation measures yaw from +Z.
-    view.root.rotation.set(0, player.movement.yaw + Math.PI, 0);
+    view.root.rotation.set(0, player.movement.yaw, 0);
 
     const speed = Math.hypot(player.movement.velocity.x, player.movement.velocity.z);
     // Clip names come from the licensed pack, whose idle holds the weapon up

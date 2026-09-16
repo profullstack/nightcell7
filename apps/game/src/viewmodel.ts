@@ -10,6 +10,8 @@ import {
 } from "@babylonjs/core";
 import { placeAll, type AssetSet } from "./assets";
 
+import { TACTICAL_VIEW_ALBEDO_SCALE, TACTICAL_WORLD_ALBEDO_SCALE } from "./tactical-materials";
+
 /**
  * First-person weapon viewmodel.
  *
@@ -34,58 +36,17 @@ import { placeAll, type AssetSet } from "./assets";
  * from this node, so a tampered viewmodel cannot move where bullets come from.
  */
 
-/**
- * Resting offset from the camera: right, down, forward, in metres.
- *
- * The forward offset is derived, not guessed: the carbine's framing was the
- * version that looked right, so the Synty rifle is placed so its muzzle sits
- * the same 0.645 m in front of the eye, given that the rifle is 1.03 m to the
- * carbine's 0.81 m and its origin sits further back. Keeping the old offset
- * would have pushed the barrel through the middle of the screen.
- *
- * The height is the one value tuned against a screenshot rather than derived.
- * Matching the muzzle exactly (-0.214) put the receiver off the bottom edge,
- * because the rifle carries more body below its bore than the carbine did.
- */
-const REST = new Vector3(0.21, -0.185, 0.293);
+/** Camera-relative position, tuned against the in-game 90-degree field of view. */
+const REST = new Vector3(0.21, -0.185, 0.324);
 
-/**
- * Base yaw of the viewmodel.
- *
- * The weapons are modelled with their barrel along Blender -Y — the generated
- * carbine and the converted Synty ones alike — which the glTF
- * exporter maps to +Z. Babylon's glTF loader then wraps the import in a
- * `__root__` node scaled (1, 1, -1) to convert right-handed glTF into its own
- * left-handed space — so the barrel ends up pointing along -Z, straight back at
- * the player. It rendered as a rifle held stock-first.
- *
- * Turning the whole thing round is the fix. Doing it here rather than in the
- * generator keeps the exported asset in the orientation the rest of the glTF
- * ecosystem expects.
- */
-const BASE_YAW = Math.PI;
+/** The glTF handedness transform lives below our placement node; +Z is forward. */
+const BASE_YAW = 0;
 
-/**
- * Viewmodel scale.
- *
- * Real games render the weapon through a second, narrower camera so a
- * true-scale rifle does not swallow the screen. This build has one camera at a
- * 90° field of view, where a full-size rifle held at arm's length covers most
- * of the frame — which is exactly how it first looked. Scaling the mesh is the
- * cheap equivalent and is indistinguishable in the result.
- *
- * 0.488 is the value that gives the 1.03 m Synty rifle the same apparent length
- * the 0.81 m carbine had at 0.62, so the framing carries over unchanged.
- */
-const VIEW_SCALE = 0.488;
+/** Preserve the previous apparent 0.50 m weapon length with the 0.958 m C7. */
+const VIEW_SCALE = 0.525;
 
-/**
- * The weapon the player holds.
- *
- * The generated `carbine` it replaced is still built and still ships, as a
- * fallback that does not depend on a licensed pack being present.
- */
-const WEAPON = "wep_rifle" as const;
+/** Original C7 viewmodel; opponents use the simplified C7 world variants. */
+const WEAPON = "nc7_carbine_v1" as const;
 
 /** How far the weapon may trail the view, in radians of camera rotation. */
 const SWAY_LIMIT = 0.045;
@@ -146,15 +107,15 @@ export class Viewmodel {
           clone.environmentIntensity = 0.5;
           // Close-range metal shimmers badly under a moving camera otherwise.
           clone.enableSpecularAntiAliasing = true;
-          // Relax the atlas's world-object dimming.
-          //
-          // `synty_weapons` scales albedo to 0.36 so a weapon lying out in the
-          // yard does not clip past the bloom threshold under hemispheric 4.05.
-          // The viewmodel is the opposite case: held below the eye-line, away
-          // from the lamps, inside the strongest part of the vignette, and lit
-          // mostly by its own rig light. 0.62 reads as gunmetal there; 0.36
-          // reads as a black cut-out and 1.0 as pale blue plastic.
-          clone.albedoColor = new Color3(0.62, 0.62, 0.62);
+          // Keep the authored tan/polymer/metal colors. The world binder dims
+          // each color for the yard; lift that factor for the dedicated rig.
+          if (source.name.startsWith("nc7_")) {
+            clone.albedoColor.scaleInPlace(
+              TACTICAL_VIEW_ALBEDO_SCALE / TACTICAL_WORLD_ALBEDO_SCALE,
+            );
+          } else if (source.name === "synty_weapons") {
+            clone.albedoColor = new Color3(0.62, 0.62, 0.62);
+          }
         }
         localised.set(source, clone);
       }
@@ -182,12 +143,7 @@ export class Viewmodel {
     // `includedOnlyMeshes` keeps it strictly off the world, so it cannot
     // brighten level geometry or give away a player's position.
     const fill = new HemisphericLight("viewmodel-fill", new Vector3(-0.3, 1, -0.6), scene);
-    // Tuned against the scene's exposure, not in isolation: the weapon is lit
-    // by this *and* the scene. The Synty atlas is darker than the generated
-    // carbine's steel, so this sits a little above the 0.62 that suited the
-    // old model. The tint is near-neutral — the strongly blue value it used to
-    // carry turned the grey rifle into pale blue plastic once the material
-    // changes above actually started applying.
+    // Neutral fill preserves the C7's authored material colors under the yard exposure.
     fill.intensity = 0.78;
     fill.diffuse = new Color3(0.72, 0.73, 0.78);
     fill.groundColor = new Color3(0.2, 0.17, 0.14);

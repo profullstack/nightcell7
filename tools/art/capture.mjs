@@ -19,12 +19,13 @@
  *   --chrome <path> Explicit Chromium/Chrome binary
  */
 
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { createReadStream } from "node:fs";
-import { mkdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, stat, writeFile, readFile, rename, unlink } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const DIST = join(ROOT, "apps/game/dist");
@@ -100,17 +101,30 @@ async function loadVantages() {
 async function toWebp(png, name) {
   const webp = join(OUT, `${name}.webp`);
   try {
-    execSync(
-      `ffmpeg -y -loglevel error -i ${JSON.stringify(png)} ` +
-        `-quality 90 -compression_level 6 ${JSON.stringify(webp)}`,
-    );
+    execFileSync("ffmpeg", [
+      "-y",
+      "-loglevel",
+      "error",
+      "-i",
+      png,
+      "-quality",
+      "90",
+      "-compression_level",
+      "6",
+      webp,
+    ]);
   } catch {
     console.warn(`ffmpeg unavailable — keeping ${name}.png`);
     return `${name}.png`;
   }
-  const { unlink } = await import("node:fs/promises");
   await unlink(png);
-  return `${name}.webp`;
+  const hash = createHash("sha256")
+    .update(await readFile(webp))
+    .digest("hex")
+    .slice(0, 10);
+  const file = `${name}-${hash}.webp`;
+  await rename(webp, join(OUT, file));
+  return file;
 }
 
 function chromePath() {
@@ -133,7 +147,12 @@ function chromePath() {
 }
 
 async function main() {
-  const vantages = await loadVantages();
+  if (opt("only") && !opt("out"))
+    throw new Error("--only requires a separate --out preview directory");
+  const previous = JSON.parse(
+    await readFile(join(OUT, "manifest.json"), "utf8").catch(() => "null"),
+  );
+  const vantages = (await loadVantages()).filter((v) => !opt("only") || v.name === opt("only"));
   if (!vantages.length) throw new Error("no vantages found in apps/game/src/photo.ts");
 
   await stat(join(DIST, "index.html")).catch(() => {
@@ -175,7 +194,7 @@ async function main() {
     await page.waitForTimeout(600);
 
     const png = join(OUT, `${vantage.name}.png`);
-    await page.screenshot({ path: png, type: "png" });
+    await page.screenshot({ path: png, type: "png", timeout: 120_000 });
     await page.close();
 
     if (errors.length) {
@@ -205,7 +224,8 @@ async function main() {
       {
         generator: "tools/art/capture.mjs",
         source: "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
-        license: "Original work, © NIGHTCELL 7. No third-party assets.",
+        license:
+          "NIGHTCELL 7 in-engine captures; scene includes refitted licensed Synty geometry. See apps/game/public/assets/PROVENANCE.md.",
         commit,
         capturedAt: new Date().toISOString(),
         viewport: { width: WIDTH, height: HEIGHT },
@@ -217,6 +237,11 @@ async function main() {
     "utf8",
   );
 
+  const current = new Set(captured.map((shot) => shot.file));
+  for (const shot of previous?.shots ?? []) {
+    if (/^[a-z0-9-]+\.(webp|png)$/.test(shot.file) && !current.has(shot.file))
+      await unlink(join(OUT, shot.file)).catch(() => {});
+  }
   await browser.close();
   server.close();
   console.log(`\n${captured.length} shots -> ${OUT}`);

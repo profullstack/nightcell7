@@ -39,6 +39,7 @@ export type VolumeTag =
   | "vehicle_armored_car"
   | "vehicle_technical"
   | "barrier"
+  | "concrete_cover"
   | "water_tank"
   | "barrel_stack"
   | "tent"
@@ -165,6 +166,14 @@ export const ARDAVAN_YARD: CollisionMap = {
     prop("barrier", 3.14, 0, -26.35, 4.86, 3.2, -25.65),
     prop("barrier", -4.86, 0, 25.65, -3.14, 3.2, 26.35),
     prop("barrier", 3.14, 0, 25.65, 4.86, 3.2, 26.35),
+
+    // Original low concrete cover, paired on both approaches. Natural-size
+    // 2.40 m length is rotated across X; the 1.04 m cast body is solid, while
+    // the small lift eyes are cosmetic. Existing 3.2 m T-walls stay in place.
+    prop("concrete_cover", -11.2, 0, -31.39, -8.8, 1.04, -30.61),
+    prop("concrete_cover", 8.8, 0, -31.39, 11.2, 1.04, -30.61),
+    prop("concrete_cover", -11.2, 0, 30.61, -8.8, 1.04, 31.39),
+    prop("concrete_cover", 8.8, 0, 30.61, 11.2, 1.04, 31.39),
 
     // Full-height water tank on the east approach.
     prop("water_tank", 16.9, 0, -15.2, 19.1, 3.6, -12.8),

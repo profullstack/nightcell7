@@ -21,13 +21,16 @@ export interface Vantage {
   readonly yaw: number;
   readonly pitch: number;
   readonly fovDegrees?: number;
+  /** Include the actual first-person rig in selected gameplay plates. */
+  readonly showWeapon?: boolean;
 }
 
 export const VANTAGES: readonly Vantage[] = [
   {
     name: "yard-approach",
     caption:
-      "The approach from the Nightcell muster point, looking north up the centre lane toward the false dawn.",
+      "The C7 carbine at the Nightcell muster point, looking north through the updated container yard toward the false dawn.",
+    showWeapon: true,
     position: [0, 1.7, 44],
     yaw: Math.PI,
     pitch: 0.02,
@@ -52,7 +55,8 @@ export const VANTAGES: readonly Vantage[] = [
   {
     name: "central-hardpoint",
     caption:
-      "Pushing north off the central hard point. Container colour encodes the contested axis — cyan is Directorate ground — so the lane is legible without a minimap.",
+      "The C7 carbine beside the central hard point, with weathered containers and the refinery structures beyond.",
+    showWeapon: true,
     position: [-17, 1.7, 15],
     yaw: Math.PI * 0.88,
     pitch: 0.02,

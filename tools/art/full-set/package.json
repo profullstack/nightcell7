@@ -1,0 +1,11 @@
+{
+  "name": "nightcell7-art-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@gltf-transform/core": "4.5.0",
+    "@gltf-transform/extensions": "4.5.0",
+    "@gltf-transform/functions": "4.5.0",
+    "gltf-validator": "2.0.0-dev.3.10"
+  }
+}
