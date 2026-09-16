@@ -76,8 +76,14 @@ unreachable skyline rather than downloaded without being used.
 | `prop_ammo_box.glb`         | `m2_field_case.glb`           |
 
 See [all model renders](modern-art-overview.webp), `art-manifest.json` and the
-runtime provenance file. The studio images are model reviews; the website gallery
-is captured from the game renderer.
+runtime provenance file. The studio images are model reviews. The combat frame
+was captured with the M2 game renderer.
+
+The website's ten-image gallery still contains the previous release's captures.
+The M2 gallery refresh started, but the execution environment disconnected before
+all ten captures could be completed and published. Re-run `tools/art/capture.mjs`
+against this revision and build the site before claiming the website gallery is
+updated. This does not affect the game runtime's complete M2 asset inventory.
 
 ## Validation and release
 

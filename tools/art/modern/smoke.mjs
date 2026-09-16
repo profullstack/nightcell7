@@ -1,4 +1,4 @@
-/* global window, document, localStorage, requestAnimationFrame, HTMLCanvasElement, Event, MouseEvent, performance */
+/* global window, document, localStorage, requestAnimationFrame, HTMLCanvasElement, MouseEvent */
 /** Exercise the real browser demo, including a remembered empty-yard preference. */
 import { chromium } from "playwright";
 import { createServer } from "../../../apps/game/node_modules/vite/dist/node/index.js";
@@ -58,6 +58,8 @@ try {
       let locked = null;
       Object.defineProperty(document, "pointerLockElement", { get: () => locked });
       HTMLCanvasElement.prototype.requestPointerLock = function () {
+        // The adapter must expose the exact canvas that requested the lock.
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         locked = this;
         document.dispatchEvent(new Event("pointerlockchange"));
         return Promise.resolve();
