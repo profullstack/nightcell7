@@ -119,7 +119,7 @@ export function brightenCharacter(root: TransformNode, palette?: TeamPalette): v
         if (isTeam) {
           clone.albedoTexture = null;
           clone.albedoColor = team.band.scale(0.55);
-        } else if (!source.name.includes("nc7_")) {
+        } else if (!source.name.includes("nc7_") && !source.name.startsWith("ir_")) {
           clone.albedoColor = team.cloth;
         }
         // Preserve the authored cloth, skin and equipment colors on tactical
@@ -137,8 +137,8 @@ export class TrainingTargets {
   private readonly targets: Target[] = [];
 
   constructor(scene: Scene, assets: AssetSet) {
-    const character = assets.models.get("m2_operator_directorate");
-    const carbine = assets.models.get("m2_rifle");
+    const character = assets.models.get("m3_operator_directorate");
+    const carbine = assets.models.get("m3_rifle");
     if (!character) throw new Error("character model not loaded");
 
     POSITIONS.forEach(([x, z], index) => {

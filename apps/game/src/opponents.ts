@@ -124,11 +124,11 @@ export class Opponents {
   private readonly grenadeModel: AssetContainer | null;
 
   constructor(_scene: Scene, assets: AssetSet, options: OpponentOptions = {}) {
-    const enemyModel = assets.models.get("m2_operator_directorate");
-    const friendlyModel = assets.models.get("m2_operator_nightcell");
-    if (!enemyModel || !friendlyModel) throw new Error("modern operator models not loaded");
+    const enemyModel = assets.models.get("m3_operator_directorate");
+    const friendlyModel = assets.models.get("m3_operator_nightcell");
+    if (!enemyModel || !friendlyModel) throw new Error("IRON RAIN operator models not loaded");
 
-    this.grenadeModel = assets.models.get("m2_grenade") ?? null;
+    this.grenadeModel = assets.models.get("m3_grenade") ?? null;
 
     // Weapons for the bots.
     //
@@ -137,7 +137,7 @@ export class Opponents {
     // rifle, Nightcell the SMG, so which side a figure is on is legible before
     // the tint confirms it.
     const weaponFor = (team: number) =>
-      assets.models.get(team === TEAM_IDS.DIRECTORATE ? "m2_rifle" : "m2_smg") ?? null;
+      assets.models.get(team === TEAM_IDS.DIRECTORATE ? "m3_rifle" : "m3_smg") ?? null;
 
     this.sim = new MatchSimulation({
       matchId: "sandbox",
@@ -478,7 +478,7 @@ export class Opponents {
       player.movement.position.y,
       player.movement.position.z,
     );
-    // M2 operators face the same forward axis as the simulation.
+    // IRON RAIN operators face the same forward axis as the simulation.
     view.root.rotation.set(0, player.movement.yaw, 0);
 
     const speed = Math.hypot(player.movement.velocity.x, player.movement.velocity.z);

@@ -66,16 +66,16 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
 
   // Top-left: operation identity.
   const tl = el("div", "hud__block hud__block--tl");
-  tl.append(el("p", "hud__label", "Operation"));
-  tl.append(el("p", "hud__value", "FALSE DAWN"));
+  tl.append(el("p", "hud__label", "NIGHTCELL 7"));
+  tl.append(el("p", "hud__value", "IRON RAIN"));
   tl.append(el("p", "hud__sub", options.mapName.toUpperCase()));
   hud.append(tl);
 
   // Top-right: build / integrity, mirroring the join-handshake checksum.
   const tr = el("div", "hud__block hud__block--tr");
-  tr.append(el("p", "hud__label", "Map integrity"));
-  tr.append(el("p", "hud__value hud__value--cyan", options.mapChecksum.toUpperCase()));
-  tr.append(el("p", "hud__sub", `${options.renderer.toUpperCase()} · ALPHA`));
+  tr.append(el("p", "hud__label", "Deployment"));
+  tr.append(el("p", "hud__value hud__value--cyan", "ARDAVAN"));
+  tr.append(el("p", "hud__sub", "TACTICAL OPERATIONS"));
   hud.append(tr);
 
   // Bottom-left: movement telemetry.
@@ -117,12 +117,12 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   mark.append(seven);
   gate.append(mark);
 
-  gate.append(el("p", "gate__sub", "False Dawn — Ardavan Yard"));
+  gate.append(el("p", "gate__sub", "IRON RAIN / ARDAVAN INDUSTRIAL DISTRICT"));
   gate.append(
     el(
       "p",
       "gate__hint",
-      "Alpha build. Movement runs the same authoritative simulation as multiplayer, so what you feel here is what the server enforces.",
+      "Secure the industrial district. Move between cover, watch the elevated lanes, and keep your squad in the fight.",
     ),
   );
 
@@ -167,7 +167,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   modes.append(blurb);
   gate.append(modes);
 
-  const button = el("button", "gate__button", "Enter the yard");
+  const button = el("button", "gate__button", "Deploy to Ardavan");
   button.type = "button";
   button.addEventListener("click", () => options.onStart());
   gate.append(button);

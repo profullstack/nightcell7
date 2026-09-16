@@ -43,8 +43,8 @@ const MAX_RANGE = 200;
 const POOL_SIZE = 12;
 
 /** How long a tracer is visible, ms. Short — a tracer is a hint, not a laser. */
-const TRACER_LIFE = 55;
-const FLASH_LIFE = 42;
+const TRACER_LIFE = 38;
+const FLASH_LIFE = 30;
 
 /** How long an explosion's light and particles persist, in ms. */
 const BLAST_LIFE = 1200;
@@ -117,10 +117,28 @@ function radialSprite(scene: Scene, name: string, inner: string, outer: string):
   const ctx = texture.getContext() as unknown as CanvasRenderingContext2D;
   const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   gradient.addColorStop(0, inner);
-  gradient.addColorStop(0.45, outer);
+  gradient.addColorStop(0.18, inner);
+  gradient.addColorStop(0.38, outer);
+  gradient.addColorStop(0.68, "rgba(100,85,62,.08)");
   gradient.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
+  if (name === "vfx-flash") {
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.beginPath();
+    for (let i = 0; i < 20; i++) {
+      const angle = (i / 20) * Math.PI * 2,
+        radius = i % 2 ? 9 : 25 + Math.sin(i * 2.1) * 6;
+      const x = 32 + Math.cos(angle) * radius,
+        y = 32 + Math.sin(angle) * radius;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = "white";
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+  }
   texture.update(false);
   texture.hasAlpha = true;
   return texture;

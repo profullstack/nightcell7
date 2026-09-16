@@ -1,0 +1,80 @@
+{
+  "input": "headless pointer-lock and DOM input adapter",
+  "initial": {
+    "tick": 0,
+    "bots": [
+      {
+        "id": "bot-e0",
+        "team": 1,
+        "position": [-20, 0, -46]
+      },
+      {
+        "id": "bot-f0",
+        "team": 0,
+        "position": [-20, 0, 46]
+      },
+      {
+        "id": "bot-e1",
+        "team": 1,
+        "position": [0, 0, -50]
+      },
+      {
+        "id": "bot-f1",
+        "team": 0,
+        "position": [0, 0, 50]
+      },
+      {
+        "id": "bot-e2",
+        "team": 1,
+        "position": [20, 0, -46]
+      },
+      {
+        "id": "bot-f2",
+        "team": 0,
+        "position": [20, 0, 46]
+      },
+      {
+        "id": "bot-e3",
+        "team": 1,
+        "position": [-8, 0, -44]
+      }
+    ],
+    "selected": "deathmatch"
+  },
+  "hit": {
+    "health": 0,
+    "alive": false
+  },
+  "paused": 146,
+  "models": [
+    "m2_carbine_fp.glb",
+    "m3_access_stair.glb",
+    "m3_blast_wall.glb",
+    "m3_cargo_module.glb",
+    "m3_catwalk.glb",
+    "m3_command_bunker.glb",
+    "m3_control_tower.glb",
+    "m3_drum_pallet.glb",
+    "m3_field_case.glb",
+    "m3_field_shelter.glb",
+    "m3_floodlight.glb",
+    "m3_fuel_drum.glb",
+    "m3_fuel_reservoir.glb",
+    "m3_grenade.glb",
+    "m3_guard_post.glb",
+    "m3_low_cover.glb",
+    "m3_maintenance_hangar.glb",
+    "m3_marksman.glb",
+    "m3_operator_directorate.glb",
+    "m3_operator_nightcell.glb",
+    "m3_patrol_vehicle.glb",
+    "m3_pipe_plant.glb",
+    "m3_refinery.glb",
+    "m3_rifle.glb",
+    "m3_security_wall.glb",
+    "m3_smg.glb",
+    "m3_utility_vehicle.glb",
+    "m3_water_unit.glb"
+  ],
+  "errors": []
+}

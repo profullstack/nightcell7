@@ -29,7 +29,7 @@ export const VANTAGES: readonly Vantage[] = [
   {
     name: "yard-approach",
     caption:
-      "The C7 carbine at the Nightcell muster point, looking north through the updated container yard toward the false dawn.",
+      "The C7 carbine at the Nightcell muster point, looking north through the IRON RAIN cargo yard in cool industrial daylight.",
     showWeapon: true,
     position: [0, 1.7, 44],
     yaw: Math.PI,
@@ -55,7 +55,7 @@ export const VANTAGES: readonly Vantage[] = [
   {
     name: "central-hardpoint",
     caption:
-      "The C7 carbine beside the central hard point, with weathered containers and the refinery structures beyond.",
+      "The C7 carbine beside the central hard point, with pale concrete cargo modules and the refinery structures beyond.",
     showWeapon: true,
     position: [-17, 1.7, 15],
     yaw: Math.PI * 0.88,
@@ -63,7 +63,8 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "gantry-overlook",
-    caption: "From the east gantry, looking back across the container yard under the sodium masts.",
+    caption:
+      "From the east gantry, looking back across the container yard under the white floodlight masts.",
     position: [30, 8.1, -14],
     yaw: Math.PI * 1.32,
     pitch: 0.2,
@@ -71,7 +72,8 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "north-gate",
-    caption: "The Directorate end of the yard, looking into the first light beyond the north wall.",
+    caption:
+      "The Directorate end of the yard, looking toward the operations buildings beyond the north wall.",
     position: [0, 1.7, -22],
     yaw: Math.PI,
     pitch: 0.06,
@@ -88,7 +90,7 @@ export const VANTAGES: readonly Vantage[] = [
   {
     name: "container-alley",
     caption:
-      "Between the northern container stacks. The corrugation and corner castings are the only cover in the centre lane, and both sides can reach it in the opening seconds.",
+      "Between the northern container stacks. The concrete panels and reinforced corners provide cover in the centre lane, and both sides can reach it in the opening seconds.",
     position: [0, 1.7, -8],
     yaw: Math.PI,
     pitch: 0.0,

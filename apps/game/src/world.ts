@@ -1,3 +1,4 @@
+import { surfaceTexture } from "./iron-rain-materials";
 import {
   Color3,
   Color4,
@@ -10,6 +11,8 @@ import {
   Mesh,
   MeshBuilder,
   PointLight,
+  PBRMaterial,
+  VertexData,
   Scene,
   ShadowGenerator,
   StandardMaterial,
@@ -20,7 +23,6 @@ import {
 import { ARDAVAN_YARD, type CollisionMap } from "@nightcell7/multiplayer-sim";
 import type { MapVolume } from "@nightcell7/multiplayer-sim";
 import {
-  createTiledMaterial,
   loadAssets,
   meshesUnder,
   placeAll,
@@ -163,86 +165,21 @@ function skyTexture(scene: Scene): DynamicTexture {
   const texture = new DynamicTexture("sky", { width: w, height: h }, scene, false);
   const ctx = texture.getContext() as unknown as CanvasRenderingContext2D;
 
-  // Zenith -> horizon. Everything below the horizon is occluded by the ground.
-  const grad = ctx.createLinearGradient(0, 0, 0, horizon);
-  grad.addColorStop(0.0, "#03050a");
-  grad.addColorStop(0.42, "#070b14");
-  grad.addColorStop(0.7, "#0d1524");
-  grad.addColorStop(0.88, "#1b2130");
-  grad.addColorStop(1.0, "#2f3038");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, horizon);
-  ctx.fillStyle = "#2f3038";
-  ctx.fillRect(0, horizon, w, h - horizon);
-
-  // Seeded stars keep the sky stable across captures and sessions.
-  let skySeed = 71609;
-  const random = () => {
-    skySeed = (Math.imul(skySeed, 1664525) + 1013904223) >>> 0;
-    return skySeed / 4294967296;
-  };
-  // Sparse cold stars, thinning toward the lit horizon.
-  for (let i = 0; i < 700; i += 1) {
-    const y = Math.pow(random(), 1.6) * horizon * 0.94;
-    const x = random() * w;
-    const a = 0.15 + random() * 0.25;
-    ctx.fillStyle = `rgba(214, 228, 244, ${a * (1 - y / horizon)})`;
-    ctx.fillRect(x, y, 1 + (random() > 0.93 ? 1 : 0), 1);
+  const gradient = ctx.createLinearGradient(0, 0, 0, horizon);
+  gradient.addColorStop(0, "#263d54");
+  gradient.addColorStop(0.6, "#697c89");
+  gradient.addColorStop(1, "#b7b7ac");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, w, h);
+  for (let layer = 0; layer < 4; layer++) {
+    const y = 100 + layer * 90;
+    const cloud = ctx.createLinearGradient(0, y - 50, 0, y + 50);
+    cloud.addColorStop(0, "rgba(28,43,58,0)");
+    cloud.addColorStop(0.5, "rgba(28,43,58,.07)");
+    cloud.addColorStop(1, "rgba(28,43,58,0)");
+    ctx.fillStyle = cloud;
+    ctx.fillRect(0, y - 50, w, 100);
   }
-
-  // The false dawn itself: a wide warm lobe hugging the horizon. Drawn as
-  // stacked radial gradients so it falls off in both azimuth and elevation.
-  // The false dawn itself.
-  //
-  // Built as (vertical falloff) x (azimuth mask) on a separate canvas rather
-  // than as radial lobes. A radial lobe's outer boundary is a line of constant
-  // latitude, and every constant-latitude line projects as a *curve* when the
-  // camera pitches — which reads as the edge of a dome sitting over the map.
-  // A gradual vertical ramp has no boundary to betray itself.
-  const centreU = w * 0.25;
-  const bandTop = horizon - h * 0.34;
-  const bandHeight = horizon - bandTop;
-
-  const dawn = document.createElement("canvas");
-  dawn.width = w;
-  dawn.height = bandHeight;
-  const dctx = dawn.getContext("2d");
-  if (dctx) {
-    // Elevation: warm and bright at the horizon, gone well before the zenith.
-    const vertical = dctx.createLinearGradient(0, 0, 0, bandHeight);
-    vertical.addColorStop(0.0, "rgba(90, 56, 26, 0)");
-    vertical.addColorStop(0.42, "rgba(126, 78, 34, 0.3)");
-    vertical.addColorStop(0.72, "rgba(178, 112, 48, 0.6)");
-    vertical.addColorStop(0.9, "rgba(226, 156, 76, 0.85)");
-    vertical.addColorStop(1.0, "rgba(255, 200, 128, 1)");
-    dctx.fillStyle = vertical;
-    dctx.fillRect(0, 0, w, bandHeight);
-
-    // Azimuth: strongest to the north, falling away toward the flanks.
-    // A periodic azimuth mask has equal values at the sphere's UV seam.
-    // A clipped linear gradient left a visible vertical split in the sky.
-    const mask = document.createElement("canvas");
-    mask.width = w;
-    mask.height = 1;
-    const maskContext = mask.getContext("2d")!;
-    const alphaRow = maskContext.createImageData(w, 1);
-    for (let x = 0; x < w; x += 1) {
-      const alpha = Math.pow(0.5 + 0.5 * Math.cos(((x - centreU) / w) * Math.PI * 2), 2);
-      alphaRow.data[x * 4 + 3] = Math.round(alpha * 255);
-    }
-    maskContext.putImageData(alphaRow, 0, 0);
-    // Apply the complete mask once: separate destination-in strokes would
-    // erase every column painted by the preceding stroke.
-    dctx.globalCompositeOperation = "destination-in";
-    dctx.drawImage(mask, 0, 0, w, bandHeight);
-
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.85;
-    ctx.drawImage(dawn, 0, bandTop);
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
-  }
-
   texture.update(false);
   return texture;
 }
@@ -292,14 +229,14 @@ function tileAlong(
  * the volume it was measured against.
  */
 const PROP_MODELS = {
-  vehicle_armored_car: { name: "m2_patrol_vehicle" as const, rotationY: 0 },
-  vehicle_technical: { name: "m2_utility_vehicle" as const, rotationY: 0 },
-  barrier: { name: "m2_blast_wall" as const, rotationY: Math.PI / 2 },
-  concrete_cover: { name: "m2_low_cover" as const, rotationY: Math.PI / 2 },
-  water_tank: { name: "m2_water_unit" as const, rotationY: 0 },
-  barrel_stack: { name: "m2_drum_pallet" as const, rotationY: 0 },
-  tent: { name: "m2_field_shelter" as const, rotationY: 0 },
-  guard_tower: { name: "m2_guard_post" as const, rotationY: 0 },
+  vehicle_armored_car: { name: "m3_patrol_vehicle" as const, rotationY: 0 },
+  vehicle_technical: { name: "m3_utility_vehicle" as const, rotationY: 0 },
+  barrier: { name: "m3_blast_wall" as const, rotationY: 0 },
+  concrete_cover: { name: "m3_low_cover" as const, rotationY: 0 },
+  water_tank: { name: "m3_water_unit" as const, rotationY: 0 },
+  barrel_stack: { name: "m3_drum_pallet" as const, rotationY: 0 },
+  tent: { name: "m3_field_shelter" as const, rotationY: 0 },
+  guard_tower: { name: "m3_guard_post" as const, rotationY: 0 },
 } satisfies Record<string, { name: ModelName; rotationY: number }>;
 
 /** Native footprint of each tiled model, in metres. Must match `tools/art`. */
@@ -323,10 +260,10 @@ export async function buildWorld(
   // Distance haze. Ardavan Yard is 80 x 120 m, so density is tuned to soften
   // the far perimeter without fogging out the mid-lane sightlines.
   scene.fogMode = Scene.FOGMODE_EXP2;
-  scene.fogDensity = 0.0085;
+  scene.fogDensity = 0.0045;
   // Slightly warm and lifted: distance should read as haze catching the yard's
   // sodium light, not as a black void the far perimeter falls into.
-  scene.fogColor = new Color3(0.135, 0.14, 0.175);
+  scene.fogColor = new Color3(0.4, 0.47, 0.52);
 
   const assets = await loadAssets(scene);
 
@@ -355,24 +292,24 @@ export async function buildWorld(
   // every container and wall; without a strong fill those faces are black
   // silhouettes and the lanes stop reading as space you can move through.
   const ambient = new HemisphericLight("ambient", new Vector3(0.1, 1, 0.05), scene);
-  ambient.intensity = 4.05;
+  ambient.intensity = 2.0;
   ambient.diffuse = new Color3(0.62, 0.7, 0.82);
-  ambient.groundColor = new Color3(0.34, 0.29, 0.24);
+  ambient.groundColor = new Color3(0.27, 0.3, 0.32);
   ambient.specular = new Color3(0.16, 0.2, 0.26);
 
   // The false dawn: a low, warm key raking from the north. Low elevation is
   // what produces the long shadows the yard reads by.
-  const key = new DirectionalLight("false-dawn", new Vector3(0.12, -0.2, 1), scene);
+  const key = new DirectionalLight("false-dawn", new Vector3(0.45, -0.65, 0.55), scene);
   key.position = new Vector3(-10, 26, -95);
-  key.intensity = 4.4;
-  key.diffuse = PALETTE.dustGold;
+  key.intensity = 2.1;
+  key.diffuse = new Color3(0.94, 0.97, 1);
   key.specular = new Color3(0.9, 0.75, 0.5);
 
   // Cold counter-rim from the south, so silhouettes separate from the sky
   // instead of dissolving into it.
   const rim = new DirectionalLight("rim", new Vector3(-0.25, -0.35, -1), scene);
   rim.position = new Vector3(20, 30, 90);
-  rim.intensity = 1.95;
+  rim.intensity = 0.55;
   rim.diffuse = new Color3(0.4, 0.58, 0.78);
   rim.specular = new Color3(0.5, 0.68, 0.85);
 
@@ -409,52 +346,84 @@ export async function buildWorld(
 
     switch (kind) {
       case "ground": {
-        // The one surface still built as a primitive: it is a flat slab, and a
-        // tiled model would only add draw calls and seams.
-        const ground = MeshBuilder.CreateBox(
-          "ground",
-          { width: v.size.x, height: v.size.y, depth: v.size.z },
-          scene,
-        );
-        ground.position = v.centre;
-        ground.isPickable = false;
+        // One mesh with independent UVs for each four-metre asphalt tile.
+        const positions: number[] = [],
+          normals: number[] = [],
+          uvs: number[] = [],
+          indices: number[] = [];
+        const top = v.box.max.y;
+        for (let x = v.box.min.x; x < v.box.max.x; x += 4)
+          for (let z = v.box.min.z; z < v.box.max.z; z += 4) {
+            const i = positions.length / 3,
+              x1 = Math.min(x + 4, v.box.max.x),
+              z1 = Math.min(z + 4, v.box.max.z);
+            positions.push(x, top, z, x, top, z1, x1, top, z1, x1, top, z);
+            normals.push(0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0);
+            uvs.push(0, 0, 0, 1, 1, 1, 1, 0);
+            indices.push(i, i + 2, i + 1, i, i + 3, i + 2);
+          }
+        const ground = new Mesh("asphalt-yard", scene);
+        const data = new VertexData();
+        Object.assign(data, { positions, normals, uvs, indices });
+        data.applyToMesh(ground);
+        const material = new PBRMaterial("ir_asphalt", scene);
+        material.albedoTexture = surfaceTexture(scene, `${import.meta.env.BASE_URL}assets/`, 2);
+        material.albedoColor = new Color3(0.36, 0.39, 0.42);
+        material.metallic = 0;
+        material.roughness = 0.93;
+        material.environmentIntensity = 0.5;
+        ground.material = material;
         ground.receiveShadows = true;
-        const groundMaterial = createTiledMaterial(scene, "concrete", v.size.x / 4, v.size.z / 4);
-        groundMaterial.albedoColor = new Color3(0.7, 0.72, 0.7);
-        if (groundMaterial.bumpTexture) groundMaterial.bumpTexture.level = 0.25;
-        ground.material = groundMaterial;
+        ground.isPickable = false;
         ground.freezeWorldMatrix();
+        const paint = new PBRMaterial("ir_road_paint", scene);
+        paint.albedoColor = new Color3(0.72, 0.66, 0.44);
+        paint.metallic = 0;
+        paint.roughness = 0.86;
+        for (const x of [-27, 27])
+          for (let z = -50; z <= 50; z += 8) {
+            const stripe = MeshBuilder.CreateBox(
+              "lane-mark",
+              { width: 0.14, height: 0.006, depth: 3.2 },
+              scene,
+            );
+            stripe.position.set(x, top + 0.004, z);
+            stripe.material = paint;
+            stripe.receiveShadows = true;
+            stripe.isPickable = false;
+            stripe.freezeWorldMatrix();
+          }
         break;
       }
 
       case "perimeter": {
         // Walls run along whichever horizontal axis is longer.
         const axis = v.size.x >= v.size.z ? "x" : "z";
-        put("m2_security_wall", `wall_${index}`, tileAlong(axis, v, SECTION.wall).placements);
+        put("m3_security_wall", `wall_${index}`, tileAlong(axis, v, SECTION.wall).placements);
         break;
       }
 
       case "deck": {
         const axis = v.size.x >= v.size.z ? "x" : "z";
-        put("m2_catwalk", `deck_${index}`, tileAlong(axis, v, SECTION.deck).placements);
+        put("m3_catwalk", `deck_${index}`, tileAlong(axis, v, SECTION.deck).placements);
         break;
       }
 
       case "pipe_rack": {
         const axis = v.size.x >= v.size.z ? "x" : "z";
-        put("m2_pipe_plant", `pipes_${index}`, tileAlong(axis, v, SECTION.pipe_rack).placements);
+        put("m3_pipe_plant", `pipes_${index}`, tileAlong(axis, v, SECTION.pipe_rack).placements);
         break;
       }
 
       case "tank": {
-        put("m2_fuel_reservoir", `tank_${index}`, [
+        put("m3_fuel_reservoir", `tank_${index}`, [
           { position: new Vector3(v.centre.x, v.box.min.y, v.centre.z) },
         ]);
         break;
       }
 
       case "hardpoint": {
-        put("m2_command_bunker", `hardpoint_${index}`, [
+        put("m3_command_bunker", `hardpoint_${index}`, [
           { position: new Vector3(v.centre.x, v.box.min.y, v.centre.z) },
         ]);
         break;
@@ -466,7 +435,7 @@ export async function buildWorld(
         // This is map-specific on purpose — deriving the direction would need
         // the neighbouring steps, and the collision map is the thing that
         // defines "up" here.
-        put("m2_access_stair", `stair_${index}`, [
+        put("m3_access_stair", `stair_${index}`, [
           {
             position: new Vector3(v.centre.x, v.box.min.y, v.centre.z),
             rotationY: v.centre.z > 0 ? 0 : Math.PI,
@@ -519,7 +488,7 @@ export async function buildWorld(
             });
           }
         }
-        put("m2_cargo_module", `container_${index}`, placements);
+        put("m3_cargo_module", `container_${index}`, placements);
         break;
       }
     }
@@ -545,7 +514,7 @@ export async function buildWorld(
   ];
 
   put(
-    "m2_floodlight",
+    "m3_floodlight",
     "lamp",
     lampSpots.map(([x, z]) => ({ position: new Vector3(x, 0, z) })),
   );
@@ -556,10 +525,10 @@ export async function buildWorld(
     // Babylon's per-mesh light cap is raised below to keep them all active.
     // Matches SOCKET_LAMP on lamp_mast.glb: 0.86 m out on the bracket arm,
     // 8.5 m up.
-    const lamp = new PointLight(`lamp-light_${i}`, new Vector3(x + 0.86, 8.5, z), scene);
-    lamp.diffuse = PALETTE.sodium;
-    lamp.specular = PALETTE.sodium;
-    lamp.intensity = 250;
+    const lamp = new PointLight(`lamp-light_${i}`, new Vector3(x, 8.4, z), scene);
+    lamp.diffuse = new Color3(0.79, 0.89, 1);
+    lamp.specular = new Color3(0.79, 0.89, 1);
+    lamp.intensity = 110;
     lamp.range = 40;
     lamp.falloffType = PointLight.FALLOFF_PHYSICAL;
   });
@@ -579,13 +548,13 @@ export async function buildWorld(
   //
   // These leftovers stay non-colliding because they are small supply props in
   // a protected spawn, where nobody expects cover.
-  put("m2_fuel_drum", "barrel", [
+  put("m3_fuel_drum", "barrel", [
     { position: new Vector3(-30, 0, -54), rotationY: 1.1 },
     { position: new Vector3(-28.5, 0, -52.5), rotationY: -0.4 },
     { position: new Vector3(29, 0, 54), rotationY: 2.2 },
     { position: new Vector3(27.5, 0, 52.5), rotationY: 0.7 },
   ]);
-  put("m2_field_case", "field-case", [
+  put("m3_field_case", "field-case", [
     { position: new Vector3(-22, 0, -44), rotationY: 0.5 },
     { position: new Vector3(22, 0, -44), rotationY: -0.8 },
     { position: new Vector3(22, 0, 44), rotationY: -2.4 },
@@ -593,9 +562,9 @@ export async function buildWorld(
   ]);
 
   // Unreachable industrial skyline: all three backdrop models are now used.
-  put("m2_control_tower", "operations-tower", [{ position: new Vector3(46, 0, -43) }]);
-  put("m2_refinery", "refinery", [{ position: new Vector3(-47, 0, -12) }]);
-  put("m2_maintenance_hangar", "maintenance", [{ position: new Vector3(0, 0, 77) }]);
+  put("m3_control_tower", "operations-tower", [{ position: new Vector3(46, 0, -43) }]);
+  put("m3_refinery", "refinery", [{ position: new Vector3(-47, 0, -12) }]);
+  put("m3_maintenance_hangar", "maintenance", [{ position: new Vector3(0, 0, 77) }]);
 
   // Two cold accent lights mark the opposing spawn ends, echoing the split
   // palette the whole product is built on.
@@ -628,7 +597,7 @@ export async function buildWorld(
   // Bloom carries the sodium lamps and the false-dawn horizon.
   pipeline.bloomEnabled = true;
   pipeline.bloomThreshold = 0.9;
-  pipeline.bloomWeight = 0.2;
+  pipeline.bloomWeight = 0.09;
   pipeline.bloomKernel = 64;
   pipeline.bloomScale = 0.6;
 
@@ -637,20 +606,20 @@ export async function buildWorld(
   pipeline.imageProcessingEnabled = true;
   pipeline.imageProcessing.toneMappingEnabled = true;
   pipeline.imageProcessing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-  pipeline.imageProcessing.exposure = 1.85;
-  pipeline.imageProcessing.contrast = 1.12;
+  pipeline.imageProcessing.exposure = 1.35;
+  pipeline.imageProcessing.contrast = 1.08;
   pipeline.imageProcessing.vignetteEnabled = true;
-  pipeline.imageProcessing.vignetteWeight = 0.55;
+  pipeline.imageProcessing.vignetteWeight = 0.12;
   pipeline.imageProcessing.vignetteStretch = 0.4;
   pipeline.imageProcessing.vignetteColor = new Color4(0, 0, 0, 0);
 
   // Subtle lens character. Kept low: this is a competitive shooter, not a
   // photo mode, and heavy aberration hurts target acquisition.
-  pipeline.chromaticAberrationEnabled = true;
+  pipeline.chromaticAberrationEnabled = false;
   pipeline.chromaticAberration.aberrationAmount = 0.9;
   pipeline.chromaticAberration.radialIntensity = 0.55;
 
-  pipeline.grainEnabled = true;
+  pipeline.grainEnabled = false;
   pipeline.grain.intensity = 2;
   pipeline.grain.animated = true;
 

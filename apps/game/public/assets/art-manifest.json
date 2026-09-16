@@ -1,7 +1,7 @@
 {
-  "version": "modern-2",
+  "version": "iron-rain-3",
   "date": "2026-09-16",
-  "generator": "tools/art/modern/generate.py",
+  "generator": "tools/art/iron-rain/generate.py",
   "originalGeometry": true,
   "legacyGeometry": false,
   "materials": {
@@ -137,244 +137,314 @@
       "roughness": 0.95,
       "detailSource": "rubber",
       "detailScale": 5
+    },
+    "ir_plaster": {
+      "baseColor": [0.86, 0.89, 0.91],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_blue": {
+      "baseColor": [0.7, 0.82, 0.93],
+      "metallic": 0.2,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_canvas": {
+      "baseColor": [0.48, 0.51, 0.4],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_uniform": {
+      "baseColor": [0.28, 0.39, 0.45],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_steel": {
+      "baseColor": [0.26, 0.31, 0.35],
+      "metallic": 0.65,
+      "roughness": 0.4,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_rubber": {
+      "baseColor": [0.035, 0.042, 0.046],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_glass": {
+      "baseColor": [0.055, 0.16, 0.2],
+      "metallic": 0.2,
+      "roughness": 0.24,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_orange": {
+      "baseColor": [0.65, 0.17, 0.045],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_white": {
+      "baseColor": [0.72, 0.76, 0.79],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_light": {
+      "baseColor": [0.72, 0.86, 1],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_skin": {
+      "baseColor": [0.38, 0.23, 0.16],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
+    },
+    "ir_mark": {
+      "baseColor": [0.69, 0.52, 0.2],
+      "metallic": 0,
+      "roughness": 0.83,
+      "detailSource": null,
+      "detailScale": 1
     }
   },
   "models": {
-    "m2_cargo_module": {
-      "name": "m2_cargo_module",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 204044,
-      "sha256": "c40c1521e6331554aabe50d226698ed82c7a512de8bfc3602a837af03599a1df",
-      "triangles": 7213,
+    "m3_cargo_module": {
+      "name": "m3_cargo_module",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 114168,
+      "sha256": "33428a7b43ec6a3ebc245ae147c9ad3851b1c1f684bad9da60feef2c6bbed2e2",
+      "triangles": 4436,
       "animations": [],
-      "materials": [
-        "nc7_panel",
-        "nc7_alloy",
-        "nc7_polymer",
-        "nc7_marking",
-        "nc7_coating",
-        "nc7_edge",
-        "nc7_dark"
-      ]
+      "materials": ["ir_plaster", "ir_blue", "ir_steel", "ir_white", "ir_rubber"]
     },
-    "m2_fuel_reservoir": {
-      "name": "m2_fuel_reservoir",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 441544,
-      "sha256": "5218869100f56fecd49e4739af724688ddc6ddee10dc77b99687941788be64ac",
-      "triangles": 18090,
+    "m3_security_wall": {
+      "name": "m3_security_wall",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 158776,
+      "sha256": "b09a686d3386a71f2bdf165e4701f61a29a70246fac153f27df0e84e9bae5b7d",
+      "triangles": 6560,
       "animations": [],
-      "materials": [
-        "nc7_panel",
-        "nc7_alloy",
-        "nc7_concrete",
-        "nc7_coating",
-        "nc7_marking",
-        "nc7_dark"
-      ]
+      "materials": ["ir_plaster", "ir_blue", "ir_rubber", "ir_glass", "ir_white", "ir_steel"]
     },
-    "m2_catwalk": {
-      "name": "m2_catwalk",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 111924,
-      "sha256": "9c9916f0957fa64eaacf2f9cd652339ae7035e63462feee51a0ea5071af2846e",
-      "triangles": 3780,
-      "animations": [],
-      "materials": ["nc7_alloy", "nc7_coating", "nc7_panel", "nc7_polymer", "nc7_marking"]
-    },
-    "m2_pipe_plant": {
-      "name": "m2_pipe_plant",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 453244,
-      "sha256": "5ae12ad821ad5e2e288cfcfc5fa5b9fa7fd26607c17fb250ab217560601bd504",
+    "m3_fuel_reservoir": {
+      "name": "m3_fuel_reservoir",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 285368,
+      "sha256": "1d45ae8e32e782188ebec06a8677bd211520a191e0b5799cfcb8236c6774a302",
       "triangles": 12564,
       "animations": [],
-      "materials": [
-        "nc7_concrete",
-        "nc7_alloy",
-        "nc7_coating",
-        "nc7_panel",
-        "nc7_edge",
-        "nc7_dark",
-        "nc7_marking"
-      ]
+      "materials": ["ir_plaster", "ir_white", "ir_steel", "ir_blue", "ir_orange"]
     },
-    "m2_security_wall": {
-      "name": "m2_security_wall",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 112092,
-      "sha256": "a4eaf08b001df969fced75eaaf3ad4c7787cea1cd9c18044ee29b5bebc2a0b96",
-      "triangles": 3640,
+    "m3_catwalk": {
+      "name": "m3_catwalk",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 105536,
+      "sha256": "2ca4f64f037536c0149edbe95bf521f40ee53a145ce19ef76dd38f1ae31ffed2",
+      "triangles": 4212,
+      "animations": [],
+      "materials": ["ir_blue", "ir_white", "ir_steel", "ir_orange"]
+    },
+    "m3_pipe_plant": {
+      "name": "m3_pipe_plant",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 214020,
+      "sha256": "7f759d5e105bc94e2b15e64da3100b91fa665d379347cf7c0c59b77f7498f10d",
+      "triangles": 9204,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_steel", "ir_orange", "ir_white", "ir_blue"]
+    },
+    "m3_command_bunker": {
+      "name": "m3_command_bunker",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 43540,
+      "sha256": "ebfcdc6ff65992406c2ac66e9ed8934c9a3509be06b483c1d39819dc3ea22b30",
+      "triangles": 1555,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_blue", "ir_glass", "ir_orange", "ir_white"]
+    },
+    "m3_access_stair": {
+      "name": "m3_access_stair",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 48188,
+      "sha256": "329bd0d4cefb93f27167860f94305e5491d206ea4baa28209b4814b522d05c76",
+      "triangles": 2160,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_blue"]
+    },
+    "m3_floodlight": {
+      "name": "m3_floodlight",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 47288,
+      "sha256": "258b3f2e8f9dd45319b3c7299d4ac2a3ceb90c75c8d602d1d23f50fca254e938",
+      "triangles": 1788,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_steel", "ir_blue", "ir_light"]
+    },
+    "m3_patrol_vehicle": {
+      "name": "m3_patrol_vehicle",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 412192,
+      "sha256": "e9a67789edf6c4f8adfff1d3494d64a0e1baf5cbda2bc3af511fc737dacff518",
+      "triangles": 16388,
+      "animations": [],
+      "materials": ["ir_blue", "ir_white", "ir_glass", "ir_rubber", "ir_steel", "ir_light"]
+    },
+    "m3_utility_vehicle": {
+      "name": "m3_utility_vehicle",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 302188,
+      "sha256": "5a9237bd302f172884a159cef1bb46686c9915703ab26039e99d398749aa7d72",
+      "triangles": 11956,
       "animations": [],
       "materials": [
-        "nc7_concrete",
-        "nc7_panel",
-        "nc7_alloy",
-        "nc7_coating",
-        "nc7_dark",
-        "nc7_marking"
+        "ir_blue",
+        "ir_white",
+        "ir_steel",
+        "ir_canvas",
+        "ir_glass",
+        "ir_rubber",
+        "ir_light"
       ]
     },
-    "m2_command_bunker": {
-      "name": "m2_command_bunker",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 194476,
-      "sha256": "0c75c3fcc665a491d4ab1a7f4831020e9e42c719b7e89b70ed772a994603ffce",
-      "triangles": 6133,
+    "m3_fuel_drum": {
+      "name": "m3_fuel_drum",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 51040,
+      "sha256": "30855ad68d0f336a4a7672fe033cb9a5c19164f145d035c2a668ea074cedf6f5",
+      "triangles": 2036,
       "animations": [],
-      "materials": [
-        "nc7_concrete",
-        "nc7_panel",
-        "nc7_coating",
-        "nc7_dark",
-        "nc7_glass",
-        "nc7_edge",
-        "nc7_marking"
-      ]
+      "materials": ["ir_blue", "ir_steel"]
     },
-    "m2_access_stair": {
-      "name": "m2_access_stair",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 76292,
-      "sha256": "9652da1917cf157037ef6ba2eadc12192f8bcf23e7fcaccf780da39593c2ee53",
-      "triangles": 2776,
+    "m3_drum_pallet": {
+      "name": "m3_drum_pallet",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 191156,
+      "sha256": "4083fcd0c0c3f67f120b3292fe141f0543ed747af3deba0962693c44aeb9a7d8",
+      "triangles": 8252,
       "animations": [],
-      "materials": ["nc7_alloy", "nc7_panel", "nc7_marking", "nc7_coating"]
+      "materials": ["ir_rubber", "ir_blue", "ir_steel"]
     },
-    "m2_floodlight": {
-      "name": "m2_floodlight",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 78412,
-      "sha256": "2ec6375c64e43b8c189a5f28c501e6228eb8058d3fe93c3f7e321f3479791bc3",
-      "triangles": 2444,
+    "m3_blast_wall": {
+      "name": "m3_blast_wall",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 19940,
+      "sha256": "876e9f85e84c2554b73e19e1c7ba0991e668ecfab96f6e146997d7e5f43ecde8",
+      "triangles": 648,
       "animations": [],
-      "materials": [
-        "nc7_concrete",
-        "nc7_alloy",
-        "nc7_edge",
-        "nc7_dark",
-        "nc7_polymer",
-        "nc7_light",
-        "nc7_coating"
-      ]
+      "materials": ["ir_plaster", "ir_steel", "ir_orange"]
     },
-    "m2_operator_directorate": {
-      "name": "m2_operator_directorate",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 634032,
-      "sha256": "9d63c2f7e5c78b8d5c3f55bf4ec2b355d245fc880d39abbf5283227cd88e043c",
-      "triangles": 16900,
+    "m3_low_cover": {
+      "name": "m3_low_cover",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 19924,
+      "sha256": "0884bd6d4a797eed84e3b937fa73f8682835a4828cef1fde689f04d6fd738ab3",
+      "triangles": 648,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_steel", "ir_orange"]
+    },
+    "m3_water_unit": {
+      "name": "m3_water_unit",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 147996,
+      "sha256": "a20fe82c3789a6c9f17c1768f2f6e1956c9e5519fc80a42a3cb1f95ec6834623",
+      "triangles": 5900,
+      "animations": [],
+      "materials": ["ir_steel", "ir_white", "ir_blue"]
+    },
+    "m3_field_case": {
+      "name": "m3_field_case",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 44256,
+      "sha256": "71cd72823faa84d6711d4929a92d562eae15378a12a45e911c32abfaa41ca1f9",
+      "triangles": 1632,
+      "animations": [],
+      "materials": ["ir_blue", "ir_white", "ir_rubber", "ir_steel"]
+    },
+    "m3_field_shelter": {
+      "name": "m3_field_shelter",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 185568,
+      "sha256": "2aa348b00b5b85101b0e43ce4532db60cebacc2bc35dc0738cf28a2f37262d46",
+      "triangles": 8190,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_canvas", "ir_steel", "ir_blue", "ir_glass"]
+    },
+    "m3_guard_post": {
+      "name": "m3_guard_post",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 105172,
+      "sha256": "8505b32873d23d336e8d420fb8b9ca0906b331f5112bd214c5d01bf74bcd34bc",
+      "triangles": 3964,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_steel", "ir_glass", "ir_blue"]
+    },
+    "m3_control_tower": {
+      "name": "m3_control_tower",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 175540,
+      "sha256": "1c339f162d1fb27cba75328b785230eb6ff100030a99536dc7177df30a5a9515",
+      "triangles": 6900,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_steel", "ir_glass", "ir_blue", "ir_white"]
+    },
+    "m3_refinery": {
+      "name": "m3_refinery",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 692800,
+      "sha256": "072546502af1f80e751e91b2e3d9646f672f686e857f5ffcdf807d116c6b596f",
+      "triangles": 28244,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_orange", "ir_steel", "ir_blue"]
+    },
+    "m3_maintenance_hangar": {
+      "name": "m3_maintenance_hangar",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 232108,
+      "sha256": "efb6963a3c7e97ff894b4e2833b72c51f5526687851d722b6b092860c44d225b",
+      "triangles": 9437,
+      "animations": [],
+      "materials": ["ir_plaster", "ir_blue", "ir_glass", "ir_white", "ir_steel"]
+    },
+    "m3_operator_nightcell": {
+      "name": "m3_operator_nightcell",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 582596,
+      "sha256": "ba6d73e6619766ce5138624a65328cee1a3ec78d56998f13ced083231c37a3f6",
+      "triangles": 17108,
       "animations": ["death", "idle", "run", "walk"],
-      "materials": [
-        "nc7_sand",
-        "nc7_polymer",
-        "nc7_coating",
-        "nc7_alloy",
-        "nc7_team",
-        "nc7_glass",
-        "nc7_edge",
-        "nc7_dark"
-      ]
+      "materials": ["ir_uniform", "ir_rubber", "ir_canvas", "ir_steel", "ir_blue", "ir_glass"]
     },
-    "m2_operator_nightcell": {
-      "name": "m2_operator_nightcell",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 634000,
-      "sha256": "b100a29626b534097323a70a4fc20ac03cc1a09a1d51a46ac07a5f81ad71e1c9",
-      "triangles": 16900,
+    "m3_operator_directorate": {
+      "name": "m3_operator_directorate",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 580188,
+      "sha256": "1d847779118172770f0e77ee37bab9ba5756de2a8c4eeb27393bd5afca45f127",
+      "triangles": 17108,
       "animations": ["death", "idle", "run", "walk"],
-      "materials": [
-        "nc7_fabric",
-        "nc7_polymer",
-        "nc7_olive",
-        "nc7_alloy",
-        "nc7_team",
-        "nc7_glass",
-        "nc7_edge",
-        "nc7_dark"
-      ]
+      "materials": ["ir_canvas", "ir_rubber", "ir_blue", "ir_steel", "ir_glass"]
     },
-    "m2_patrol_vehicle": {
-      "name": "m2_patrol_vehicle",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 443544,
-      "sha256": "67aec131972b77d737d8f73f0595871d10810136f68205ad11a6ab5d3eba740f",
-      "triangles": 14328,
-      "animations": [],
-      "materials": [
-        "nc7_alloy",
-        "nc7_coating",
-        "nc7_panel",
-        "nc7_glass",
-        "nc7_polymer",
-        "nc7_dark",
-        "nc7_edge",
-        "nc7_marking",
-        "nc7_light"
-      ]
-    },
-    "m2_utility_vehicle": {
-      "name": "m2_utility_vehicle",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 449280,
-      "sha256": "8fb4e9bb89073633f4950e1452748705d6dc4e48c4a070550060e31b7b94edb8",
-      "triangles": 14404,
-      "animations": [],
-      "materials": [
-        "nc7_alloy",
-        "nc7_coating",
-        "nc7_panel",
-        "nc7_glass",
-        "nc7_polymer",
-        "nc7_dark",
-        "nc7_edge",
-        "nc7_marking",
-        "nc7_light",
-        "nc7_olive"
-      ]
-    },
-    "m2_fuel_drum": {
-      "name": "m2_fuel_drum",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 81908,
-      "sha256": "d21989b1c1ed5b63924ecafd30636294775cdf874ae184b3ef937b53d6b76626",
-      "triangles": 3002,
-      "animations": [],
-      "materials": ["nc7_olive", "nc7_alloy", "nc7_panel", "nc7_dark", "nc7_marking"]
-    },
-    "m2_drum_pallet": {
-      "name": "m2_drum_pallet",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 347112,
-      "sha256": "ef04f85443aa5a35786a6e943deec2b7b91b3daa12377ff6c3a26c4b7f7c96d0",
-      "triangles": 13088,
-      "animations": [],
-      "materials": ["nc7_polymer", "nc7_panel", "nc7_olive", "nc7_alloy", "nc7_dark", "nc7_marking"]
-    },
-    "m2_blast_wall": {
-      "name": "m2_blast_wall",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 92092,
-      "sha256": "c1287e735de302072dae44688fed2b060052844c05581cbf17151c57fc012143",
-      "triangles": 2896,
-      "animations": [],
-      "materials": ["nc7_concrete", "nc7_panel", "nc7_dark", "nc7_marking", "nc7_alloy"]
-    },
-    "m2_water_unit": {
-      "name": "m2_water_unit",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 176892,
-      "sha256": "84e25eb5161f1700d1f60d99759f2976b19289901ca1b035c88f5f9ce9ca960c",
-      "triangles": 6620,
-      "animations": [],
-      "materials": ["nc7_alloy", "nc7_panel", "nc7_coating", "nc7_polymer", "nc7_marking"]
-    },
-    "m2_rifle": {
-      "name": "m2_rifle",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 368504,
-      "sha256": "0e567fc8c7dc2f35a75b3259ebf68e5f9ee40955bce6ba75d8416fb3267f6f07",
-      "triangles": 12204,
+    "m3_rifle": {
+      "name": "m3_rifle",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 314660,
+      "sha256": "fe761bc283ff2b0a8e2340c92a221cd06078e086f6d4f761c536041d2cdad9cc",
+      "triangles": 11720,
       "animations": [],
       "materials": [
         "nc7_coating",
@@ -386,12 +456,12 @@
         "nc7_marking"
       ]
     },
-    "m2_smg": {
-      "name": "m2_smg",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 367572,
-      "sha256": "81ccb743a9e2c578c011718bbda50cbd871708796d5e23ecf4e2945c2ab06a71",
-      "triangles": 12204,
+    "m3_smg": {
+      "name": "m3_smg",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 312252,
+      "sha256": "7b6dd94936cb9e11aa1185a5b13b70087d1c98b2767f1ce8a5cc4717a8d8dd21",
+      "triangles": 11720,
       "animations": [],
       "materials": [
         "nc7_coating",
@@ -403,12 +473,12 @@
         "nc7_marking"
       ]
     },
-    "m2_marksman": {
-      "name": "m2_marksman",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 347380,
-      "sha256": "cd89afec1d20489262abdb45ad54c2c0cc49bcf204445e0f36515379fa4557e9",
-      "triangles": 11688,
+    "m3_marksman": {
+      "name": "m3_marksman",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 309340,
+      "sha256": "64d625df7a1805a1579eb5c0eea815cd1518bc41ad8ccbe67ea31c791c7867f0",
+      "triangles": 11720,
       "animations": [],
       "materials": [
         "nc7_coating",
@@ -416,100 +486,18 @@
         "nc7_polymer",
         "nc7_dark",
         "nc7_edge",
-        "nc7_marking",
-        "nc7_lens"
-      ]
-    },
-    "m2_grenade": {
-      "name": "m2_grenade",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 45944,
-      "sha256": "3bf223a319213f8bf9a25a13d4bef029151438226b3a25327f17a170a593170d",
-      "triangles": 1636,
-      "animations": [],
-      "materials": ["nc7_olive", "nc7_polymer", "nc7_alloy", "nc7_edge"]
-    },
-    "m2_control_tower": {
-      "name": "m2_control_tower",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 238416,
-      "sha256": "57143a51e2653a057363ebca1d82ca237488c4880a8fd783aa6844739ff6a9e2",
-      "triangles": 8588,
-      "animations": [],
-      "materials": [
-        "nc7_concrete",
-        "nc7_alloy",
-        "nc7_panel",
-        "nc7_glass",
-        "nc7_coating",
-        "nc7_dark",
+        "nc7_lens",
         "nc7_marking"
       ]
     },
-    "m2_refinery": {
-      "name": "m2_refinery",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 527408,
-      "sha256": "a3883ac228efe633d682aca4940ca81290bc7fa330b9d21784b6800448dbe5ed",
-      "triangles": 15354,
+    "m3_grenade": {
+      "name": "m3_grenade",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 28852,
+      "sha256": "d0ae44301ee1b45616479478d15d81adfc1df50e718881e2f52e2f8a8cb38f5d",
+      "triangles": 1272,
       "animations": [],
-      "materials": [
-        "nc7_concrete",
-        "nc7_panel",
-        "nc7_alloy",
-        "nc7_marking",
-        "nc7_coating",
-        "nc7_polymer"
-      ]
-    },
-    "m2_maintenance_hangar": {
-      "name": "m2_maintenance_hangar",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 282712,
-      "sha256": "ca04478ecb86d559e0049ec2a8dc40237406b1c85a0862b98593556b54856f99",
-      "triangles": 9833,
-      "animations": [],
-      "materials": [
-        "nc7_concrete",
-        "nc7_panel",
-        "nc7_alloy",
-        "nc7_polymer",
-        "nc7_coating",
-        "nc7_marking"
-      ]
-    },
-    "m2_guard_post": {
-      "name": "m2_guard_post",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 161676,
-      "sha256": "90aefbefd7e2f3a4d7db117b02e159b607ddaa60389938d6fa8ca1c3149e6a27",
-      "triangles": 5512,
-      "animations": [],
-      "materials": [
-        "nc7_concrete",
-        "nc7_alloy",
-        "nc7_panel",
-        "nc7_glass",
-        "nc7_coating",
-        "nc7_dark",
-        "nc7_marking"
-      ]
-    },
-    "m2_field_shelter": {
-      "name": "m2_field_shelter",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 126556,
-      "sha256": "ad2c4477976bd5fc2cd30e9f8f32aeae7cf3e51728d4c06269ccfdc0fd7cbffa",
-      "triangles": 4153,
-      "animations": [],
-      "materials": [
-        "nc7_polymer",
-        "nc7_fabric",
-        "nc7_alloy",
-        "nc7_coating",
-        "nc7_glass",
-        "nc7_marking"
-      ]
+      "materials": ["ir_blue", "ir_steel"]
     },
     "m2_carbine_fp": {
       "name": "m2_carbine_fp",
@@ -527,25 +515,8 @@
         "nc7_lens",
         "nc7_marking"
       ]
-    },
-    "m2_field_case": {
-      "name": "m2_field_case",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 184184,
-      "sha256": "68b04d16de28a63254d4dba6d3d3e96c59acd94332c0a73aea8d0e674a0b0bec",
-      "triangles": 5956,
-      "animations": [],
-      "materials": ["nc7_olive", "nc7_dark", "nc7_polymer", "nc7_alloy", "nc7_edge", "nc7_marking"]
-    },
-    "m2_low_cover": {
-      "name": "m2_low_cover",
-      "origin": "Original NIGHTCELL 7 M2 geometry; no imported mesh or rig",
-      "bytes": 159748,
-      "sha256": "da9efa40959180d79d6222446b50181ffaa56a8f8ad340a67c2a9ae91ee0a908",
-      "triangles": 4372,
-      "animations": [],
-      "materials": ["nc7_concrete", "nc7_rust", "nc7_dark", "nc7_marking"]
     }
   },
-  "optimization": "glTF Transform 4.5.0: dedup, weld, 16-bit positions/weights, 12-bit normals; UVs retain full precision outside 0-1; KHR_mesh_quantization"
+  "optimization": "glTF Transform 4.5.0: dedup, weld, 16-bit positions/weights, 12-bit normals; UVs retain full precision outside 0-1; KHR_mesh_quantization",
+  "approvedWeapon": "m2_carbine_fp preserved byte for byte"
 }

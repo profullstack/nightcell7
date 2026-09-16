@@ -18,7 +18,7 @@ describe("runtime GLB placement", () => {
     const engine = new NullEngine();
     const scene = new Scene(engine);
     try {
-      const container = await load(scene, "m2_low_cover");
+      const container = await load(scene, "m3_low_cover");
       for (const mesh of [...container.meshes])
         if (mesh.name.startsWith("COL_")) {
           container.meshes.splice(container.meshes.indexOf(mesh), 1);
@@ -31,8 +31,8 @@ describe("runtime GLB placement", () => {
       for (const child of root!.getChildMeshes()) child.computeWorldMatrix(true);
       const { min, max } = root!.getHierarchyBoundingVectors(true);
       const size = max.subtract(min);
-      expect(size.x).toBeCloseTo(2.4, 2);
-      expect(size.z).toBeCloseTo(0.781 * 2, 2);
+      expect(size.x).toBeCloseTo(0.78, 2);
+      expect(size.z).toBeCloseTo(2.4 * 2, 2);
       expect((min.x + max.x) / 2).toBeCloseTo(10, 2);
       expect((min.z + max.z) / 2).toBeCloseTo(31, 2);
     } finally {
@@ -64,9 +64,9 @@ describe("runtime GLB placement", () => {
     const scene = new Scene(engine);
     try {
       for (const name of [
-        "m2_operator_directorate",
-        "m2_operator_directorate",
-        "m2_operator_nightcell",
+        "m3_operator_directorate",
+        "m3_operator_directorate",
+        "m3_operator_nightcell",
       ]) {
         const placed = placeAnimated(await load(scene, name), name, {
           position: new Vector3(4, 0, 5),
