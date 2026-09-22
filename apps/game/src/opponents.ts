@@ -29,9 +29,8 @@ import {
 import type { InputFrame } from "@nightcell7/multiplayer-protocol";
 import { TDM_RULES, getWeapon, type WeaponId } from "@nightcell7/game-core";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
+import { difficultyInfo, DEFAULT_SANDBOX_DIFFICULTY, type SandboxDifficulty } from "./difficulty";
 import {
-  SANDBOX_ENEMY_TUNING,
-  SANDBOX_HUMAN_INCOMING_DAMAGE,
   SANDBOX_PICKUPS,
   SANDBOX_STARTING_STAMINA,
   WEAPON_WORLD_MODEL,
@@ -56,6 +55,8 @@ export interface OpponentOptions {
   readonly friendlies?: number;
   /** Dynamic character and weapon shadows in the game renderer. */
   readonly shadows?: ShadowGenerator;
+  /** How hard the yard hits back. Easy unless told otherwise. */
+  readonly difficulty?: SandboxDifficulty;
 }
 
 /** Speed above which the run cycle replaces the walk cycle, m/s. */
@@ -208,6 +209,8 @@ export class Opponents {
 
     this.grenadeModel = assets.models.get("m3_grenade") ?? null;
 
+    const difficulty = options.difficulty ?? difficultyInfo(DEFAULT_SANDBOX_DIFFICULTY);
+
     this.sim = new MatchSimulation({
       matchId: "sandbox",
       map: ARDAVAN_YARD,
@@ -220,7 +223,7 @@ export class Opponents {
         respawnDelayMs: RESPAWN_MS,
       },
       pickups: SANDBOX_PICKUPS,
-      humanIncomingDamage: SANDBOX_HUMAN_INCOMING_DAMAGE,
+      humanIncomingDamage: difficulty.incomingDamage,
     });
 
     // The player, so the bots have someone to fight.
@@ -279,7 +282,7 @@ export class Opponents {
         new BotController(
           id,
           1000 + i * 37,
-          entry.team === TEAM_IDS.DIRECTORATE ? SANDBOX_ENEMY_TUNING : undefined,
+          entry.team === TEAM_IDS.DIRECTORATE ? difficulty.enemyTuning : undefined,
         ),
       );
 

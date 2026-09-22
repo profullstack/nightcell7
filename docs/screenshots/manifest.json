@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-09-22T09:49:22.101Z",
+  "commit": "8f668c30d8b48d619b9c28e14955cd375b7fd1ce",
+  "tool": "tools/art/capture-gameplay.mjs",
+  "width": 1920,
+  "height": 1080,
+  "frames": [
+    {
+      "name": "deploy-gate",
+      "caption": "The deploy gate: pick a mode, read the controls, enter the yard.",
+      "file": "deploy-gate-ec5f760ad7.webp"
+    },
+    {
+      "name": "first-contact",
+      "caption": "First contact at the Nightcell spawn: the C9 Kestrel on a Directorate fighter.",
+      "file": "first-contact-88722b50e6.webp"
+    },
+    {
+      "name": "into-the-yard",
+      "caption": "Moving up the centre lane between the containers, squad ahead.",
+      "file": "into-the-yard-03072ec35f.webp"
+    },
+    {
+      "name": "under-fire",
+      "caption": "Holding the spawn exit: stamina, armour, magazine and reserve on the status bar, frag ready.",
+      "file": "under-fire-0741cc961c.webp"
+    }
+  ]
+}

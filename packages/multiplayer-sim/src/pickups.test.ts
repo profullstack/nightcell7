@@ -448,6 +448,32 @@ describe("weapon drops", () => {
     expect(weapons()).toBe(0);
   });
 
+  it("drops nothing for a kill the player had no part in", () => {
+    const sim = new MatchSimulation({
+      matchId: "t",
+      map: FLAT_MAP,
+      pickups: { healthSpawns: [], dropExpiresMs: 3_000 },
+    });
+    // Join order matters: balancing assigns teams, so the human goes first on
+    // team 1 and the shooter lands on team 0 opposite its victim.
+    sim.addPlayer({ id: "me", userId: "me", displayName: "Me", preferredTeam: 1 });
+    sim.addPlayer({ id: "b0", userId: "b0", displayName: "B0", isBot: true, preferredTeam: 0 });
+    sim.addPlayer({ id: "b1", userId: "b1", displayName: "B1", isBot: true, preferredTeam: 1 });
+    expect(sim.players.get("b0")!.team).not.toBe(sim.players.get("b1")!.team);
+    sim.startNow();
+    stepFor(sim, 1_600);
+    // Keep the human out of it.
+    sim.players.get("me")!.movement.position = { x: 0, y: 0, z: 80 };
+    const b1 = sim.players.get("b1")!;
+    b1.armor = 0;
+    for (let i = 0; i < 200 && b1.alive; i += 1) {
+      sim.applyWeaponIntent("b0", frame({ seq: i + 1, yaw: AIM_PLUS_X, buttons: BUTTON.FIRE }));
+      sim.step();
+    }
+    expect(b1.alive).toBe(false);
+    expect([...sim.pickups.values()].some((p) => p.kind === PICKUP_KIND.WEAPON)).toBe(false);
+  });
+
   it("bots take health but leave weapons alone", () => {
     const sim = sandbox();
     const bot = sim.players.get("bot")!;

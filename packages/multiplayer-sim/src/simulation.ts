@@ -981,7 +981,7 @@ export class MatchSimulation {
 
     this.recentDeaths.push({ position: { ...victim.movement.position }, atMs: this.elapsedMs });
 
-    this.dropWeapons(victim);
+    this.dropWeapons(victim, attacker);
 
     if (attacker && attacker.id !== victim.id) {
       if (attacker.team === victim.team) {
@@ -1160,15 +1160,20 @@ export class MatchSimulation {
 
   /**
    * What a dead fighter leaves on the ground: the weapon in their hands, with
-   * whatever rounds it had.
+   * whatever rounds it had — and only when a human made the kill.
    *
    * Only the one in hand. Dropping the whole kit read well on paper and
    * littered the yard in practice — seven bots dying every twenty seconds
-   * left forty weapons floating in the lanes.
+   * left forty weapons floating in the lanes. Dropping on every kill did
+   * the same at half the rate: bots kill each other constantly, and a
+   * player walking into a lane full of guns they never fought for read it
+   * as a bug. A drop is the reward for a kill, so it needs a killer who can
+   * collect it.
    */
-  private dropWeapons(victim: SimPlayer): void {
+  private dropWeapons(victim: SimPlayer, attacker: SimPlayer | null): void {
     const rules = this.pickupRules;
     if (!rules || !rules.dropWeapons) return;
+    if (!attacker || attacker.isBot || attacker.id === victim.id) return;
 
     const weaponId = victim.weapons[victim.weaponSlot];
     const ammo = victim.ammo[victim.weaponSlot];
