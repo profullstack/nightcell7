@@ -62,6 +62,11 @@ linux:
     entry:
       Categories: Game;ActionGame;
       Keywords: fps;shooter;nightcell;
+      # Without this the desktop environment cannot match the running window
+      # to this .desktop entry, so the taskbar falls back to a generic icon
+      # even though the entry names a good one. Electron sets WM_CLASS from
+      # the product name; this has to be the same string.
+      StartupWMClass: NIGHTCELL 7
 
 deb:
   packageName: nightcell7
