@@ -616,11 +616,15 @@ body {
   position: absolute;
   inset: 0;
   display: grid;
-  place-content: center;
+  place-content: start center;
   justify-items: center;
-  gap: 1.1rem;
+  gap: 0.9rem;
   text-align: center;
   padding: 2rem;
+  /* The gate grew an operator panel and an armory; on a short window it
+     has to scroll, which needs pointer events on the gate itself. */
+  overflow-y: auto;
+  pointer-events: auto;
   background:
     linear-gradient(
       100deg,
@@ -752,7 +756,179 @@ body {
   color: var(--hud-dim);
 }
 
+/* Compact groups on the operator panel: same controls, tighter. */
+.modes--compact {
+  margin-top: 0.2rem;
+  gap: 0.35rem;
+}
+
+.modes--compact .modes__legend {
+  margin-bottom: 0.3rem;
+}
+
+.modes--compact .modes__name {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.62rem;
+}
+
+.modes__option--disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.modes__option--disabled:hover .modes__name {
+  color: var(--hud-dim);
+  border-color: color-mix(in srgb, var(--bone-300) 28%, transparent);
+}
+
+/* Colour swatch: band over cloth, the way the figure wears them. */
+.swatch {
+  display: inline-block;
+  vertical-align: middle;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.35rem;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--band) 0 38%, var(--cloth) 38% 100%);
+  border: 1px solid color-mix(in srgb, var(--bone-300) 35%, transparent);
+}
+
+.operator {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+  width: min(44rem, 92vw);
+  pointer-events: auto;
+}
+
+.operator .modes {
+  justify-content: flex-start;
+}
+
+/* ------------------------------------------------------------------ armory */
+
+.armory {
+  display: grid;
+  gap: 0.5rem;
+  width: min(44rem, 92vw);
+  margin-top: 0.4rem;
+  padding: 0.8rem 0.9rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 18%, transparent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ink-950) 72%, transparent);
+  pointer-events: auto;
+  text-align: left;
+}
+
+.armory__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.armory__credits {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.1em;
+  color: var(--dust-gold);
+}
+
+.armory__rack {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.45rem;
+}
+
+.armory__item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 28%, transparent);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--bone-100);
+  font: inherit;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.armory__item b {
+  font-weight: 400;
+}
+
+.armory__item small {
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  color: var(--hud-dim);
+}
+
+.armory__price {
+  color: var(--dust-gold);
+}
+
+.armory__item:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--bone-300) 60%, transparent);
+}
+
+.armory__item:focus-visible {
+  outline: 2px solid var(--signal-cyan);
+  outline-offset: 3px;
+}
+
+.armory__item:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.armory__item--bought {
+  animation: armory-bought 600ms ease-out;
+}
+
+.armory__item--nothing {
+  animation: armory-nothing 400ms ease-out;
+}
+
+@keyframes armory-bought {
+  0% {
+    border-color: var(--dust-gold);
+    background: color-mix(in srgb, var(--dust-gold) 25%, transparent);
+  }
+}
+
+@keyframes armory-nothing {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(3px);
+  }
+}
+
+.armory__note {
+  margin: 0;
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  color: var(--hud-dim);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .armory__item,
+  .armory__item--bought,
+  .armory__item--nothing {
+    animation: none;
+    transition: none;
+  }
+
   .modes__name {
     transition: none;
   }

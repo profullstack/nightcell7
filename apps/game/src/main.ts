@@ -1,10 +1,21 @@
 import { FreeCamera, Scene, Vector3 } from "@babylonjs/core";
-import { ARDAVAN_YARD, mapChecksum, spawnsForTeam, TEAM_IDS } from "@nightcell7/multiplayer-sim";
+import { ARDAVAN_YARD, mapChecksum, spawnsForTeam } from "@nightcell7/multiplayer-sim";
 import { decideAccess, loadViewer, parseMode } from "./access";
 import { modeLabel, renderGate } from "./gate";
 import { createHud, renderFault } from "./hud";
 import { GAME_MODE, preferredMode, rememberMode } from "./modes";
 import { difficultyInfo, preferredDifficulty, rememberDifficulty } from "./difficulty";
+import {
+  CREDITS_PER_KILL,
+  CREDITS_PER_PACK,
+  armoryItem,
+  loadCredits,
+  preferredLoadout,
+  rememberLoadout,
+  saveCredits,
+  sideTeam,
+} from "./loadout";
+import { LoadoutPreview } from "./preview";
 import { TrainingTargets } from "./targets";
 import { requestedVantage } from "./photo";
 import { PlayerController } from "./player";
@@ -79,10 +90,12 @@ async function boot(): Promise<void> {
 
   const scene = new Scene(engine);
 
-  // Enter at a real Nightcell spawn rather than an arbitrary camera position,
-  // so the yard is entered the way a match would be.
-  const spawn = spawnsForTeam(ARDAVAN_YARD, TEAM_IDS.NIGHTCELL)[0];
-  if (!spawn) throw new Error("map has no Nightcell spawn");
+  // Enter at a real spawn of the chosen side rather than an arbitrary camera
+  // position, so the yard is entered the way a match would be.
+  const loadout = preferredLoadout(window.location.search, safeStorage());
+  const team = sideTeam(loadout.side);
+  const spawn = spawnsForTeam(ARDAVAN_YARD, team)[0];
+  if (!spawn) throw new Error("map has no spawn for the chosen side");
 
   const camera = new FreeCamera("camera", new Vector3(0, 1.65, 40), scene);
   camera.minZ = 0.05;
@@ -158,7 +171,16 @@ async function boot(): Promise<void> {
     ...roster,
     shadows: world.shadows,
     difficulty: difficultyInfo(difficulty),
+    team,
+    armorClass: loadout.armor,
   });
+
+  // The operator on the gate, in the chosen colours, idling in the yard.
+  const preview = new LoadoutPreview(scene, camera, world.assets);
+  preview.show(loadout);
+  let currentLoadout = loadout;
+
+  let credits = loadCredits(safeStorage());
 
   // Mode and difficulty are both set at boot: the yard is dressed and the
   // bots are tuned once, so changing either reloads with both in the URL.
@@ -195,11 +217,38 @@ async function boot(): Promise<void> {
       rememberDifficulty(next, safeStorage());
       if (next !== difficulty) reloadWith({ difficulty: next });
     },
+    loadout,
+    onLoadoutChange: (next) => {
+      rememberLoadout(next, safeStorage());
+      // A side is a roster: bots, teams and spawns are built at boot, so a
+      // new side is a reload. Armour and colour apply where the player stands.
+      if (next.side !== currentLoadout.side) {
+        reloadWith({});
+        return;
+      }
+      currentLoadout = next;
+      opponents.setArmorClass(next.armor);
+      preview.show(next);
+    },
+    credits,
+    onBuy: (id) => {
+      const item = armoryItem(id);
+      if (!item || credits < item.price) return false;
+      if (!opponents.grant(item)) return false;
+      credits -= item.price;
+      saveCredits(credits, safeStorage());
+      hud.setCredits(credits);
+      hud.notify(`${item.name} · −${item.price} cr`);
+      return true;
+    },
     onStart: () => player.requestLock(),
   });
 
   player.onLockChanged = (locked) => {
     hud.setLocked(locked);
+    // The figure stands in the yard only while the gate is up.
+    if (locked) preview.hide();
+    else preview.show(currentLoadout);
     if (!locked) return;
     // Browsers only allow audio to start from a user gesture, and taking
     // pointer lock is one. Without this every sound is silently discarded.
@@ -219,6 +268,13 @@ async function boot(): Promise<void> {
 
   const dynamicResolution = new DynamicResolution(engine);
   let lastDryFireAt = 0;
+  let lastKills = 0;
+  const earn = (amount: number, why: string) => {
+    credits += amount;
+    saveCredits(credits, safeStorage());
+    hud.setCredits(credits);
+    hud.notify(`+${amount} cr · ${why}`);
+  };
 
   engine.runRenderLoop(() => {
     const deltaMs = engine.getDeltaTime();
@@ -226,6 +282,7 @@ async function boot(): Promise<void> {
     // Movement only advances while the pointer is locked; otherwise the start
     // gate is up and the yard should sit still behind it.
     if (player.isLocked) player.update(deltaMs);
+    else preview.update(deltaMs);
     const status = player.status();
     viewmodel.update(deltaMs, status.speed, camera.rotation.y, camera.rotation.x);
 
@@ -361,6 +418,14 @@ async function boot(): Promise<void> {
       hud.notify(notice);
       audio.pickup();
     }
+
+    // Credits: kills and packs pay.
+    if (local.kills > lastKills) {
+      earn((local.kills - lastKills) * CREDITS_PER_KILL, "kill");
+      lastKills = local.kills;
+    }
+    const packs = opponents.drainPacksTaken();
+    if (packs > 0) earn(packs * CREDITS_PER_PACK, "health pack");
 
     hud.update(status, engine.getFps(), local);
     scene.render();
