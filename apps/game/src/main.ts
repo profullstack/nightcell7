@@ -313,9 +313,22 @@ async function boot(): Promise<void> {
     }
 
     // Taking damage, dying, coming back.
-    const damage = opponents.drainDamage();
-    if (damage > 0) {
-      hud.flashDamage(damage);
+    const hits = opponents.drainHits();
+    if (hits.length > 0) {
+      let total = 0;
+      for (const hit of hits) {
+        total += hit.damage;
+        // Where it came from, relative to the way the player is looking:
+        // degrees clockwise from straight ahead, for the HUD arc.
+        const bearing = hit.from
+          ? ((Math.atan2(hit.from.x - status.position.x, hit.from.z - status.position.z) -
+              camera.rotation.y) *
+              180) /
+            Math.PI
+          : null;
+        hud.showHit(hit.damage, bearing);
+      }
+      player.stagger(total);
       audio.hurt();
     }
     if (opponents.drainLocalDeath()) player.setDead(true);

@@ -211,7 +211,11 @@ describe("public combat demo with shipped operator models", () => {
       let respawn: { position: { x: number; y: number; z: number } } | null = null;
       for (let n = 0; n < 1800 && !respawn; n++) {
         f.opponents.update(TICK_MS, { x: 0, y: 0, z: 14 }, Math.PI);
-        damage += f.opponents.drainDamage();
+        for (const hit of f.opponents.drainHits()) {
+          damage += hit.damage;
+          // A bot's round says where it came from.
+          expect(hit.from).not.toBeNull();
+        }
         died = died || f.opponents.drainLocalDeath();
         respawn = f.opponents.drainLocalRespawn();
         if (!died) expect(f.opponents.localStatus().alive).toBe(me.alive);

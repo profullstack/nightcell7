@@ -357,6 +357,114 @@ body {
   );
 }
 
+/* Health readout after a hit: red, glowing, and named. */
+.status__health--hit {
+  color: var(--signal-red);
+  text-shadow:
+    0 0 10px color-mix(in srgb, var(--signal-red) 90%, transparent),
+    0 0 26px color-mix(in srgb, var(--signal-red) 55%, transparent);
+  animation: status-hit 320ms ease-out infinite alternate;
+}
+
+@keyframes status-hit {
+  to {
+    opacity: 0.55;
+  }
+}
+
+.status__group--hit .status__fill {
+  background: var(--signal-red);
+  box-shadow: 0 0 8px var(--signal-red);
+}
+
+.status__alert {
+  margin: 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.34em;
+  color: var(--signal-red);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--signal-red) 80%, transparent);
+  animation: status-hit 320ms ease-out infinite alternate;
+}
+
+/* Blood on the lens. Irregular dark-red marks that dry and fade. */
+.spatter {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.spatter__mark {
+  position: absolute;
+  display: block;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, #6e0d12 92%, transparent) 0%,
+    color-mix(in srgb, #8a1219 80%, transparent) 35%,
+    color-mix(in srgb, #5a0a0e 55%, transparent) 65%,
+    transparent 100%
+  );
+  filter: blur(1.5px);
+  opacity: 0;
+  animation: spatter-fade 1900ms ease-out forwards;
+}
+
+@keyframes spatter-fade {
+  0% {
+    opacity: 0;
+    scale: 0.6;
+  }
+  8% {
+    opacity: 0.85;
+    scale: 1;
+  }
+  55% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.06;
+  }
+}
+
+/* Where the round came from: a red arc on a ring around the crosshair,
+   rotated so it sits on the shooter's side. 0 is straight ahead. */
+.hitdirs {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.hitdir {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--signal-red);
+  box-shadow: 0 -4px 12px -6px var(--signal-red);
+  opacity: 0;
+  animation: hitdir-fade 1300ms ease-out forwards;
+}
+
+@keyframes hitdir-fade {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 .kia {
   position: absolute;
   left: 50%;
@@ -395,8 +503,24 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .status__health--critical {
+  .status__health--critical,
+  .status__health--hit,
+  .status__alert {
     animation: none;
+  }
+
+  /* Still shown, still fades; only the pop and drift go. */
+  .spatter__mark {
+    animation: spatter-fade-still 1900ms ease-out forwards;
+  }
+
+  @keyframes spatter-fade-still {
+    0% {
+      opacity: 0.8;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   .status__fill,

@@ -24,8 +24,12 @@ export interface HudOptions {
 export interface Hud {
   /** Cheap enough to call every frame; writes only what actually changed. */
   update(status: ControllerStatus, fps: number, local: LocalStatus): void;
-  /** Incoming damage: a red pulse at the screen edge, sized to the hit. */
-  flashDamage(amount: number): void;
+  /**
+   * Incoming damage. Blood at the screen edge sized to the hit, an arc
+   * toward where it came from (`bearing` in degrees clockwise from straight
+   * ahead, null when unknown), and the health readout glowing red.
+   */
+  showHit(amount: number, bearing: number | null): void;
   /** A one-line notice above the status bar — a pickup, mostly. Fades on its own. */
   notify(text: string): void;
   setLocked(locked: boolean): void;
@@ -51,6 +55,14 @@ const CRITICAL_FRACTION = 0.3;
 /** How long a notice stays before fading, and how long the fade takes. */
 const NOTICE_HOLD_MS = 2200;
 const NOTICE_FADE_MS = 500;
+
+/** How long the health readout glows and the alert shows after a hit. */
+const HIT_GLOW_MS = 1400;
+/** Lifetimes of the blood and the direction arc; matched by the CSS animations. */
+const SPATTER_MS = 1900;
+const HITDIR_MS = 1300;
+/** Most spatter marks on screen at once, so a burst does not paint it over. */
+const MAX_SPATTER = 10;
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -120,6 +132,10 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   // Stamina is the bar's full width; the number is what is left of it.
   const armorValue = el("p", "hud__sub status__armor", "STAMINA 100 · ARMOR 50");
   vitals.append(armorValue);
+  // Shown for a moment after every hit, so the number is not the only tell.
+  const alert = el("p", "status__alert", "TAKING FIRE");
+  alert.hidden = true;
+  vitals.append(alert);
   bc.append(vitals);
 
   const weapon = el("div", "status__group status__group--weapon");
@@ -148,6 +164,12 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   // Notices stack just above the status bar.
   const notices = el("div", "notices");
   hud.append(notices);
+
+  // Blood and hit-direction arcs are created per hit and remove themselves.
+  const spatter = el("div", "spatter");
+  hud.append(spatter);
+  const hitdirs = el("div", "hitdirs");
+  hud.append(hitdirs);
 
   // Down. Shown over the yard until the simulation redeploys the player.
   const kia = el("div", "kia");
@@ -264,6 +286,8 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
 
   // Damage pulse: driven up by hits, bled off every frame.
   let hurtLevel = 0;
+  let hitGlowUntil = 0;
+  let lastGlow = false;
   let lastHurtWritten = -1;
   let lastTickAt = performance.now();
 
@@ -366,6 +390,13 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
 
       // ---- damage pulse
       if (hurtLevel > 0) hurtLevel = Math.max(0, hurtLevel - elapsed / 650);
+      const glowing = now < hitGlowUntil;
+      if (glowing !== lastGlow) {
+        healthValue.classList.toggle("status__health--hit", glowing);
+        vitals.classList.toggle("status__group--hit", glowing);
+        alert.hidden = !glowing;
+        lastGlow = glowing;
+      }
       const written = Math.round(Math.min(1, hurtLevel) * 100);
       if (written !== lastHurtWritten) {
         hurt.style.opacity = String(written / 100);
@@ -413,10 +444,52 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
       }
     },
 
-    flashDamage(amount: number): void {
+    showHit(amount: number, bearing: number | null): void {
       // A graze is a flicker; a shotgun blast is the whole edge. Capped so a
       // burst cannot stack into a screen that stays red for seconds.
-      hurtLevel = Math.min(1.4, hurtLevel + 0.35 + amount / 60);
+      hurtLevel = Math.min(1.4, hurtLevel + 0.45 + amount / 40);
+      hitGlowUntil = performance.now() + HIT_GLOW_MS;
+
+      // Blood. Two or three marks per hit, thrown toward the edge the round
+      // came from when that is known, anywhere on the rim when it is not.
+      const marks = 2 + (amount > 6 ? 1 : 0);
+      for (let i = 0; i < marks; i += 1) {
+        while (spatter.childElementCount >= MAX_SPATTER) spatter.firstElementChild?.remove();
+        const mark = el("i", "spatter__mark");
+        const angle = bearing === null ? Math.random() * 360 : bearing + (Math.random() - 0.5) * 80;
+        const rad = (angle * Math.PI) / 180;
+        // Radius in viewport units from centre; keep marks out of the middle
+        // where the target is.
+        const radius = 30 + Math.random() * 18;
+        const x = 50 + Math.sin(rad) * radius;
+        const y = 50 - Math.cos(rad) * radius * 0.75;
+        const size = 90 + Math.random() * 120 * Math.min(1, amount / 8 + 0.5);
+        mark.style.left = `${x}%`;
+        mark.style.top = `${y}%`;
+        mark.style.width = `${size}px`;
+        mark.style.height = `${size * (0.7 + Math.random() * 0.6)}px`;
+        mark.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 360}deg)`;
+        mark.style.borderRadius = `${40 + Math.random() * 30}% ${50 + Math.random() * 30}% ${35 + Math.random() * 40}% ${55 + Math.random() * 25}%`;
+        spatter.append(mark);
+        const timer = window.setTimeout(() => {
+          mark.remove();
+          noticeTimers.delete(timer);
+        }, SPATTER_MS);
+        noticeTimers.add(timer);
+      }
+
+      // Which way. An arc on the crosshair ring, pointing at the shooter.
+      if (bearing !== null) {
+        while (hitdirs.childElementCount >= 6) hitdirs.firstElementChild?.remove();
+        const arc = el("i", "hitdir");
+        arc.style.transform = `translate(-50%, -50%) rotate(${bearing}deg)`;
+        hitdirs.append(arc);
+        const timer = window.setTimeout(() => {
+          arc.remove();
+          noticeTimers.delete(timer);
+        }, HITDIR_MS);
+        noticeTimers.add(timer);
+      }
     },
 
     notify(text: string): void {

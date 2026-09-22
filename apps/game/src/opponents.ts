@@ -103,6 +103,13 @@ export interface BotShot {
   readonly to: Vec3 | null;
 }
 
+/** A round that hit the local player, and where it came from. */
+export interface LocalHit {
+  readonly damage: number;
+  /** The attacker's feet at the moment of the hit; null for a fall or unknown. */
+  readonly from: Vec3 | null;
+}
+
 /** A round the local player fired, as the simulation resolved it. */
 export interface LocalShot {
   readonly origin: Vec3;
@@ -181,7 +188,7 @@ export class Opponents {
   private readonly pickupViews = new Map<string, PickupView>();
   private readonly explosions: Explosion[] = [];
   private readonly notices: string[] = [];
-  private damageTaken = 0;
+  private readonly hits: LocalHit[] = [];
   private localDied = false;
   private localRespawn: { position: Vec3; yaw: number } | null = null;
   private reloadStarted = false;
@@ -444,11 +451,9 @@ export class Opponents {
     return this.localShots.splice(0, this.localShots.length);
   }
 
-  /** Damage the local player took since the last call. */
-  drainDamage(): number {
-    const taken = this.damageTaken;
-    this.damageTaken = 0;
-    return taken;
+  /** Every hit the local player took since the last call, with its source. */
+  drainHits(): LocalHit[] {
+    return this.hits.splice(0, this.hits.length);
   }
 
   /** True once, when the local player has just been killed. */
@@ -674,7 +679,13 @@ export class Opponents {
         }
 
         case "hit":
-          if (event.victimId === LOCAL_ID) this.damageTaken += event.damage;
+          if (event.victimId === LOCAL_ID) {
+            const attacker = this.sim.players.get(event.attackerId);
+            this.hits.push({
+              damage: event.damage,
+              from: attacker && attacker.id !== LOCAL_ID ? { ...attacker.movement.position } : null,
+            });
+          }
           break;
 
         case "kill": {

@@ -37,6 +37,20 @@ const PITCH_LIMIT = (89 * Math.PI) / 180;
  */
 const KEY_TURN_RATE = 2.4;
 
+/**
+ * Stagger: what a hit does to the player's body.
+ *
+ * Movement drops to a shuffle for `STAGGER_MS`, and the view takes a jolt
+ * that bleeds off over a few frames. The jolt is presentation only — it is
+ * added on top of the aim when the camera is written, never into the yaw
+ * and pitch the simulation is told — so a hit cannot move where the next
+ * round goes, only how the moment feels.
+ */
+const STAGGER_MS = 1100;
+const STAGGER_MOVE_SCALE = 0.55;
+/** Fraction of the jolt left after one 60 Hz frame. */
+const KICK_DECAY = 0.86;
+
 export interface ControllerOptions {
   /** Radians of view rotation per pixel of mouse travel. */
   sensitivity?: number;
@@ -80,6 +94,11 @@ export class PlayerController {
   /** Absolute slot from a number key, or a wheel step; null when nothing asked. */
   private weaponRequested: { slot: number } | { step: number } | null = null;
   private lastFrame: InputFrame | null = null;
+  private staggerUntil = 0;
+  private kickPitch = 0;
+  private kickYaw = 0;
+  private kickRoll = 0;
+  private readonly reducedMotion: boolean;
   private readonly sensitivity: number;
   private readonly invertY: boolean;
   private readonly spawn: Vec3;
@@ -98,6 +117,10 @@ export class PlayerController {
     this.state = createMovementState(this.spawn, this.yaw);
     this.sensitivity = options.sensitivity ?? 0.0022;
     this.invertY = options.invertY ?? false;
+    // A view jolt is motion the player did not ask for; honour the setting.
+    this.reducedMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     this.attach();
     this.syncCamera();
@@ -238,10 +261,33 @@ export class PlayerController {
     }
   }
 
+  /**
+   * Take a hit. Slows movement for a moment and jolts the view, scaled by
+   * how hard the hit was; see STAGGER_MS.
+   */
+  stagger(damage: number): void {
+    this.staggerUntil = performance.now() + STAGGER_MS;
+    if (this.reducedMotion) return;
+    const strength = Math.min(1, 0.5 + damage / 12);
+    // Up and a little sideways, the way a body flinches, never the same twice.
+    this.kickPitch -= 0.03 * strength;
+    this.kickYaw += (Math.random() - 0.5) * 0.06 * strength;
+    this.kickRoll += (Math.random() - 0.5) * 0.05 * strength;
+  }
+
+  /** True while a recent hit is still slowing the player. */
+  get isStaggered(): boolean {
+    return performance.now() < this.staggerUntil;
+  }
+
   /** Put the player somewhere else, standing still. Used on respawn. */
   teleport(position: Vec3, yaw: number): void {
     this.yaw = yaw;
     this.pitch = 0;
+    this.staggerUntil = 0;
+    this.kickPitch = 0;
+    this.kickYaw = 0;
+    this.kickRoll = 0;
     this.state = createMovementState({ ...position }, yaw);
     this.syncCamera();
   }
@@ -259,11 +305,18 @@ export class PlayerController {
     const turn = this.axis("ArrowRight", "ArrowLeft");
     if (turn !== 0) this.yaw += turn * KEY_TURN_RATE * (dtMs / 1000);
 
+    // Bleed the hit jolt off, frame-rate independent.
+    const decay = Math.pow(KICK_DECAY, dtMs / 16.667);
+    this.kickPitch *= decay;
+    this.kickYaw *= decay;
+    this.kickRoll *= decay;
+    const pace = this.isStaggered ? STAGGER_MOVE_SCALE : 1;
+
     const input: InputFrame = {
       seq: (this.seq += 1),
       dtMs,
-      moveX: this.dead ? 0 : this.axis("KeyD", "KeyA"),
-      moveZ: this.dead ? 0 : this.axis("KeyW", "KeyS"),
+      moveX: this.dead ? 0 : this.axis("KeyD", "KeyA") * pace,
+      moveZ: this.dead ? 0 : this.axis("KeyW", "KeyS") * pace,
       yaw: this.yaw,
       pitch: this.pitch,
       buttons: this.dead ? 0 : this.buttons(),
@@ -308,8 +361,9 @@ export class PlayerController {
     );
 
     // Babylon's FreeCamera yaw is measured from +Z, matching the simulation's
-    // convention, so the angles can be handed straight over.
-    this.camera.rotation.set(this.pitch, this.yaw, 0);
+    // convention, so the angles can be handed straight over. The hit jolt
+    // rides on top and is never fed back into the aim.
+    this.camera.rotation.set(this.pitch + this.kickPitch, this.yaw + this.kickYaw, this.kickRoll);
     void this.scene;
   }
 
