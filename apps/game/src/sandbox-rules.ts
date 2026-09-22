@@ -1,5 +1,10 @@
-import { DIFFICULTY, WEAPON, getDifficulty, type WeaponId } from "@nightcell7/game-core";
-import type { PickupRules, Vec3 } from "@nightcell7/multiplayer-sim";
+import { WEAPON, getWeapon, type WeaponId } from "@nightcell7/game-core";
+import {
+  DEFAULT_BOT_TUNING,
+  type BotTuning,
+  type PickupRules,
+  type Vec3,
+} from "@nightcell7/multiplayer-sim";
 import type { ModelName } from "./assets";
 
 /**
@@ -38,15 +43,36 @@ export const SANDBOX_STAMINA_PER_PACK = 25;
 export const SANDBOX_STAMINA_CAP = 300;
 
 /**
- * Damage the player takes, as a fraction of what a bot would.
+ * Health a rifle round costs the player, before armour.
  *
- * The Field Agent difficulty's number, not a new one: four rifles at full
- * damage empty a player in about a second, which reads as unfair rather than
- * hard in a demo with no cover discipline taught yet.
+ * The demo is for exploring the yard, not for being good at it yet. Four
+ * bots landing full-damage rounds emptied a player in about a second; at
+ * the Field Agent multiplier, in ten. This is the number the player asked
+ * for: a hit stings, a fight is survivable, and a few minutes in the open
+ * is possible. Bots take full damage from each other and from the player.
  */
-export const SANDBOX_HUMAN_INCOMING_DAMAGE = getDifficulty(
-  DIFFICULTY.FIELD_AGENT,
-).incomingDamageMultiplier;
+export const SANDBOX_HEALTH_PER_RIFLE_ROUND = 4;
+
+/** Damage the player takes, as a fraction of what a bot would. */
+export const SANDBOX_HUMAN_INCOMING_DAMAGE =
+  SANDBOX_HEALTH_PER_RIFLE_ROUND / getWeapon(WEAPON.C9_KESTREL).damage;
+
+/**
+ * How the Directorate bots fight the player.
+ *
+ * Match bots hold the trigger down with a 3.4° aim error, which is the
+ * right opponent for a match and the wrong one for a first visit. Sandbox
+ * enemies fire in short bursts with a pause between, take longer to react,
+ * and wobble more; friendlies keep the match tuning so they still win their
+ * fights and the yard stays alive around the player.
+ */
+export const SANDBOX_ENEMY_TUNING: BotTuning = {
+  ...DEFAULT_BOT_TUNING,
+  aimError: 0.14,
+  reactionMs: 900,
+  burstMs: 300,
+  burstPauseMs: 1_700,
+};
 
 export const SANDBOX_PICKUPS: Partial<PickupRules> = {
   healthSpawns: SANDBOX_HEALTH_SPAWNS,

@@ -39,6 +39,13 @@ export interface BotTuning {
   grenadeMaxRangeM: number;
   /** Probability per second of throwing while a target sits in that band. */
   grenadeChancePerSecond: number;
+  /**
+   * Trigger discipline. The bot holds the trigger for `burstMs`, then lets go
+   * for `burstPauseMs`, for as long as a target is in sight. A pause of zero
+   * is continuous fire, which is what a match bot does.
+   */
+  burstMs: number;
+  burstPauseMs: number;
 }
 
 export const DEFAULT_BOT_TUNING: BotTuning = {
@@ -50,6 +57,8 @@ export const DEFAULT_BOT_TUNING: BotTuning = {
   grenadeMinRangeM: 11,
   grenadeMaxRangeM: 30,
   grenadeChancePerSecond: 0.22,
+  burstMs: 0,
+  burstPauseMs: 0,
 };
 
 /** Small deterministic PRNG so a bot match can be replayed exactly. */
@@ -143,10 +152,17 @@ export class BotController {
 
       const acquiredFor = sim.elapsedMs - this.targetAcquiredAtMs;
       const aimed = Math.abs(angleDelta(yaw, desiredYaw)) < 0.09;
+      // Burst discipline, phased from the moment the target was acquired so
+      // two bots seeded alike do not fire in lockstep.
+      const cycle = this.tuning.burstMs + this.tuning.burstPauseMs;
+      const inBurst =
+        this.tuning.burstPauseMs <= 0 ||
+        ((acquiredFor % cycle) + cycle) % cycle < this.tuning.burstMs;
       if (
         visible &&
         acquiredFor >= this.tuning.reactionMs &&
         aimed &&
+        inBurst &&
         range <= this.tuning.engageRangeM
       ) {
         buttons |= BUTTON.FIRE;
