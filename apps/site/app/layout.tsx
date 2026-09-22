@@ -42,8 +42,16 @@ export const metadata: Metadata = {
   description:
     "Two operatives. Two countries. One manufactured war. Play both sides before the truth disappears.",
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icon-512.png", sizes: "512x512" }],
+    // favicon.svg first: a browser that understands SVG gets the mark at any
+    // size, and the .ico is the fallback for the ones that do not. Both are
+    // generated — the SVG by `tools/art/brand.mjs`, the rasters by `fav`.
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
+    ],
+    shortcut: [{ url: "/favicon.ico" }],
+    apple: [{ url: "/icons/apple-touch-icon-180x180.png", sizes: "180x180" }],
   },
   openGraph: {
     title: "NIGHTCELL 7: FALSE DAWN",

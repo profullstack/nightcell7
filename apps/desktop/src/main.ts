@@ -23,6 +23,24 @@ const ALLOWED_ORIGINS = new Set([
   ...(isDevelopment ? ["http://localhost:8080", "http://localhost:5173"] : []),
 ]);
 
+/**
+ * The window icon, which is what the taskbar shows.
+ *
+ * `electron-builder.yml` also points at an icon, and that one is not this one:
+ * it dresses the *packaged* artifact (the .desktop entry, the .app bundle, the
+ * installer). On Linux the running window takes its taskbar icon from the
+ * `BrowserWindow` itself, and this was not set, so the app ran with no icon at
+ * all. On Windows the packaged exe carries it but an unpackaged run does not.
+ *
+ * Resolved for both layouts: unpackaged, `__dirname` is `apps/desktop/dist`
+ * and resources sit beside it; packaged, they are unpacked next to the asar.
+ */
+function windowIcon(): string {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, "resources", "icon.png")
+    : path.join(__dirname, "..", "resources", "icon.png");
+}
+
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1600,
@@ -31,6 +49,7 @@ function createWindow(): BrowserWindow {
     minHeight: 576,
     backgroundColor: "#07090c",
     title: "NIGHTCELL 7",
+    icon: windowIcon(),
     show: false,
     webPreferences: {
       contextIsolation: true,
