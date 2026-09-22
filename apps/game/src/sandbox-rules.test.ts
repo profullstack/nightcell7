@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { MAX_HEALTH, WEAPON, getWeapon, isMultiplayerLegal } from "@nightcell7/game-core";
 import { ARDAVAN_YARD, isClearOfSolids } from "@nightcell7/multiplayer-sim";
 import {
+  SANDBOX_ENEMY_TUNING,
+  SANDBOX_HEALTH_PER_RIFLE_ROUND,
   SANDBOX_HEALTH_SPAWNS,
   SANDBOX_HUMAN_INCOMING_DAMAGE,
   SANDBOX_PICKUPS,
@@ -48,9 +50,19 @@ describe("sandbox stamina", () => {
     expect(SANDBOX_PICKUPS.staminaCap).toBe(SANDBOX_STAMINA_CAP);
   });
 
-  it("softens incoming damage without switching it off", () => {
+  it("costs the player about four health per rifle round, and never zero", () => {
     expect(SANDBOX_HUMAN_INCOMING_DAMAGE).toBeGreaterThan(0);
     expect(SANDBOX_HUMAN_INCOMING_DAMAGE).toBeLessThan(1);
+    expect(getWeapon(WEAPON.C9_KESTREL).damage * SANDBOX_HUMAN_INCOMING_DAMAGE).toBeCloseTo(
+      SANDBOX_HEALTH_PER_RIFLE_ROUND,
+      5,
+    );
+  });
+
+  it("makes enemies fire in bursts with a real pause, and worse aim than a match bot", () => {
+    expect(SANDBOX_ENEMY_TUNING.burstMs).toBeGreaterThan(0);
+    expect(SANDBOX_ENEMY_TUNING.burstPauseMs).toBeGreaterThan(SANDBOX_ENEMY_TUNING.burstMs);
+    expect(SANDBOX_ENEMY_TUNING.aimError).toBeGreaterThan(0.06);
   });
 });
 

@@ -199,10 +199,17 @@ describe("public combat demo with shipped operator models", () => {
       // Stand in front of an armed enemy with no cover.
       const enemy = f.inspect.sim.players.get("bot-e0")!;
       enemy.movement.position = { x: 0, y: 0, z: 9 };
+      // Already nearly down: the sandbox is tuned so a healthy player lasts
+      // minutes, and this test is about the death and redeploy path, not
+      // about how long that takes.
+      me.health = 1;
+      me.armor = 0;
+      // Hold regeneration off, or the next 4.5 s lifts them back to 40.
+      me.lastDamagedAtMs = Number.MAX_SAFE_INTEGER;
       let damage = 0;
       let died = false;
       let respawn: { position: { x: number; y: number; z: number } } | null = null;
-      for (let n = 0; n < 900 && !respawn; n++) {
+      for (let n = 0; n < 1800 && !respawn; n++) {
         f.opponents.update(TICK_MS, { x: 0, y: 0, z: 14 }, Math.PI);
         damage += f.opponents.drainDamage();
         died = died || f.opponents.drainLocalDeath();

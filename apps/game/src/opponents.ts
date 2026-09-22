@@ -30,6 +30,7 @@ import type { InputFrame } from "@nightcell7/multiplayer-protocol";
 import { TDM_RULES, getWeapon, type WeaponId } from "@nightcell7/game-core";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
 import {
+  SANDBOX_ENEMY_TUNING,
   SANDBOX_HUMAN_INCOMING_DAMAGE,
   SANDBOX_PICKUPS,
   SANDBOX_STARTING_STAMINA,
@@ -267,7 +268,13 @@ export class Opponents {
       });
       // Seeded per bot so a session is reproducible and they do not all make
       // the same decision on the same tick.
-      this.controllers.push(new BotController(id, 1000 + i * 37));
+      this.controllers.push(
+        new BotController(
+          id,
+          1000 + i * 37,
+          entry.team === TEAM_IDS.DIRECTORATE ? SANDBOX_ENEMY_TUNING : undefined,
+        ),
+      );
 
       // Initial spawn scoring ties before the first tick. Spread the roster
       // across its real faction pads rather than stacking every mesh together.
