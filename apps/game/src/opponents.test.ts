@@ -7,6 +7,7 @@ import {
   NullEngine,
   Scene,
   Vector3,
+  type Color3,
   type AnimationGroup,
   type TransformNode,
 } from "@babylonjs/core";
@@ -15,6 +16,7 @@ import { BUTTON } from "@nightcell7/multiplayer-protocol";
 import { type MatchSimulation, PICKUP_KIND, TEAM_IDS, TICK_MS } from "@nightcell7/multiplayer-sim";
 import { ARDAVAN_YARD, spawnsForTeam } from "@nightcell7/multiplayer-sim";
 import { Opponents } from "./opponents";
+import { materialRole } from "./targets";
 import { type AssetSet } from "./assets";
 
 interface Inspection {
@@ -266,6 +268,71 @@ describe("public combat demo with shipped operator models", () => {
       // Averaged over the run: at any one instant the count swings between one
       // and seven as fighters die and redeploy, which is the demo working.
       expect(aliveSum / 1800).toBeGreaterThan(2);
+    } finally {
+      f.dispose();
+    }
+  });
+});
+
+/**
+ * The colour bug: every fighter in the yard rendered the same blue.
+ *
+ * These run the real path — real GLBs, real `brightenCharacter` — and read the
+ * albedo that actually ends up on the meshes, because the unit tests around
+ * `materialRole` prove the classifier and not the wiring. Both are needed: the
+ * classifier was the defect, but the call site had a second one (it keyed the
+ * palette on an absolute faction instead of the player's own side).
+ */
+describe("the two sides are visibly different in the yard", () => {
+  const bandsOf = (inspect: Inspection, prefix: string) => {
+    const out = new Set<string>();
+    for (const [id, view] of inspect.views) {
+      if (!id.startsWith(prefix)) continue;
+      for (const mesh of view.root.getChildMeshes()) {
+        const material = mesh.material as { name?: string; albedoColor?: Color3 } | null;
+        if (!material?.albedoColor || !material.name) continue;
+        // Only the materials `brightenCharacter` cloned. Everything else under
+        // the root is the weapon, which is attached afterwards and is the same
+        // on both sides: the rifle's own `nc7_marking` stencil is tan for
+        // everyone, and counting it made both sets look identical.
+        if (!material.name.startsWith("target_")) continue;
+        if (materialRole(material.name.replace(/^(target_)+/, "")) !== "band") continue;
+        out.add(material.albedoColor.toHexString());
+      }
+    }
+    return out;
+  };
+
+  it("gives friendlies and enemies different band colours", async () => {
+    const f = await fixture();
+    try {
+      const friendly = bandsOf(f.inspect, "bot-f");
+      const enemy = bandsOf(f.inspect, "bot-e");
+
+      // The classifier must have matched something, or this proves nothing.
+      expect(friendly.size, "no band material was coloured on friendlies").toBeGreaterThan(0);
+      expect(enemy.size, "no band material was coloured on enemies").toBeGreaterThan(0);
+
+      // The actual regression: both sets used to be identical.
+      for (const hex of friendly) {
+        expect(enemy.has(hex), `both sides wear ${hex}`).toBe(false);
+      }
+    } finally {
+      f.dispose();
+    }
+  });
+
+  it("repaints both sides when the gate changes colour", async () => {
+    const f = await fixture();
+    try {
+      const before = bandsOf(f.inspect, "bot-f");
+      f.opponents.setColor("ember");
+      const after = bandsOf(f.inspect, "bot-f");
+      expect([...after].sort()).not.toEqual([...before].sort());
+      // And the sides are still telling each other apart afterwards.
+      for (const hex of after) {
+        expect(bandsOf(f.inspect, "bot-e").has(hex)).toBe(false);
+      }
     } finally {
       f.dispose();
     }

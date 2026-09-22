@@ -10,6 +10,7 @@ import {
 } from "@babylonjs/core";
 import { rayAabb, type Aabb, type Vec3 } from "@nightcell7/multiplayer-sim";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
+import { colorInfo } from "./loadout";
 
 /**
  * Training targets.
@@ -100,6 +101,113 @@ export const TEAM_PALETTE: { readonly friendly: TeamPalette; readonly enemy: Tea
   enemy: { band: new Color3(1.0, 0.28, 0.12), cloth: new Color3(0.72, 0.6, 0.44) },
 };
 
+/**
+ * Which materials carry a team colour, and which are left as authored.
+ *
+ * This used to be an exclusion list: "team" meant a name containing `paint` or
+ * `nc7_team`, and "cloth" meant a name that did *not* start with `nc7_` or
+ * `ir_`. The shipped operators are `m3_operator_nightcell` and
+ * `m3_operator_directorate`, and every material on both is `ir_`-prefixed
+ * (`ir_uniform`, `ir_canvas`, `ir_blue`, `ir_steel`, `ir_rubber`, `ir_glass`).
+ * So the first test never matched and the second excluded everything: neither
+ * branch ever ran, no team colour was ever applied, and since both models share
+ * `ir_blue` every fighter in the yard came out the same blue. The call site
+ * even says "without this both teams are the same model with the same
+ * materials" — it was right, the matching just never fired.
+ *
+ * Naming the roles instead of excluding prefixes is what stops that happening
+ * again: a new material is uncoloured until it is listed, which is a visible
+ * omission, rather than silently disabling the whole system.
+ */
+const BAND_MATERIALS = /(^|_)(paint|team|marking|mark|blue|orange)($|_|\.|\d)/i;
+const CLOTH_MATERIALS = /(^|_)(uniform|canvas|cloth|camo|fabric|olive|sand)($|_|\.|\d)/i;
+
+/** Equipment and flesh: never team-coloured, whatever side carries it. */
+const KEEP_AUTHORED =
+  /(^|_)(steel|rubber|glass|lens|skin|light|plaster|concrete|alloy)($|_|\.|\d)/i;
+
+export type MaterialRole = "band" | "cloth" | "keep";
+
+/** Exported for the tests: the classification is the part that broke. */
+export function materialRole(name: string): MaterialRole {
+  if (KEEP_AUTHORED.test(name)) return "keep";
+  if (BAND_MATERIALS.test(name)) return "band";
+  if (CLOTH_MATERIALS.test(name)) return "cloth";
+  return "keep";
+}
+
+/**
+ * How far apart two colours read, 0 to ~1.7.
+ *
+ * Plain RGB distance, weighted towards the channels the eye resolves best. It
+ * does not need to be a perceptual colour space to answer the only question
+ * asked of it: are these two bands obviously different across a yard.
+ */
+export function colorDistance(a: Color3, b: Color3): number {
+  const dr = (a.r - b.r) * 1.0;
+  const dg = (a.g - b.g) * 1.3;
+  const db = (a.b - b.b) * 0.8;
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+/**
+ * Candidate enemy palettes, deliberately spread around the wheel.
+ *
+ * The enemy is not fixed, because the player may now choose their own colour
+ * and could pick the one the enemy was wearing. Two teams in the same colour is
+ * not a cosmetic problem, it is the game becoming unplayable.
+ */
+const ENEMY_CANDIDATES: readonly TeamPalette[] = [
+  { band: new Color3(1.0, 0.28, 0.12), cloth: new Color3(0.72, 0.6, 0.44) }, // ember
+  { band: new Color3(0.1, 0.75, 0.95), cloth: new Color3(0.42, 0.52, 0.6) }, // signal
+  { band: new Color3(0.68, 0.85, 0.2), cloth: new Color3(0.4, 0.47, 0.3) }, // olive
+  { band: new Color3(0.95, 0.75, 0.25), cloth: new Color3(0.66, 0.6, 0.44) }, // sand
+  { band: new Color3(0.85, 0.3, 0.9), cloth: new Color3(0.5, 0.4, 0.55) }, // orchid
+];
+
+/** Below this the two sides are not reliably tellable apart at range. */
+export const MIN_TEAM_DISTANCE = 0.55;
+
+/** The gate's colour swatch as a wearable palette. */
+export function paletteFromColor(id: string): TeamPalette {
+  const chosen = colorInfo(id);
+  return {
+    band: Color3.FromHexString(chosen.band),
+    cloth: Color3.FromHexString(chosen.cloth),
+  };
+}
+
+/**
+ * Both palettes for a match: what the player's side wears, and what the other
+ * side wears so the two can never be confused.
+ */
+export function teamPalettes(colorId: string): {
+  readonly own: TeamPalette;
+  readonly enemy: TeamPalette;
+} {
+  const own = paletteFromColor(colorId);
+  return { own, enemy: enemyPaletteFor(own) };
+}
+
+/**
+ * The enemy palette to wear against `own`: whichever candidate sits furthest
+ * from it. Always returns something, and the test asserts that "furthest" is
+ * never closer than `MIN_TEAM_DISTANCE` for any colour the gate offers, so the
+ * two sides cannot collide however the player dresses.
+ */
+export function enemyPaletteFor(own: TeamPalette): TeamPalette {
+  let best = ENEMY_CANDIDATES[0]!;
+  let bestDistance = -1;
+  for (const candidate of ENEMY_CANDIDATES) {
+    const distance = colorDistance(candidate.band, own.band);
+    if (distance > bestDistance) {
+      bestDistance = distance;
+      best = candidate;
+    }
+  }
+  return best;
+}
+
 export function brightenCharacter(root: TransformNode, palette?: TeamPalette): void {
   // Local to this call. The cache exists to share one clone across the meshes
   // of a single figure; making it module-level would hand the second team the
@@ -114,18 +222,23 @@ export function brightenCharacter(root: TransformNode, palette?: TeamPalette): v
     if (!clone) {
       clone = source.clone(`target_${source.name}`) ?? source;
       if (clone instanceof PBRMaterial) {
-        const isTeam = source.name.includes("paint") || source.name.includes("nc7_team");
+        const role = materialRole(source.name);
         const team = palette ?? TEAM_PALETTE.enemy;
-        if (isTeam) {
+        if (role === "band") {
+          // The texture has to go: an albedo texture multiplies the colour, and
+          // the authored one is the blue that made every fighter look alike.
           clone.albedoTexture = null;
           clone.albedoColor = team.band.scale(0.55);
-        } else if (!source.name.includes("nc7_") && !source.name.startsWith("ir_")) {
+        } else if (role === "cloth") {
+          // The texture stays. It carries the weave and the seams, and
+          // `albedoColor` multiplies through it, so tinting keeps the fabric.
+          // Clearing it here turned the uniform into a flat white sheet.
           clone.albedoColor = team.cloth;
         }
-        // Preserve the authored cloth, skin and equipment colors on tactical
-        // characters. Only the unit patch changes with the player's team.
+        // Equipment and skin keep what the artist gave them. Only the uniform
+        // and the unit markings answer to the player's team.
         clone.environmentIntensity = 0.65;
-        clone.emissiveColor = isTeam ? team.band.scale(0.35) : new Color3(0, 0, 0);
+        clone.emissiveColor = role === "band" ? team.band.scale(0.35) : new Color3(0, 0, 0);
       }
       localised.set(source, clone);
     }
