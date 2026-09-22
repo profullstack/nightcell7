@@ -11,6 +11,9 @@ commit as the code (CLAUDE.md).
 > `docs/prd-v1.3.md` so the document CLAUDE.md points at is actually here.
 > This file is the engineering-facing extract and index, not a replacement.
 
+> **Steam:** readiness, requirements and the open payment-rule decision are in
+> `docs/prd-steam.md` (assessment dated 2026-09-22, not a locked decision).
+
 ---
 
 ## Locked V1 decisions (PRD §2)
