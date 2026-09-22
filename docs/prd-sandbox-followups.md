@@ -20,9 +20,9 @@ passes:
 1. **Female operator.** The chooser shows the option disabled with "art
    pending". The operator bodies are procedural Blender builds, so this is a
    generator change plus wiring, not a purchase or a licence.
-2. **Colour has no effect in play.** It tints the preview figure only. A
-   first-person player never sees their own body, so the choice needs a place
-   to show.
+2. **Colour has no effect in play.** ~~It tints the preview figure only.~~
+   **Done 2026-09-22.** It also turned out that _nobody_ was team-coloured:
+   see §4, which was a live bug, not just a missing feature.
 3. **Trailer v2.** The 26 s film shows movement, firing, a frag and a weapon
    switch, but no enemy kill lands in frame, and it has no title cards.
 4. **Credits are browser-local.** The armory balance lives in `localStorage`,
@@ -112,7 +112,48 @@ Estimate: two to three days for one engineer who knows the generator.
 
 ## 4. Colour that shows in play
 
-### 4.1 Requirement
+### 4.0 Done, 2026-09-22 — and it was a bug, not a gap
+
+Reported from the live build: "everyone is blue in gameplay." Investigating it
+found the colour swatch was the smaller half of the problem. Three faults:
+
+1. **No fighter was ever team-coloured.** `brightenCharacter` picked materials
+   by exclusion: "team" meant a name containing `paint` or `nc7_team`, "cloth"
+   meant a name that did _not_ start with `nc7_` or `ir_`. Every material on
+   both shipped operators is `ir_`-prefixed (`ir_uniform`, `ir_canvas`,
+   `ir_blue`, `ir_steel`, `ir_rubber`, `ir_glass`), so the first test never
+   matched and the second excluded everything. Neither branch ever ran. Both
+   models share `ir_blue`, so every fighter in the yard came out the same blue
+   and friend was indistinguishable from foe. The call site's own comment said
+   "without this both teams are the same model with the same materials" — it
+   was right, the matching just never fired.
+
+   Materials are now classified by **role** (`materialRole`), naming what is a
+   band, what is cloth, and what keeps its authored colour. A material that is
+   not listed stays authored, which is a visible omission rather than a silent
+   disabling of the whole system.
+
+2. **The palette was keyed on an absolute faction**, `player.team ===
+TEAM_IDS.NIGHTCELL`, which is only the right question while the player is
+   Nightcell. Choosing Directorate on the gate put your own squad in the enemy
+   colour and the enemies in yours. It now asks `player.team === playerTeam`.
+
+3. **The gate's colour never reached the yard.** It does now, through
+   `Opponents({ color })` at boot and `setColor()` when the swatch changes with
+   the gate still up.
+
+**The two sides can never collide.** The player may now wear any of the five
+colours, including the one the enemy used to wear, so the enemy palette is
+chosen as whichever candidate sits furthest from the player's
+(`enemyPaletteFor`). A test asserts the separation exceeds `MIN_TEAM_DISTANCE`
+for every colour the gate offers. Two teams in one colour is not a cosmetic
+problem, it is the game becoming unplayable.
+
+Covered by `team-colour.test.ts` (classification and separation) and two cases
+in `opponents.test.ts` that load the real GLBs and read the albedo that ends up
+on the meshes, because the classifier and the wiring each broke separately.
+
+### 4.1 Requirement (met)
 
 The colour chosen on the gate is visible while playing, not only on the
 preview figure.

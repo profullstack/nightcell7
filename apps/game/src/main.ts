@@ -173,6 +173,7 @@ async function boot(): Promise<void> {
     difficulty: difficultyInfo(difficulty),
     team,
     armorClass: loadout.armor,
+    color: loadout.color,
   });
 
   // The operator on the gate, in the chosen colours, idling in the yard.
@@ -226,8 +227,13 @@ async function boot(): Promise<void> {
         reloadWith({});
         return;
       }
+      const colorChanged = next.color !== currentLoadout.color;
       currentLoadout = next;
       opponents.setArmorClass(next.armor);
+      // The squad already standing in the yard was built with the old palette,
+      // so a colour picked on the gate has to be pushed to them. Without this
+      // the swatch only ever tinted the preview figure.
+      if (colorChanged) opponents.setColor(next.color);
       preview.show(next);
     },
     credits,

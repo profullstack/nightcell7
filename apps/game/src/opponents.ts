@@ -30,7 +30,13 @@ import {
 } from "@nightcell7/multiplayer-sim";
 import type { InputFrame } from "@nightcell7/multiplayer-protocol";
 import { MAX_ARMOR, TDM_RULES, getWeapon, type WeaponId } from "@nightcell7/game-core";
-import { ARMORY_ITEM, armorClassInfo, type ArmorClassId, type ArmoryItem } from "./loadout";
+import {
+  ARMORY_ITEM,
+  DEFAULT_LOADOUT,
+  armorClassInfo,
+  type ArmorClassId,
+  type ArmoryItem,
+} from "./loadout";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
 import { difficultyInfo, DEFAULT_SANDBOX_DIFFICULTY, type SandboxDifficulty } from "./difficulty";
 import {
@@ -41,7 +47,7 @@ import {
   WEAPON_WORLD_MODEL,
   botLoadout,
 } from "./sandbox-rules";
-import { TEAM_PALETTE, brightenCharacter } from "./targets";
+import { brightenCharacter, teamPalettes, type TeamPalette } from "./targets";
 
 /** Enemies on the Directorate side, and friendlies on the player's. */
 const ENEMY_COUNT = 4;
@@ -66,6 +72,11 @@ export interface OpponentOptions {
   readonly team?: number;
   /** Armour class: plates on deploy and redeploy, and a stamina trade. */
   readonly armorClass?: ArmorClassId;
+  /**
+   * The colour the player chose on the gate. Their whole side wears it, and
+   * the other side is given whichever palette sits furthest from it.
+   */
+  readonly color?: string;
 }
 
 /** Speed above which the run cycle replaces the walk cycle, m/s. */
@@ -209,6 +220,8 @@ export class Opponents {
   /** The armour class's stamina trade currently applied to the player. */
   private armorStaminaBonus: number;
   private readonly playerTeam: number;
+  /** What the player's side wears, and what the other side wears against it. */
+  private palettes: { own: TeamPalette; enemy: TeamPalette };
   private readonly grenadeModel: AssetContainer | null;
   private readonly assets: AssetSet;
 
@@ -229,6 +242,7 @@ export class Opponents {
     this.spawnArmor = armorClass.armor;
     this.armorStaminaBonus = armorClass.staminaBonus;
     this.playerTeam = options.team ?? TEAM_IDS.NIGHTCELL;
+    this.palettes = teamPalettes(options.color ?? DEFAULT_LOADOUT.color);
     const enemyTeam =
       this.playerTeam === TEAM_IDS.NIGHTCELL ? TEAM_IDS.DIRECTORATE : TEAM_IDS.NIGHTCELL;
 
@@ -343,9 +357,14 @@ export class Opponents {
       // Without this both teams are the *same model with the same materials*,
       // so the only difference between a friendly and an enemy is which weapon
       // it holds — invisible from the front, and at any range that matters.
+      //
+      // Keyed on the player's own team, not on an absolute faction. It used to
+      // ask `player.team === TEAM_IDS.NIGHTCELL`, which is only the same
+      // question while the player is Nightcell: choose Directorate on the gate
+      // and your own squad wore the enemy colour and the enemies wore yours.
       brightenCharacter(
         placed.root,
-        player.team === TEAM_IDS.NIGHTCELL ? TEAM_PALETTE.friendly : TEAM_PALETTE.enemy,
+        player.team === this.playerTeam ? this.palettes.own : this.palettes.enemy,
       );
 
       // The weapon in hand is the one the fighter will drop, so the silhouette
@@ -495,6 +514,27 @@ export class Opponents {
       local.health = Math.min(local.health + Math.max(0, delta), local.maxHealth);
     }
     this.armorStaminaBonus = armorClass.staminaBonus;
+  }
+
+  /**
+   * Repaint both sides for a colour picked on the gate.
+   *
+   * The gate lets a player change colour without redeploying, and the figures
+   * already standing in the yard were built with the old palette, so the choice
+   * has to reach them here. Changing the player's colour also moves the enemy
+   * if the two would otherwise collide, which is why both sides are repainted
+   * rather than just the friendly one.
+   */
+  setColor(id: string): void {
+    this.palettes = teamPalettes(id);
+    for (const view of this.views.values()) {
+      const player = this.sim.players.get(view.id);
+      if (!player) continue;
+      brightenCharacter(
+        view.root,
+        player.team === this.playerTeam ? this.palettes.own : this.palettes.enemy,
+      );
+    }
   }
 
   /** Health packs the player took since the last call. */
