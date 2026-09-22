@@ -82,6 +82,12 @@ deb:
     - libxss1
     - libxtst6
     - xdg-utils
+    # Electron links libasound at startup. Without it the binary exits with
+    # "libasound.so.2: cannot open shared object file" before a window
+    # appears, which a clean Ubuntu 24.04 container reproduced. Ubuntu 24.04
+    # renamed the package with the t64 transition; older releases keep the
+    # plain name.
+    - libasound2t64 | libasound2
 
 rpm:
   packageName: nightcell7

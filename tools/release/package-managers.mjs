@@ -18,6 +18,7 @@
  *   aur       PKGBUILD + .SRCINFO
  *   nix       nightcell7.nix
  */
+import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
@@ -84,6 +85,35 @@ function need(sums, pattern) {
 const asset = (name) =>
   `https://github.com/${REPO}/releases/download/v${VERSION}/${encodeURIComponent(name)}`;
 let VERSION = "0.0.0";
+
+/**
+ * The app icon, pinned to the release tag.
+ *
+ * The AppImage carries the icon inside it, but a PKGBUILD cannot reach it
+ * without executing the AppImage, so the package fetches the same file from
+ * the tagged source tree as a second source. Hashed from that URL, not from a
+ * local checkout, so the sum is of exactly the bytes makepkg will download.
+ */
+const iconUrl = () =>
+  `https://raw.githubusercontent.com/${REPO}/v${VERSION}/apps/desktop/resources/icon.png`;
+let ICON_SHA256 = "";
+
+async function fetchIconSha256() {
+  const response = await fetch(iconUrl());
+  if (!response.ok) {
+    throw new Error(`No icon at ${iconUrl()} (HTTP ${response.status}). Is the tag pushed?`);
+  }
+  return createHash("sha256")
+    .update(Buffer.from(await response.arrayBuffer()))
+    .digest("hex");
+}
+
+/**
+ * Electron sets the window's WM_CLASS from the npm package name, not from the
+ * product name: read off a running v0.2.0 build, it is "@nightcell7/desktop".
+ * A .desktop entry only lends its Icon to a window whose class it names.
+ */
+const WM_CLASS = "@nightcell7/desktop";
 
 // --------------------------------------------------------------------------
 // Manifest builders
@@ -238,8 +268,10 @@ pkgdesc="${DESCRIPTION}"
 arch=('x86_64' 'aarch64')
 url="${HOMEPAGE}"
 license=('custom:proprietary')
-depends=('gtk3' 'nss' 'libxss' 'libxtst' 'xdg-utils')
+depends=('gtk3' 'nss' 'libxss' 'libxtst' 'xdg-utils' 'alsa-lib')
 options=('!strip')
+source=("${IDENT}.png::${iconUrl()}")
+sha256sums=('${ICON_SHA256}')
 source_x86_64=("\${pkgname}-\${pkgver}-x86_64.AppImage::${asset(x64Name)}")
 source_aarch64=("\${pkgname}-\${pkgver}-aarch64.AppImage::${asset(armName)}")
 sha256sums_x86_64=('${x64Sum}')
@@ -268,15 +300,20 @@ fi
 LAUNCHER
   chmod 755 "\${pkgdir}/usr/bin/${IDENT}"
 
+  install -Dm644 "\${srcdir}/${IDENT}.png" \\
+    "\${pkgdir}/usr/share/icons/hicolor/512x512/apps/${IDENT}.png"
+
   install -dm755 "\${pkgdir}/usr/share/applications"
   cat > "\${pkgdir}/usr/share/applications/${IDENT}.desktop" <<'DESKTOP'
 [Desktop Entry]
 Name=${PRODUCT}
 Comment=${DESCRIPTION}
 Exec=${IDENT} %U
+Icon=${IDENT}
 Terminal=false
 Type=Application
 Categories=Game;ActionGame;
+StartupWMClass=${WM_CLASS}
 DESKTOP
 }
 `;
@@ -294,7 +331,10 @@ DESKTOP
 \tdepends = libxss
 \tdepends = libxtst
 \tdepends = xdg-utils
+\tdepends = alsa-lib
 \toptions = !strip
+\tsource = ${IDENT}.png::${iconUrl()}
+\tsha256sums = ${ICON_SHA256}
 \tsource_x86_64 = ${IDENT}-bin-${VERSION}-x86_64.AppImage::${asset(x64Name)}
 \tsha256sums_x86_64 = ${x64Sum}
 \tsource_aarch64 = ${IDENT}-bin-${VERSION}-aarch64.AppImage::${asset(armName)}
@@ -360,6 +400,9 @@ async function main() {
 
   const selected =
     args.manager === "all" ? Object.keys(BUILDERS) : args.manager.split(",").map((m) => m.trim());
+
+  // Only the AUR package ships the icon as a separate source.
+  if (selected.includes("aur")) ICON_SHA256 = await fetchIconSha256();
 
   let written = 0;
   const failures = [];
