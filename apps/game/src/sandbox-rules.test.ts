@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { WEAPON, getWeapon, isMultiplayerLegal } from "@nightcell7/game-core";
+import { MAX_HEALTH, WEAPON, getWeapon, isMultiplayerLegal } from "@nightcell7/game-core";
 import { ARDAVAN_YARD, isClearOfSolids } from "@nightcell7/multiplayer-sim";
 import {
   SANDBOX_HEALTH_SPAWNS,
+  SANDBOX_HUMAN_INCOMING_DAMAGE,
+  SANDBOX_PICKUPS,
+  SANDBOX_STAMINA_CAP,
+  SANDBOX_STAMINA_PER_PACK,
+  SANDBOX_STARTING_STAMINA,
   WEAPON_VIEWMODEL,
   WEAPON_WORLD_MODEL,
   botLoadout,
@@ -31,6 +36,21 @@ describe("sandbox health pack spawns", () => {
         expect(d).toBeGreaterThan(12);
       }
     }
+  });
+});
+
+describe("sandbox stamina", () => {
+  it("starts the player above a bot, grows per pack, and caps", () => {
+    expect(SANDBOX_STARTING_STAMINA).toBeGreaterThan(MAX_HEALTH);
+    expect(SANDBOX_STAMINA_PER_PACK).toBeGreaterThan(0);
+    expect(SANDBOX_STAMINA_CAP).toBeGreaterThan(SANDBOX_STARTING_STAMINA);
+    expect(SANDBOX_PICKUPS.staminaPerPack).toBe(SANDBOX_STAMINA_PER_PACK);
+    expect(SANDBOX_PICKUPS.staminaCap).toBe(SANDBOX_STAMINA_CAP);
+  });
+
+  it("softens incoming damage without switching it off", () => {
+    expect(SANDBOX_HUMAN_INCOMING_DAMAGE).toBeGreaterThan(0);
+    expect(SANDBOX_HUMAN_INCOMING_DAMAGE).toBeLessThan(1);
   });
 });
 

@@ -1,4 +1,4 @@
-import { WEAPON, type WeaponId } from "@nightcell7/game-core";
+import { DIFFICULTY, WEAPON, getDifficulty, type WeaponId } from "@nightcell7/game-core";
 import type { PickupRules, Vec3 } from "@nightcell7/multiplayer-sim";
 import type { ModelName } from "./assets";
 
@@ -26,6 +26,28 @@ export const SANDBOX_HEALTH_SPAWNS: readonly Vec3[] = [
   { x: 14, y: 0, z: 28 },
 ];
 
+/**
+ * Stamina: the player's maximum health.
+ *
+ * Starts above the bots' 100 and grows with every health pack collected, so
+ * holding the lanes is rewarded with a player who can take more. Kept across
+ * redeploys within a session.
+ */
+export const SANDBOX_STARTING_STAMINA = 150;
+export const SANDBOX_STAMINA_PER_PACK = 25;
+export const SANDBOX_STAMINA_CAP = 300;
+
+/**
+ * Damage the player takes, as a fraction of what a bot would.
+ *
+ * The Field Agent difficulty's number, not a new one: four rifles at full
+ * damage empty a player in about a second, which reads as unfair rather than
+ * hard in a demo with no cover discipline taught yet.
+ */
+export const SANDBOX_HUMAN_INCOMING_DAMAGE = getDifficulty(
+  DIFFICULTY.FIELD_AGENT,
+).incomingDamageMultiplier;
+
 export const SANDBOX_PICKUPS: Partial<PickupRules> = {
   healthSpawns: SANDBOX_HEALTH_SPAWNS,
   healthFirstSpawnMs: 10_000,
@@ -34,6 +56,8 @@ export const SANDBOX_PICKUPS: Partial<PickupRules> = {
   dropWeapons: true,
   // Short enough that seven bots dying on a loop do not carpet the lanes.
   dropExpiresMs: 20_000,
+  staminaPerPack: SANDBOX_STAMINA_PER_PACK,
+  staminaCap: SANDBOX_STAMINA_CAP,
 };
 
 /**

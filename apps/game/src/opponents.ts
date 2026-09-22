@@ -29,7 +29,13 @@ import {
 import type { InputFrame } from "@nightcell7/multiplayer-protocol";
 import { TDM_RULES, getWeapon, type WeaponId } from "@nightcell7/game-core";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
-import { SANDBOX_PICKUPS, WEAPON_WORLD_MODEL, botLoadout } from "./sandbox-rules";
+import {
+  SANDBOX_HUMAN_INCOMING_DAMAGE,
+  SANDBOX_PICKUPS,
+  SANDBOX_STARTING_STAMINA,
+  WEAPON_WORLD_MODEL,
+  botLoadout,
+} from "./sandbox-rules";
 import { TEAM_PALETTE, brightenCharacter } from "./targets";
 
 /** Enemies on the Directorate side, and friendlies on the player's. */
@@ -116,6 +122,8 @@ export interface WeaponSlotStatus {
 export interface LocalStatus {
   readonly alive: boolean;
   readonly health: number;
+  /** Stamina: the ceiling health can reach. */
+  readonly maxHealth: number;
   readonly armor: number;
   /** Milliseconds until redeploy; zero while alive. */
   readonly respawnInMs: number;
@@ -204,6 +212,7 @@ export class Opponents {
         respawnDelayMs: RESPAWN_MS,
       },
       pickups: SANDBOX_PICKUPS,
+      humanIncomingDamage: SANDBOX_HUMAN_INCOMING_DAMAGE,
     });
 
     // The player, so the bots have someone to fight.
@@ -212,6 +221,7 @@ export class Opponents {
       userId: LOCAL_ID,
       displayName: "You",
       preferredTeam: TEAM_IDS.NIGHTCELL,
+      maxHealth: SANDBOX_STARTING_STAMINA,
     });
 
     const enemyCount = options.enemies ?? ENEMY_COUNT;
@@ -375,6 +385,7 @@ export class Opponents {
       return {
         alive: true,
         health: 0,
+        maxHealth: 0,
         armor: 0,
         respawnInMs: 0,
         slot: 0,
@@ -388,6 +399,7 @@ export class Opponents {
     return {
       alive: local.alive,
       health: Math.round(local.health),
+      maxHealth: Math.round(local.maxHealth),
       armor: Math.round(local.armor),
       respawnInMs: local.alive ? 0 : Math.max(0, local.respawnAtMs - this.sim.elapsedMs),
       slot: local.weaponSlot,
@@ -680,7 +692,8 @@ export class Opponents {
         case "pickup_taken": {
           if (event.playerId !== LOCAL_ID) break;
           if (event.kind === PICKUP_KIND.HEALTH) {
-            this.notices.push(`+${Math.round(event.healed)} health`);
+            const stamina = event.staminaGained > 0 ? ` · stamina ${event.stamina}` : "";
+            this.notices.push(`+${Math.round(event.healed)} health${stamina}`);
           } else if (event.weaponId) {
             const name = getWeapon(event.weaponId).displayName;
             this.notices.push(

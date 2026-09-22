@@ -56,6 +56,12 @@ export interface PickupRules {
   readonly maxWeapons: number;
   /** Reserve ammo ceiling as a multiple of the weapon's issued reserve. */
   readonly reserveCapMultiplier: number;
+  /**
+   * Stamina a health pack adds to the taker's maximum health, up to
+   * `staminaCap`. Zero keeps packs as plain heals.
+   */
+  readonly staminaPerPack: number;
+  readonly staminaCap: number;
 }
 
 export const DEFAULT_PICKUP_RULES: PickupRules = {
@@ -68,17 +74,21 @@ export const DEFAULT_PICKUP_RULES: PickupRules = {
   pickupRadiusM: 1.1,
   maxWeapons: 3,
   reserveCapMultiplier: 2,
+  staminaPerPack: 0,
+  staminaCap: MAX_HEALTH,
 };
 
 /** The subset of a player a pickup can read and change. */
 export interface PickupTaker {
   health: number;
+  /** Stamina: the ceiling health can reach. */
+  maxHealth: number;
   weapons: WeaponId[];
   ammo: { magazine: number; reserve: number }[];
 }
 
 export type PickupOutcome =
-  | { kind: "health"; healed: number }
+  | { kind: "health"; healed: number; staminaGained: number; stamina: number }
   | { kind: "weapon"; weaponId: WeaponId; slot: number; added: boolean; ammoAdded: number };
 
 /**
@@ -112,10 +122,21 @@ export function applyPickup(
   rules: PickupRules,
 ): PickupOutcome | null {
   if (pickup.kind === PICKUP_KIND.HEALTH) {
-    if (taker.health >= MAX_HEALTH) return null;
+    // Every pack taken builds stamina, so a player who keeps collecting
+    // can take more before going down — and a pack is worth taking at full
+    // health while there is stamina left to gain.
+    const staminaRoom = Math.max(0, rules.staminaCap - taker.maxHealth);
+    const staminaGained = Math.min(staminaRoom, Math.max(0, rules.staminaPerPack));
+    if (taker.health >= taker.maxHealth && staminaGained <= 0) return null;
+    taker.maxHealth += staminaGained;
     const before = taker.health;
-    taker.health = Math.min(MAX_HEALTH, taker.health + pickup.heal);
-    return { kind: "health", healed: taker.health - before };
+    taker.health = Math.min(taker.maxHealth, taker.health + pickup.heal);
+    return {
+      kind: "health",
+      healed: taker.health - before,
+      staminaGained,
+      stamina: taker.maxHealth,
+    };
   }
 
   const weaponId = pickup.weaponId;

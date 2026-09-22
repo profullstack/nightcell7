@@ -45,8 +45,8 @@ const KEYS: ReadonlyArray<readonly [string, string]> = [
   ["Esc", "Release cursor"],
 ];
 
-/** Health at or below this reads as critical: the readout pulses. */
-const CRITICAL_HEALTH = 30;
+/** Health at or below this fraction of stamina reads as critical: the readout pulses. */
+const CRITICAL_FRACTION = 0.3;
 
 /** How long a notice stays before fading, and how long the fade takes. */
 const NOTICE_HOLD_MS = 2200;
@@ -117,7 +117,8 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   const healthFill = el("i", "status__fill");
   healthBar.append(healthFill);
   vitals.append(healthBar);
-  const armorValue = el("p", "hud__sub status__armor", "ARMOR 50");
+  // Stamina is the bar's full width; the number is what is left of it.
+  const armorValue = el("p", "hud__sub status__armor", "STAMINA 100 · ARMOR 50");
   vitals.append(armorValue);
   bc.append(vitals);
 
@@ -275,14 +276,18 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
       lastTickAt = now;
 
       // ---- vitals
-      const health = String(local.health);
+      const health = `${local.health}/${local.maxHealth}`;
       if (health !== lastHealth) {
-        healthValue.textContent = health;
-        healthFill.style.width = `${Math.max(0, Math.min(100, local.health))}%`;
-        healthValue.classList.toggle("status__health--critical", local.health <= CRITICAL_HEALTH);
+        healthValue.textContent = String(local.health);
+        const stamina = Math.max(1, local.maxHealth);
+        healthFill.style.width = `${Math.max(0, Math.min(100, (local.health / stamina) * 100))}%`;
+        healthValue.classList.toggle(
+          "status__health--critical",
+          local.health <= stamina * CRITICAL_FRACTION,
+        );
         lastHealth = health;
       }
-      const armor = `ARMOR ${local.armor}`;
+      const armor = `STAMINA ${local.maxHealth} · ARMOR ${local.armor}`;
       if (armor !== lastArmor) {
         armorValue.textContent = armor;
         lastArmor = armor;

@@ -1,5 +1,6 @@
 import {
   GRENADE_SPEC,
+  MAX_HEALTH,
   MULTIPLAYER_LOADOUT,
   REGEN_DELAY_MS,
   TDM_RULES,
@@ -88,6 +89,8 @@ export interface SimPlayer {
 
   movement: MovementState;
   health: number;
+  /** Stamina: the ceiling health can reach. 100 in a match. */
+  maxHealth: number;
   armor: number;
 
   weapons: WeaponId[];
@@ -179,6 +182,9 @@ export type SimEvent =
       weaponId: WeaponId | null;
       /** Health restored, for a pack. */
       healed: number;
+      /** Stamina added by a pack, and the taker's stamina afterwards. */
+      staminaGained: number;
+      stamina: number;
       /** Rounds gained, for a weapon. */
       ammoAdded: number;
       /** Slot the weapon now occupies, and whether it is a new one. */
@@ -220,6 +226,8 @@ export interface AddPlayerOptions {
   isBot?: boolean;
   preferredTeam?: number;
   loadout?: readonly WeaponId[];
+  /** Starting stamina. Defaults to the match value of 100. */
+  maxHealth?: number;
 }
 
 export interface SimulationOptions {
@@ -232,6 +240,12 @@ export interface SimulationOptions {
    * none.
    */
   pickups?: Partial<PickupRules>;
+  /**
+   * Multiplier on damage human players take. 1 in a match; the single-player
+   * sandbox uses the difficulty table's value so four bots do not empty a
+   * player in a second.
+   */
+  humanIncomingDamage?: number;
 }
 
 export class MatchSimulation {
@@ -255,6 +269,7 @@ export class MatchSimulation {
   /** Health packs and weapon drops on the ground, keyed by id. */
   readonly pickups = new Map<string, SimPickup>();
   private readonly pickupRules: PickupRules | null;
+  private readonly humanIncomingDamage: number;
   /** Per health spawn: when the next pack appears there, or null while one sits there. */
   private readonly healthSpawnDueAtMs: (number | null)[] = [];
 
@@ -268,6 +283,7 @@ export class MatchSimulation {
     this.matchId = options.matchId;
     this.map = options.map;
     this.rules = options.rules ?? TDM_RULES;
+    this.humanIncomingDamage = Math.max(0, options.humanIncomingDamage ?? 1);
 
     if (options.pickups) {
       const merged = { ...DEFAULT_PICKUP_RULES, ...options.pickups };
@@ -309,7 +325,8 @@ export class MatchSimulation {
       isBot: options.isBot ?? false,
       team,
       movement: createMovementState({ x: 0, y: 0, z: 0 }, 0),
-      health: 100,
+      health: options.maxHealth ?? MAX_HEALTH,
+      maxHealth: options.maxHealth ?? MAX_HEALTH,
       armor: 50,
       weapons,
       weaponSlot: 0,
@@ -760,11 +777,16 @@ export class MatchSimulation {
       // a spawn exit beats the rule that protects it.
       if (this.elapsedMs < player.spawnProtectedUntilMs) continue;
 
-      const result = applyDamage({ health: player.health, armor: player.armor }, victim.damage);
+      const dealt = this.scaleIncoming(player, victim.damage);
+      const result = applyDamage(
+        { health: player.health, armor: player.armor },
+        dealt,
+        player.maxHealth,
+      );
       player.health = result.vitals.health;
       player.armor = result.vitals.armor;
       player.lastDamagedAtMs = this.elapsedMs;
-      applied.push({ playerId: player.id, damage: victim.damage });
+      applied.push({ playerId: player.id, damage: dealt });
 
       if (owner && owner.id !== player.id) {
         player.recentDamage.set(owner.id, {
@@ -777,7 +799,7 @@ export class MatchSimulation {
         type: "hit",
         attackerId: grenade.ownerId,
         victimId: player.id,
-        damage: victim.damage,
+        damage: dealt,
         armorAbsorbed: result.armorAbsorbed,
         headshot: false,
         tick: this.tick,
@@ -906,7 +928,12 @@ export class MatchSimulation {
     if (!victim || !victim.alive) return;
     if (this.elapsedMs < victim.spawnProtectedUntilMs) return;
 
-    const result = applyDamage({ health: victim.health, armor: victim.armor }, totalDamage);
+    const dealt = this.scaleIncoming(victim, totalDamage);
+    const result = applyDamage(
+      { health: victim.health, armor: victim.armor },
+      dealt,
+      victim.maxHealth,
+    );
     victim.health = result.vitals.health;
     victim.armor = result.vitals.armor;
 
@@ -920,7 +947,7 @@ export class MatchSimulation {
       type: "hit",
       attackerId: player.id,
       victimId: victim.id,
-      damage: totalDamage,
+      damage: dealt,
       armorAbsorbed: result.armorAbsorbed,
       headshot,
       tick: this.tick,
@@ -1003,7 +1030,9 @@ export class MatchSimulation {
     });
 
     player.movement = createMovementState(spawn.position, spawn.yaw);
-    player.health = 100;
+    // Stamina built up in a life is kept: dying costs the fight, not the
+    // packs collected getting there.
+    player.health = player.maxHealth;
     player.armor = 50;
     player.alive = true;
     player.respawnAtMs = 0;
@@ -1036,6 +1065,11 @@ export class MatchSimulation {
   // ------------------------------------------------------------------------
   // Vitals
   // ------------------------------------------------------------------------
+
+  /** Damage as a human actually takes it; bots always take it in full. */
+  private scaleIncoming(victim: SimPlayer, damage: number): number {
+    return victim.isBot ? damage : damage * this.humanIncomingDamage;
+  }
 
   /**
    * Passive regeneration up to the stabilisation ceiling (PRD §12.4).
@@ -1114,6 +1148,8 @@ export class MatchSimulation {
           kind: pickup.kind,
           weaponId: pickup.weaponId,
           healed: outcome.kind === "health" ? outcome.healed : 0,
+          staminaGained: outcome.kind === "health" ? outcome.staminaGained : 0,
+          stamina: player.maxHealth,
           ammoAdded: outcome.kind === "weapon" ? outcome.ammoAdded : 0,
           slot: outcome.kind === "weapon" ? outcome.slot : -1,
           added: outcome.kind === "weapon" ? outcome.added : false,
