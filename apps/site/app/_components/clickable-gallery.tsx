@@ -36,7 +36,7 @@ export function ClickableGallery({
           aria-label={`View full size: ${lead.caption}`}
         >
           <Image
-            src={captureSrc(lead.file)}
+            src={captureSrc(lead.file, lead.dir)}
             alt={lead.caption}
             width={width}
             height={height}
@@ -64,7 +64,7 @@ export function ClickableGallery({
                 aria-label={`View full size: ${shot.caption}`}
               >
                 <Image
-                  src={captureSrc(shot.file)}
+                  src={captureSrc(shot.file, shot.dir)}
                   alt={shot.caption}
                   width={width}
                   height={height}

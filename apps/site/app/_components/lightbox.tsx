@@ -28,6 +28,8 @@ export interface LightboxShot {
   readonly name: string;
   readonly caption: string;
   readonly file: string;
+  /** Subdirectory of `/media`. Defaults to the yard captures. */
+  readonly dir?: string;
 }
 
 interface Props {
@@ -174,7 +176,7 @@ export function Lightbox({ shots, index, onClose, onNavigate }: Props) {
               arbitrary zoom crop, and at full-screen it would hand back the
               original file anyway. */}
           <img
-            src={captureSrc(shot.file)}
+            src={captureSrc(shot.file, shot.dir)}
             alt={shot.caption}
             onClick={toggleZoom}
             onWheel={onWheel}

@@ -706,6 +706,75 @@ a {
   color: var(--dust-gold);
 }
 
+/* ------------------------------------------------------------------- film */
+
+/* The trailer. Same hard-edged plate as a capture, because it is the same kind
+   of thing: a frame from the build, not a designed card (PRD §21.5). */
+.film {
+  margin: 2.5rem 0 0;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 16%, transparent);
+  background: var(--ink-900);
+}
+
+.film__video {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The film is 16:9 and must not be cropped — a trailer is not a plate. The
+     ratio is declared so the poster reserves its space before it decodes and
+     the page does not jump. */
+  aspect-ratio: 16 / 9;
+  background: var(--ink-900);
+}
+
+.film figcaption {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--bone-300) 16%, transparent);
+  font-size: 0.9rem;
+  color: var(--bone-300);
+}
+
+.film__label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dust-gold);
+}
+
+/* ------------------------------------------------------- asset contact sheet */
+
+/* The sheet is taller than it is wide (1920 x 2938). Rendered whole it is a
+   1,400 px slab that pushes everything below it off the page, so it is capped
+   and anchored to the top: the reader sees the title and the first rows, and
+   opens it to read the rest. Cropping is safe here only because the lightbox
+   shows the full image — it is a way in, not the presentation. */
+.sheet {
+  margin: 2.5rem 0 0;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 16%, transparent);
+  background: var(--ink-900);
+}
+
+.sheet img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 34rem;
+  object-fit: cover;
+  object-position: 50% 0;
+}
+
+.sheet figcaption {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--bone-300) 16%, transparent);
+  font-size: 0.9rem;
+  color: var(--bone-300);
+}
+
 .strip {
   list-style: none;
   padding: 0;

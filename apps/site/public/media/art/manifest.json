@@ -1,0 +1,45 @@
+{
+  "sourceOfTruth": "docs/art/ and docs/screenshots/manifest.json",
+  "assetSheet": {
+    "file": "iron-rain-overview.webp",
+    "title": "IRON RAIN",
+    "subtitle": "27 redesigned models + the approved C7 rifle, rendered from the exported geometry",
+    "width": 1920,
+    "height": 2938,
+    "version": "iron-rain-3",
+    "date": "2026-09-16",
+    "generator": "tools/art/iron-rain/generate.py",
+    "models": 28,
+    "originalGeometry": true,
+    "note": "Matches apps/game/public/assets/models/ one for one: 27 m3_*.glb plus m2_carbine_fp.glb. Every tile is a render of the file that ships in the build, not concept art."
+  },
+  "frames": {
+    "generatedAt": "2026-09-22T10:52:18.453Z",
+    "commit": "249dcb8b55f13fbfee9cb4ccb215f87a9137b1b0",
+    "tool": "tools/art/capture-gameplay.mjs",
+    "width": 1920,
+    "height": 1080,
+    "shots": [
+      {
+        "name": "deploy-gate",
+        "caption": "The deploy gate: mode, difficulty, side, operator and armory before you enter the yard.",
+        "file": "deploy-gate-1b35359fbd.webp"
+      },
+      {
+        "name": "first-contact",
+        "caption": "First contact at the Nightcell spawn: the C9 Kestrel on a Directorate fighter.",
+        "file": "first-contact-54dc296018.webp"
+      },
+      {
+        "name": "into-the-yard",
+        "caption": "Moving up the centre lane between the containers, squad ahead.",
+        "file": "into-the-yard-009e7490df.webp"
+      },
+      {
+        "name": "under-fire",
+        "caption": "Holding the spawn exit: stamina, armour, magazine and reserve on the status bar, frag ready.",
+        "file": "under-fire-d206ba6647.webp"
+      }
+    ]
+  }
+}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { PageShell, DraftNotice } from "../_components/page-shell";
 import { CaptureStrip, CaptureNotice } from "../gallery";
+import { TRAILER, TrailerFilm, TrailerNotice } from "../trailer";
+import { AssetSheet, GameplayFrames, SHEET_SUMMARY } from "../art-pass";
 
 export const metadata: Metadata = { title: "Press" };
 
@@ -65,14 +67,45 @@ export default function PressPage() {
         that has been manufactured. Neither country is written as the villain.
       </p>
 
-      <h3>Images</h3>
+      <h3>Trailer</h3>
+      <TrailerFilm label="Gameplay trailer" />
+      <TrailerNotice />
+      <p>
+        <a href={TRAILER.src} download>
+          Download the trailer
+        </a>{" "}
+        &mdash; {TRAILER.megabytes} MB, {TRAILER.seconds} s, {TRAILER.width}&times;
+        {TRAILER.height} at 30 fps, H.264 High / AAC, MP4. Free to use in coverage, with a credit to
+        NIGHTCELL 7. The poster frame above is a still from the film itself and may be used the same
+        way.
+      </p>
+
+      <h3>Gameplay</h3>
+      <GameplayFrames />
+
+      <h3>Art pass</h3>
+      <p>{SHEET_SUMMARY}</p>
+      <AssetSheet />
+
+      <h3>The map</h3>
       <CaptureStrip names={["west-catwalk", "tank-row", "gantry-overlook"]} />
       <CaptureNotice />
 
+      <h3>Using these</h3>
+      <p>
+        Every image and the film on this page may be used in coverage with a credit to NIGHTCELL 7.
+        Open any frame to get it at full size, or take the originals from the repository:{" "}
+        <code>docs/screenshots/</code> for the gameplay frames, <code>docs/art/</code> for the asset
+        sheet, <code>docs/trailer/</code> for the film. Each directory carries a manifest recording
+        the commit it was made from.
+      </p>
+
       <DraftNotice>
-        There is no key art, character art or trailer yet, so there is no full press pack to
-        download. We would rather say that than hand out screenshots of untextured boxes labelled as
-        finished work.
+        There is no key art and no illustrated character art yet, so there is no full press pack to
+        download. What is here is the build: the operators above are renders and captures of the
+        models that ship in it, and the trailer is alpha gameplay of the multiplayer map, not a cut
+        trailer — no title cards, no campaign footage. We would rather say that than hand out
+        screenshots of untextured boxes labelled as finished work.
       </DraftNotice>
 
       <h3>Contact</h3>
