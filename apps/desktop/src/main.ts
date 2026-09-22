@@ -29,16 +29,19 @@ const ALLOWED_ORIGINS = new Set([
  * `electron-builder.yml` also points at an icon, and that one is not this one:
  * it dresses the *packaged* artifact (the .desktop entry, the .app bundle, the
  * installer). On Linux the running window takes its taskbar icon from the
- * `BrowserWindow` itself, and this was not set, so the app ran with no icon at
- * all. On Windows the packaged exe carries it but an unpackaged run does not.
+ * `BrowserWindow` itself, and without it an AppImage, which is launched
+ * directly rather than through a .desktop entry, has no icon at all. On
+ * Windows the packaged exe carries one but an unpackaged run does not.
  *
- * Resolved for both layouts: unpackaged, `__dirname` is `apps/desktop/dist`
- * and resources sit beside it; packaged, they are unpacked next to the asar.
+ * One path for both layouts. `files` in `electron-builder.yml` packs
+ * `resources/**` into `app.asar` beside `dist/`, so in a packaged build this is
+ * `app.asar/resources/icon.png`, and Electron reads images out of the asar.
+ * The first v0.2.0 build branched on `app.isPackaged` and looked in
+ * `process.resourcesPath/resources/`, which does not exist: the icon shipped
+ * and the window never found it.
  */
 function windowIcon(): string {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, "resources", "icon.png")
-    : path.join(__dirname, "..", "resources", "icon.png");
+  return path.join(__dirname, "..", "resources", "icon.png");
 }
 
 function createWindow(): BrowserWindow {

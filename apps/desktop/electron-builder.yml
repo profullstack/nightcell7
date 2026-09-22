@@ -58,15 +58,20 @@ linux:
   synopsis: Two operatives. Two countries. One manufactured war.
   artifactName: "nightcell7-${version}-linux-${arch}.${ext}"
   executableName: nightcell7
+  # A flat map of .desktop keys. electron-builder 25 does not take a nested
+  # `entry:` here: it stringified the whole block into the line
+  # `entry=[object Object]`, so none of these keys ever reached the file.
+  # Categories is not set here: `category` above writes it, and wins.
   desktop:
-    entry:
-      Categories: Game;ActionGame;
-      Keywords: fps;shooter;nightcell;
-      # Without this the desktop environment cannot match the running window
-      # to this .desktop entry, so the taskbar falls back to a generic icon
-      # even though the entry names a good one. Electron sets WM_CLASS from
-      # the product name; this has to be the same string.
-      StartupWMClass: NIGHTCELL 7
+    Keywords: fps;shooter;nightcell;
+    # Lets the desktop environment match the running window to this entry, so
+    # the taskbar uses the entry's Icon. It must equal the window's WM_CLASS,
+    # which Electron takes from the npm package name, not from productName:
+    # read off a running v0.2.0 build under Xvfb, it is "@nightcell7/desktop".
+    # "NIGHTCELL 7" matched nothing. Renaming the app to change the class
+    # would also move Electron's userData directory and strand every v0.1.0
+    # player's local save, so the entry follows the class instead.
+    StartupWMClass: "@nightcell7/desktop"
 
 deb:
   packageName: nightcell7
