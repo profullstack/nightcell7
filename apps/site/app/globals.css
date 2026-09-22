@@ -88,18 +88,43 @@ a {
   max-width: var(--max-width);
   margin-inline: auto;
   padding-inline: var(--gutter);
+  /* `margin-inline: auto` above is what centres the shell, and on a grid item
+     an auto margin also switches off `justify-self: stretch`. The box then
+     sizes shrink-to-fit, which means min-content, and the hero's install
+     command is one unbreakable 436px string: the shell measured 478px inside a
+     390px phone and took the whole page sideways with it.
+
+     `width: 100%` puts it back on the column's width. The max-width above still
+     caps it and the auto margins still centre it, so wide screens are
+     unchanged, and `.command pre` (overflow-x: auto) scrolls the long command
+     inside the shell rather than stretching it. `min-width: 0` alone does not
+     fix this: the box is not being held open by a minimum, it is being sized
+     to its content. */
+  width: 100%;
+  min-width: 0;
 }
 
 /* ---------------------------------------------------------------- header */
 
+/* Wraps, because it did not and six links plus the wordmark are wider than a
+   phone: the row measured 469px inside a 390px viewport and every page on the
+   site scrolled sideways by 261px. A sticky bar is the one element that must
+   never do that, since it is on screen while you scroll. The nav drops onto
+   its own line rather than being hidden behind a menu button: six links fit in
+   two rows, and PRD §22.6 makes reaching them without a pointer a launch gate. */
 .masthead {
-  position: sticky;
+  /* Static on a phone, sticky once it is one row. Wrapped, this bar is 123px
+     tall, and 123px of a 844px screen pinned to the top for the whole scroll
+     is a worse deal than the sideways scroll it replaced. It stops following
+     the reader and goes back to being a header. */
+  position: static;
   top: 0;
   z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.5rem;
   padding: 1rem var(--gutter);
   background: color-mix(in srgb, var(--ink-950) 88%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--bone-300) 14%, transparent);
@@ -117,13 +142,31 @@ a {
   color: var(--signal-red);
 }
 
+/* Mobile first, like the rest of this file: the tighter type and the wrap are
+   the base, and the full-size row comes back once there is room for it. */
 .masthead nav {
   display: flex;
-  gap: clamp(0.75rem, 2vw, 1.75rem);
-  font-size: 0.82rem;
-  letter-spacing: 0.14em;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-family: var(--font-mono);
+}
+
+/* 760px, not 700: at 700 the full-size row does not quite fit beside the
+   wordmark, so the masthead itself wrapped and grew to 97px tall. Measured. */
+@media (min-width: 760px) {
+  .masthead {
+    position: sticky;
+  }
+
+  .masthead nav {
+    flex-wrap: nowrap;
+    gap: clamp(0.75rem, 2vw, 1.75rem);
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+  }
 }
 
 .masthead nav a:hover {
@@ -221,8 +264,12 @@ a {
   z-index: 3;
 }
 
+/* The 3rem floor was taller than the narrowest phones can hold: at 320px the
+   content box is 280px and "NIGHTCELL 7" set at 48px runs 17px past it, which
+   scrolled the whole page sideways. The floor only binds below 400px (above
+   that 12vw wins), so this changes nothing on any other screen. */
 .hero h1 {
-  font-size: clamp(3rem, 12vw, 8.5rem);
+  font-size: clamp(2.4rem, 12vw, 8.5rem);
   letter-spacing: 0.04em;
 }
 
@@ -832,6 +879,12 @@ a {
   max-width: 74ch;
   margin-top: 2rem;
   color: var(--bone-300);
+  /* Prose carries bare URLs, and a URL has nothing a line breaker will break
+     on: "github.com/profullstack/nightcell7/issues" measured 328px inside a
+     280px column on a 320px phone and scrolled /support sideways. Breaking
+     inside a long word is only allowed when it does not fit, so ordinary
+     wrapping is unchanged. */
+  overflow-wrap: break-word;
 }
 
 .prose h3 {
