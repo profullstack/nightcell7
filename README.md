@@ -22,8 +22,8 @@ and three difficulty tiers (Easy is the default).
 
 |                                                                                                                                    |                                                                                                                                              |
 | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| ![The deploy gate: pick a mode and a difficulty, read the controls, enter the yard.](docs/screenshots/deploy-gate-ec5f760ad7.webp) | ![First contact at the Nightcell spawn: the C9 Kestrel, a squadmate ahead.](docs/screenshots/first-contact-88722b50e6.webp)                  |
-| ![Moving up the centre lane between the containers.](docs/screenshots/into-the-yard-03072ec35f.webp)                               | ![Holding the spawn exit: stamina, armour, magazine and reserve on the status bar, frag ready.](docs/screenshots/under-fire-0741cc961c.webp) |
+| ![The deploy gate: pick a mode, a difficulty and an operator, buy from the armory, enter the yard.](docs/screenshots/deploy-gate-1b35359fbd.webp) | ![First contact at the Nightcell spawn: the C9 Kestrel, a squadmate ahead.](docs/screenshots/first-contact-54dc296018.webp)                  |
+| ![Moving up the centre lane between the containers.](docs/screenshots/into-the-yard-009e7490df.webp)                               | ![Holding the spawn exit: stamina, armour, magazine and reserve on the status bar, frag ready.](docs/screenshots/under-fire-d206ba6647.webp) |
 
 Every frame is reproducible: `tools/art/capture-gameplay.mjs` deploys into the
 built game, plays a scripted sequence, and writes `docs/screenshots/manifest.json`
