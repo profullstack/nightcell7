@@ -11,7 +11,8 @@ import {
   type TransformNode,
 } from "@babylonjs/core";
 import { describe, expect, it } from "vitest";
-import { type MatchSimulation, TEAM_IDS, TICK_MS } from "@nightcell7/multiplayer-sim";
+import { BUTTON } from "@nightcell7/multiplayer-protocol";
+import { type MatchSimulation, PICKUP_KIND, TEAM_IDS, TICK_MS } from "@nightcell7/multiplayer-sim";
 import { Opponents } from "./opponents";
 import { type AssetSet } from "./assets";
 
@@ -133,20 +134,52 @@ describe("public combat demo with shipped operator models", () => {
     }
   });
 
-  it("takes rifle damage, stays down, then respawns once with fresh ammo on the simulation clock", async () => {
+  it("takes rifle damage through the simulation, drops its weapon, stays down, then respawns with fresh ammo", async () => {
     const f = await fixture();
     try {
       const enemy = f.inspect.sim.players.get("bot-e0")!;
-      for (const [id, p] of f.inspect.sim.players)
-        if (id !== enemy.id) p.movement.position = { x: 30, y: 0, z: 40 };
+      // Everyone else far away and disarmed, so only the player's rounds count.
+      for (const [id, p] of f.inspect.sim.players) {
+        if (id === enemy.id) continue;
+        p.movement.position = { x: 30, y: 0, z: 40 };
+        for (const ammo of p.ammo) {
+          ammo.magazine = 0;
+          ammo.reserve = 0;
+        }
+      }
+      // Armed but unable to fire, so its drop has rounds in it.
+      enemy.nextFireAtMs = Number.MAX_SAFE_INTEGER;
+      // Past spawn protection.
+      for (let n = 0; n < 50; n++) f.opponents.update(TICK_MS, { x: 30, y: 0, z: 40 }, 0);
       enemy.movement.position = { x: 0, y: 0, z: 9 };
-      enemy.ammo[0]!.magazine = 0;
-      enemy.ammo[0]!.reserve = 0;
-      for (let n = 0; n < 3; n++)
-        expect(
-          f.opponents.tryHit({ x: 0, y: 1.1, z: 12 }, { x: 0, y: 0, z: -1 }, 6),
-        ).not.toBeNull();
+
+      // Stand at z=12 and fire down -Z at the enemy 3 m away.
+      const me = f.inspect.sim.players.get("local-player")!;
+      for (const ammo of me.ammo) ammo.magazine = 30;
+      const aim = Math.PI; // yaw measured from +Z, so π looks down -Z
+      let shots = 0;
+      for (let n = 0; n < 90 && enemy.alive; n++) {
+        f.opponents.applyLocalInput({
+          seq: n + 1,
+          dtMs: TICK_MS,
+          moveX: 0,
+          moveZ: 0,
+          yaw: aim,
+          pitch: 0,
+          buttons: BUTTON.FIRE,
+          clientTimeMs: 0,
+        });
+        f.opponents.update(TICK_MS, { x: 0, y: 0, z: 12 }, aim);
+        enemy.movement.position = { x: 0, y: 0, z: 9 };
+        shots += f.opponents.drainLocalShots().filter((s) => s.point !== null).length;
+      }
+      expect(shots).toBeGreaterThan(0);
       expect(enemy.alive).toBe(false);
+      // Its rifle is on the ground where it fell.
+      expect([...f.inspect.sim.pickups.values()].some((p) => p.kind === PICKUP_KIND.WEAPON)).toBe(
+        true,
+      );
+
       for (let n = 0; n < 30; n++) f.opponents.update(TICK_MS, { x: 30, y: 0, z: 40 }, 0);
       expect(enemy.alive).toBe(false);
       for (let n = 0; n < 152; n++) f.opponents.update(TICK_MS, { x: 30, y: 0, z: 40 }, 0);
@@ -159,23 +192,52 @@ describe("public combat demo with shipped operator models", () => {
     }
   });
 
+  it("lets the bots hurt the player, kills them, and redeploys them on the simulation clock", async () => {
+    const f = await fixture();
+    try {
+      const me = f.inspect.sim.players.get("local-player")!;
+      // Stand in front of an armed enemy with no cover.
+      const enemy = f.inspect.sim.players.get("bot-e0")!;
+      enemy.movement.position = { x: 0, y: 0, z: 9 };
+      let damage = 0;
+      let died = false;
+      let respawn: { position: { x: number; y: number; z: number } } | null = null;
+      for (let n = 0; n < 900 && !respawn; n++) {
+        f.opponents.update(TICK_MS, { x: 0, y: 0, z: 14 }, Math.PI);
+        damage += f.opponents.drainDamage();
+        died = died || f.opponents.drainLocalDeath();
+        respawn = f.opponents.drainLocalRespawn();
+        if (!died) expect(f.opponents.localStatus().alive).toBe(me.alive);
+      }
+      expect(damage).toBeGreaterThan(0);
+      expect(died).toBe(true);
+      expect(respawn).not.toBeNull();
+      expect(f.opponents.localStatus().alive).toBe(true);
+      expect(f.opponents.localStatus().health).toBe(100);
+    } finally {
+      f.dispose();
+    }
+  });
+
   it("continues producing incoming fire and visible combatants during an extended demo", async () => {
     const f = await fixture();
     try {
       let shots = 0;
       const start = f.inspect.views.get("bot-e0")!.root.position.clone();
       let moved = false;
+      let aliveSum = 0;
       for (let tick = 0; tick < 1800; tick++) {
         f.opponents.update(TICK_MS, { x: -11, y: 0, z: 18 }, 0);
         shots += f.opponents.drainShots().length;
         if (Vector3.Distance(start, f.inspect.views.get("bot-e0")!.root.position) > 1) moved = true;
+        aliveSum += [...f.inspect.sim.players.values()].filter((p) => p.isBot && p.alive).length;
       }
       expect(shots).toBeGreaterThan(5);
       expect(moved).toBe(true);
       expect(f.inspect.sim.phase).toBe("live");
-      expect(
-        [...f.inspect.sim.players.values()].filter((p) => p.isBot && p.alive).length,
-      ).toBeGreaterThan(2);
+      // Averaged over the run: at any one instant the count swings between one
+      // and seven as fighters die and redeploy, which is the demo working.
+      expect(aliveSum / 1800).toBeGreaterThan(2);
     } finally {
       f.dispose();
     }

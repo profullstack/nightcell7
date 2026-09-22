@@ -1,6 +1,7 @@
 import {
   GRENADE_SPEC,
   MULTIPLAYER_LOADOUT,
+  REGEN_DELAY_MS,
   TDM_RULES,
   applyDamage,
   assignTeam,
@@ -9,6 +10,7 @@ import {
   fireIntervalMs,
   getWeapon,
   isMultiplayerLegal,
+  regenerate,
   type MatchRules,
   type WeaponId,
 } from "@nightcell7/game-core";
@@ -29,6 +31,16 @@ import {
 } from "./grenades";
 import { PositionHistory, resolveHitscan, rewindTicks, type HitCandidate } from "./hitscan";
 import type { CollisionMap } from "./map";
+import {
+  DEFAULT_PICKUP_RULES,
+  PICKUP_KIND,
+  applyPickup,
+  isClearOfSolids,
+  withinPickupReach,
+  type PickupKind,
+  type PickupRules,
+  type SimPickup,
+} from "./pickups";
 import {
   createMovementState,
   isBelowKillPlane,
@@ -92,6 +104,8 @@ export interface SimPlayer {
   alive: boolean;
   respawnAtMs: number;
   spawnProtectedUntilMs: number;
+  /** Match time of the last damage taken; gates passive regeneration. */
+  lastDamagedAtMs: number;
 
   kills: number;
   deaths: number;
@@ -106,6 +120,10 @@ export interface SimPlayer {
 
   history: PositionHistory;
   pendingInputs: InputFrame[];
+  /** Trigger intent from a player driven outside the input queue; see `applyWeaponIntent`. */
+  pendingWeaponIntent: InputFrame | null;
+  /** True until a tick has consumed `pendingWeaponIntent` at least once. */
+  weaponIntentFresh: boolean;
   /** Damage taken recently, for assist attribution. */
   recentDamage: Map<string, { amount: number; atMs: number }>;
   rejectedInputs: number;
@@ -131,6 +149,43 @@ export type SimEvent =
       respawnAtMs: number;
     }
   | { type: "respawn"; playerId: string; position: Vec3; yaw: number; tick: number }
+  | {
+      /**
+       * A trigger pull that fired a round. Emitted for hits and misses alike,
+       * so a client can draw the muzzle flash and tracer without guessing at
+       * cadence or ammunition. `distance` is null on a miss.
+       */
+      type: "shot";
+      playerId: string;
+      weaponId: WeaponId;
+      origin: Vec3;
+      direction: Vec3;
+      victimId: string | null;
+      distance: number | null;
+      tick: number;
+    }
+  | {
+      type: "pickup_spawned";
+      pickupId: string;
+      kind: PickupKind;
+      position: Vec3;
+      weaponId: WeaponId | null;
+    }
+  | {
+      type: "pickup_taken";
+      pickupId: string;
+      playerId: string;
+      kind: PickupKind;
+      weaponId: WeaponId | null;
+      /** Health restored, for a pack. */
+      healed: number;
+      /** Rounds gained, for a weapon. */
+      ammoAdded: number;
+      /** Slot the weapon now occupies, and whether it is a new one. */
+      slot: number;
+      added: boolean;
+    }
+  | { type: "pickup_removed"; pickupId: string }
   | {
       type: "grenade_thrown";
       grenadeId: string;
@@ -171,6 +226,12 @@ export interface SimulationOptions {
   matchId: string;
   map: CollisionMap;
   rules?: MatchRules;
+  /**
+   * Health packs and weapon drops. Off unless asked for: the multiplayer room
+   * does not render pickups yet, and an invisible health pack is worse than
+   * none.
+   */
+  pickups?: Partial<PickupRules>;
 }
 
 export class MatchSimulation {
@@ -191,8 +252,15 @@ export class MatchSimulation {
   /** Grenades currently in flight, keyed by id. */
   readonly grenades = new Map<string, SimGrenade>();
 
+  /** Health packs and weapon drops on the ground, keyed by id. */
+  readonly pickups = new Map<string, SimPickup>();
+  private readonly pickupRules: PickupRules | null;
+  /** Per health spawn: when the next pack appears there, or null while one sits there. */
+  private readonly healthSpawnDueAtMs: (number | null)[] = [];
+
   private readonly recentDeaths: { position: Vec3; atMs: number }[] = [];
   private nextGrenadeSeq = 0;
+  private nextPickupSeq = 0;
   private events: SimEvent[] = [];
   private emitStartNextStep = false;
 
@@ -200,6 +268,17 @@ export class MatchSimulation {
     this.matchId = options.matchId;
     this.map = options.map;
     this.rules = options.rules ?? TDM_RULES;
+
+    if (options.pickups) {
+      const merged = { ...DEFAULT_PICKUP_RULES, ...options.pickups };
+      // A spawn inside a solid would be visible and unreachable; drop it here
+      // rather than ship it.
+      const healthSpawns = merged.healthSpawns.filter((point) => isClearOfSolids(this.map, point));
+      this.pickupRules = { ...merged, healthSpawns };
+      this.healthSpawnDueAtMs.push(...healthSpawns.map(() => merged.healthFirstSpawnMs));
+    } else {
+      this.pickupRules = null;
+    }
   }
 
   // ------------------------------------------------------------------------
@@ -246,6 +325,7 @@ export class MatchSimulation {
       alive: true,
       respawnAtMs: 0,
       spawnProtectedUntilMs: 0,
+      lastDamagedAtMs: -Infinity,
       kills: 0,
       deaths: 0,
       assists: 0,
@@ -257,6 +337,8 @@ export class MatchSimulation {
       reconnectCount: 0,
       history: new PositionHistory(),
       pendingInputs: [],
+      pendingWeaponIntent: null,
+      weaponIntentFresh: false,
       recentDamage: new Map(),
       rejectedInputs: 0,
     };
@@ -408,6 +490,9 @@ export class MatchSimulation {
     // against where players actually ended up, not where they started.
     this.stepGrenades();
 
+    this.regenerateAll();
+    this.stepPickups();
+
     if (this.phase === "live") {
       const outcome = evaluateMatchOutcome(this.scores, this.elapsedMs, this.rules);
       if (outcome.ended) {
@@ -473,13 +558,48 @@ export class MatchSimulation {
       player.movement = stepMovement(player.movement, idle, this.map);
       if (isBelowKillPlane(player.movement.position, this.map)) {
         this.killPlayer(player, null, null, false);
+        return;
       }
+    }
+
+    const intent = player.pendingWeaponIntent;
+    if (intent) {
+      player.weaponIntentFresh = false;
+      player.movement.yaw = intent.yaw;
+      player.movement.pitch = intent.pitch;
+      this.processWeaponIntent(player, intent);
     }
   }
 
   // ------------------------------------------------------------------------
   // Weapons
   // ------------------------------------------------------------------------
+
+  /**
+   * Weapon intent for a player whose movement is driven outside the input
+   * queue.
+   *
+   * The single-player sandbox runs `stepMovement` on the client and writes
+   * the result straight into the player, so it never queues frames; without
+   * this it had to fake the trigger with its own damage table. Routing the
+   * pull through here gives it the same cadence, magazine, reload and hit
+   * resolution a match enforces, and the same `shot` event to draw from.
+   */
+  applyWeaponIntent(playerId: string, frame: InputFrame): void {
+    const player = this.players.get(playerId);
+    if (!player || !player.alive) return;
+    const clean = sanitizeInputFrame(frame);
+    // Resolved on the ticks that follow, where every other intent is
+    // resolved and where the events it produces are actually returned. The
+    // intent stands until the next call replaces it, so a held trigger keeps
+    // firing at the weapon's cadence however few frames the client renders
+    // per tick. A press shorter than a frame still counts: an unconsumed
+    // fire bit survives the merge.
+    const unconsumed = player.weaponIntentFresh ? player.pendingWeaponIntent : null;
+    const held = unconsumed?.buttons ?? 0;
+    player.pendingWeaponIntent = { ...clean, buttons: clean.buttons | (held & BUTTON.FIRE) };
+    player.weaponIntentFresh = true;
+  }
 
   private processWeaponIntent(player: SimPlayer, frame: InputFrame): void {
     const wantsFire = hasButton(frame.buttons, BUTTON.FIRE);
@@ -643,6 +763,7 @@ export class MatchSimulation {
       const result = applyDamage({ health: player.health, armor: player.armor }, victim.damage);
       player.health = result.vitals.health;
       player.armor = result.vitals.armor;
+      player.lastDamagedAtMs = this.elapsedMs;
       applied.push({ playerId: player.id, damage: victim.damage });
 
       if (owner && owner.id !== player.id) {
@@ -766,6 +887,19 @@ export class MatchSimulation {
       });
     }
 
+    // The shot itself, before whatever it did: a client draws the flash and
+    // tracer from this, then the hit on top.
+    this.events.push({
+      type: "shot",
+      playerId: player.id,
+      weaponId: spec.id,
+      origin,
+      direction,
+      victimId,
+      distance: victimId === null ? null : distanceM,
+      tick: this.tick,
+    });
+
     if (victimId === null || totalDamage <= 0) return;
 
     const victim = this.players.get(victimId);
@@ -776,6 +910,7 @@ export class MatchSimulation {
     victim.health = result.vitals.health;
     victim.armor = result.vitals.armor;
 
+    victim.lastDamagedAtMs = this.elapsedMs;
     victim.recentDamage.set(player.id, {
       amount: (victim.recentDamage.get(player.id)?.amount ?? 0) + totalDamage,
       atMs: this.elapsedMs,
@@ -790,8 +925,6 @@ export class MatchSimulation {
       headshot,
       tick: this.tick,
     });
-
-    void distanceM;
 
     if (result.killed) {
       this.killPlayer(victim, player, spec.id, headshot);
@@ -815,9 +948,13 @@ export class MatchSimulation {
     victim.deaths += 1;
     victim.respawnAtMs = this.elapsedMs + this.rules.respawnDelayMs;
     victim.pendingInputs.length = 0;
+    victim.pendingWeaponIntent = null;
+    victim.weaponIntentFresh = false;
     victim.triggerHeld = false;
 
     this.recentDeaths.push({ position: { ...victim.movement.position }, atMs: this.elapsedMs });
+
+    this.dropWeapons(victim);
 
     if (attacker && attacker.id !== victim.id) {
       if (attacker.team === victim.team) {
@@ -878,6 +1015,7 @@ export class MatchSimulation {
     player.grenades = GRENADE_SPEC.carried;
     player.nextGrenadeAtMs = 0;
     player.recentDamage.clear();
+    player.lastDamagedAtMs = -Infinity;
     player.history.clear();
     player.ammo = player.weapons.map((id) => {
       const spec = getWeapon(id);
@@ -893,6 +1031,135 @@ export class MatchSimulation {
         tick: this.tick,
       });
     }
+  }
+
+  // ------------------------------------------------------------------------
+  // Vitals
+  // ------------------------------------------------------------------------
+
+  /**
+   * Passive regeneration up to the stabilisation ceiling (PRD §12.4).
+   *
+   * Only after a pause in incoming damage, and never past `REGEN_CEILING`:
+   * getting back to full is what health packs are for.
+   */
+  private regenerateAll(): void {
+    for (const player of this.players.values()) {
+      if (!player.alive) continue;
+      if (this.elapsedMs - player.lastDamagedAtMs < REGEN_DELAY_MS) continue;
+      player.health = regenerate({ health: player.health, armor: player.armor }, TICK_MS).health;
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // Pickups
+  // ------------------------------------------------------------------------
+
+  private stepPickups(): void {
+    const rules = this.pickupRules;
+    if (!rules) return;
+
+    // Health packs come back on their own clock.
+    rules.healthSpawns.forEach((position, index) => {
+      const dueAt = this.healthSpawnDueAtMs[index];
+      if (dueAt === null || dueAt === undefined || this.elapsedMs < dueAt) return;
+      this.healthSpawnDueAtMs[index] = null;
+      this.placePickup({
+        kind: PICKUP_KIND.HEALTH,
+        position: { ...position },
+        heal: rules.healAmount,
+        weaponId: null,
+        magazine: 0,
+        reserve: 0,
+        expiresAtMs: null,
+        spawnIndex: index,
+      });
+    });
+
+    // Drops nobody wanted are swept up.
+    for (const pickup of this.pickups.values()) {
+      if (pickup.expiresAtMs !== null && this.elapsedMs >= pickup.expiresAtMs) {
+        this.pickups.delete(pickup.id);
+        this.events.push({ type: "pickup_removed", pickupId: pickup.id });
+      }
+    }
+
+    for (const player of this.players.values()) {
+      if (!player.alive) continue;
+      for (const pickup of this.pickups.values()) {
+        // Bots take health but leave weapons: a bot's silhouette is its
+        // weapon, and swapping it mid-match would make the sides unreadable.
+        if (pickup.kind === PICKUP_KIND.WEAPON && player.isBot) continue;
+        if (
+          !withinPickupReach(
+            player.movement.position,
+            player.movement.crouching,
+            pickup.position,
+            rules.pickupRadiusM,
+          )
+        ) {
+          continue;
+        }
+        const outcome = applyPickup(player, pickup, rules);
+        if (!outcome) continue;
+
+        this.pickups.delete(pickup.id);
+        if (pickup.spawnIndex !== null) {
+          this.healthSpawnDueAtMs[pickup.spawnIndex] = this.elapsedMs + rules.healthRespawnMs;
+        }
+        this.events.push({
+          type: "pickup_taken",
+          pickupId: pickup.id,
+          playerId: player.id,
+          kind: pickup.kind,
+          weaponId: pickup.weaponId,
+          healed: outcome.kind === "health" ? outcome.healed : 0,
+          ammoAdded: outcome.kind === "weapon" ? outcome.ammoAdded : 0,
+          slot: outcome.kind === "weapon" ? outcome.slot : -1,
+          added: outcome.kind === "weapon" ? outcome.added : false,
+        });
+      }
+    }
+  }
+
+  /**
+   * What a dead fighter leaves on the ground: the weapon in their hands, with
+   * whatever rounds it had.
+   *
+   * Only the one in hand. Dropping the whole kit read well on paper and
+   * littered the yard in practice — seven bots dying every twenty seconds
+   * left forty weapons floating in the lanes.
+   */
+  private dropWeapons(victim: SimPlayer): void {
+    const rules = this.pickupRules;
+    if (!rules || !rules.dropWeapons) return;
+
+    const weaponId = victim.weapons[victim.weaponSlot];
+    const ammo = victim.ammo[victim.weaponSlot];
+    if (!weaponId || !ammo || ammo.magazine + ammo.reserve <= 0) return;
+    this.placePickup({
+      kind: PICKUP_KIND.WEAPON,
+      position: { ...victim.movement.position },
+      heal: 0,
+      weaponId,
+      magazine: ammo.magazine,
+      reserve: ammo.reserve,
+      expiresAtMs: this.elapsedMs + rules.dropExpiresMs,
+      spawnIndex: null,
+    });
+  }
+
+  private placePickup(pickup: Omit<SimPickup, "id">): void {
+    this.nextPickupSeq += 1;
+    const placed: SimPickup = { ...pickup, id: `pickup-${this.nextPickupSeq}` };
+    this.pickups.set(placed.id, placed);
+    this.events.push({
+      type: "pickup_spawned",
+      pickupId: placed.id,
+      kind: placed.kind,
+      position: { ...placed.position },
+      weaponId: placed.weaponId,
+    });
   }
 
   private pruneRecentDeaths(): void {

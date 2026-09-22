@@ -1,4 +1,4 @@
-import type { FreeCamera, Scene, Vector3 } from "@babylonjs/core";
+import type { FreeCamera, Scene } from "@babylonjs/core";
 import { BUTTON, MAX_INPUT_DT_MS, type InputFrame } from "@nightcell7/multiplayer-protocol";
 import {
   createMovementState,
@@ -26,6 +26,17 @@ import {
 
 const PITCH_LIMIT = (89 * Math.PI) / 180;
 
+/**
+ * Keyboard turn rate, radians per second.
+ *
+ * A fallback, not a control scheme. Pointer lock is supposed to deliver
+ * unbounded relative motion, and on most desktops it does — but some
+ * compositors and remote-desktop sessions only *confine* the cursor, so the
+ * view stops turning when the invisible cursor reaches the window edge. The
+ * arrow keys keep the yard navigable when that happens.
+ */
+const KEY_TURN_RATE = 2.4;
+
 export interface ControllerOptions {
   /** Radians of view rotation per pixel of mouse travel. */
   sensitivity?: number;
@@ -41,7 +52,12 @@ export interface ControllerStatus {
   readonly locked: boolean;
   /** Fire button held. Presentation only — the server decides what a shot does. */
   readonly firing: boolean;
+  /** Dead: input is ignored until the simulation respawns the player. */
+  readonly dead: boolean;
 }
+
+/** Weapon-slot keys, in slot order. */
+const SLOT_KEYS = ["Digit1", "Digit2", "Digit3"] as const;
 
 export class PlayerController {
   private state: MovementState;
@@ -51,14 +67,19 @@ export class PlayerController {
   private seq = 0;
   private locked = false;
   private firing = false;
+  private dead = false;
   /**
-   * Edge-triggered throw request.
+   * Edge-triggered requests.
    *
    * Held keys are level-triggered, which is right for movement and wrong for a
-   * grenade: holding G would empty the pouch in two frames. This latches on the
-   * key-down and is cleared by whoever consumes it.
+   * grenade: holding G would empty the pouch in two frames. These latch on the
+   * key-down and are cleared by whoever consumes them.
    */
   private throwRequested = false;
+  private reloadRequested = false;
+  /** Absolute slot from a number key, or a wheel step; null when nothing asked. */
+  private weaponRequested: { slot: number } | { step: number } | null = null;
+  private lastFrame: InputFrame | null = null;
   private readonly sensitivity: number;
   private readonly invertY: boolean;
   private readonly spawn: Vec3;
@@ -88,8 +109,11 @@ export class PlayerController {
     const onKeyDown = (e: KeyboardEvent) => {
       // Never swallow the browser's own escape hatches.
       if (e.code === "F5" || e.code === "F12") return;
-      if (this.locked && e.code === "KeyG" && !this.held.has("KeyG")) {
-        this.throwRequested = true;
+      if (this.locked && !this.held.has(e.code)) {
+        if (e.code === "KeyG") this.throwRequested = true;
+        if (e.code === "KeyR") this.reloadRequested = true;
+        const slot = SLOT_KEYS.indexOf(e.code as (typeof SLOT_KEYS)[number]);
+        if (slot >= 0) this.weaponRequested = { slot };
       }
       this.held.add(e.code);
       if (this.locked) e.preventDefault();
@@ -111,6 +135,11 @@ export class PlayerController {
     const onMouseUp = (e: MouseEvent) => {
       if (e.button === 0) this.firing = false;
     };
+    const onWheel = (e: WheelEvent) => {
+      if (!this.locked || e.deltaY === 0) return;
+      this.weaponRequested = { step: e.deltaY > 0 ? 1 : -1 };
+      e.preventDefault();
+    };
 
     const onLockChange = () => {
       this.locked = document.pointerLockElement === this.canvas;
@@ -120,6 +149,8 @@ export class PlayerController {
         this.held.clear();
         this.firing = false;
         this.throwRequested = false;
+        this.reloadRequested = false;
+        this.weaponRequested = null;
       }
       this.onLockChanged?.(this.locked);
     };
@@ -129,6 +160,7 @@ export class PlayerController {
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("wheel", onWheel, { passive: false });
     document.addEventListener("pointerlockchange", onLockChange);
     // Losing focus mid-strafe otherwise leaves the key latched down.
     const onBlur = () => this.held.clear();
@@ -140,6 +172,7 @@ export class PlayerController {
       () => window.removeEventListener("mousemove", onMouseMove),
       () => window.removeEventListener("mousedown", onMouseDown),
       () => window.removeEventListener("mouseup", onMouseUp),
+      () => window.removeEventListener("wheel", onWheel),
       () => document.removeEventListener("pointerlockchange", onLockChange),
       () => window.removeEventListener("blur", onBlur),
     );
@@ -164,8 +197,53 @@ export class PlayerController {
     return true;
   }
 
+  /** Take the pending reload request, if any. Clears it. */
+  consumeReloadRequest(): boolean {
+    if (!this.reloadRequested) return false;
+    this.reloadRequested = false;
+    return true;
+  }
+
+  /** Take the pending weapon change, if any. Clears it. */
+  consumeWeaponRequest(): { slot: number } | { step: number } | null {
+    const request = this.weaponRequested;
+    this.weaponRequested = null;
+    return request;
+  }
+
+  /** The input frame built by the last `update`, for whoever resolves the trigger. */
+  lastInput(): InputFrame | null {
+    return this.lastFrame;
+  }
+
   get isLocked(): boolean {
     return this.locked;
+  }
+
+  /**
+   * Dead or alive, as decided by the simulation.
+   *
+   * While dead the player can still look around — watching who got you is
+   * part of the loop — but cannot move, fire or throw, and every latched
+   * request is dropped so nothing fires on the respawn frame.
+   */
+  setDead(dead: boolean): void {
+    if (this.dead === dead) return;
+    this.dead = dead;
+    if (dead) {
+      this.firing = false;
+      this.throwRequested = false;
+      this.reloadRequested = false;
+      this.weaponRequested = null;
+    }
+  }
+
+  /** Put the player somewhere else, standing still. Used on respawn. */
+  teleport(position: Vec3, yaw: number): void {
+    this.yaw = yaw;
+    this.pitch = 0;
+    this.state = createMovementState({ ...position }, yaw);
+    this.syncCamera();
   }
 
   // ---------------------------------------------------------------- update
@@ -177,16 +255,21 @@ export class PlayerController {
     const dtMs = Math.min(deltaMs, MAX_INPUT_DT_MS);
     if (dtMs <= 0) return;
 
+    // Keyboard turning; see KEY_TURN_RATE.
+    const turn = this.axis("ArrowRight", "ArrowLeft");
+    if (turn !== 0) this.yaw += turn * KEY_TURN_RATE * (dtMs / 1000);
+
     const input: InputFrame = {
       seq: (this.seq += 1),
       dtMs,
-      moveX: this.axis("KeyD", "KeyA"),
-      moveZ: this.axis("KeyW", "KeyS"),
+      moveX: this.dead ? 0 : this.axis("KeyD", "KeyA"),
+      moveZ: this.dead ? 0 : this.axis("KeyW", "KeyS"),
       yaw: this.yaw,
       pitch: this.pitch,
-      buttons: this.buttons(),
+      buttons: this.dead ? 0 : this.buttons(),
       clientTimeMs: performance.now(),
     };
+    this.lastFrame = input;
 
     this.state = stepMovement(this.state, input, this.map);
 
@@ -239,12 +322,8 @@ export class PlayerController {
       crouching: this.state.crouching,
       sprinting: this.held.has("ShiftLeft"),
       locked: this.locked,
-      firing: this.firing,
+      firing: this.firing && !this.dead,
+      dead: this.dead,
     };
-  }
-
-  /** World-space eye position, used for muzzle origin and audio. */
-  eyePosition(): Vector3 {
-    return this.camera.position.clone();
   }
 }
