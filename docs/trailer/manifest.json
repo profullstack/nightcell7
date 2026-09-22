@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-09-22T11:23:52.389Z",
+  "commit": "c867e670ea7d4627039e67fa9a5ee2a1c17f19fa",
+  "tool": "tools/art/trailer.mjs",
+  "file": "nightcell7-trailer.mp4",
+  "sha256": "b322ab2597",
+  "bytes": 7049183,
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "seconds": 26.27,
+  "music": "apps/game/public/audio/music/throngva/ironwood-oath.mp3",
+  "beats": [
+    {
+      "name": "look-left",
+      "frames": 24
+    },
+    {
+      "name": "look-right",
+      "frames": 40
+    },
+    {
+      "name": "settle",
+      "frames": 12
+    },
+    {
+      "name": "open-fire",
+      "frames": 40
+    },
+    {
+      "name": "advance",
+      "frames": 100
+    },
+    {
+      "name": "advance-turn",
+      "frames": 30
+    },
+    {
+      "name": "advance-fire",
+      "frames": 50
+    },
+    {
+      "name": "frag",
+      "frames": 8
+    },
+    {
+      "name": "watch-the-frag",
+      "frames": 70
+    },
+    {
+      "name": "sidearm",
+      "frames": 6
+    },
+    {
+      "name": "sidearm-fire",
+      "frames": 45
+    },
+    {
+      "name": "reload",
+      "frames": 6
+    },
+    {
+      "name": "reloading",
+      "frames": 60
+    },
+    {
+      "name": "rifle",
+      "frames": 6
+    },
+    {
+      "name": "push",
+      "frames": 90
+    },
+    {
+      "name": "push-fire",
+      "frames": 60
+    },
+    {
+      "name": "hold",
+      "frames": 90
+    }
+  ],
+  "note": "Re-encoded once from the first master to limited range at crf 23; the tool now does both directly."
+}
