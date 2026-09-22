@@ -515,6 +515,24 @@
         "nc7_lens",
         "nc7_marking"
       ]
+    },
+    "m3_launcher": {
+      "name": "m3_launcher",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 77732,
+      "sha256": "37c3fa23ed3d22847f4ca076e242ae9f0ffd1d0e0de3166d7defa4aef919886d",
+      "triangles": 3044,
+      "animations": [],
+      "materials": ["ir_white", "nc7_alloy", "nc7_coating", "nc7_dark", "nc7_lens", "nc7_polymer"]
+    },
+    "m3_rocket": {
+      "name": "m3_rocket",
+      "origin": "Original IRON RAIN geometry and rigging",
+      "bytes": 40104,
+      "sha256": "10ca0fcec44ccb9d52c1f6a1046380d11888468c49c599d7514357d13290fd1a",
+      "triangles": 1612,
+      "animations": [],
+      "materials": ["nc7_alloy", "nc7_coating", "nc7_dark"]
     }
   },
   "optimization": "glTF Transform 4.5.0: dedup, weld, 16-bit positions/weights, 12-bit normals; UVs retain full precision outside 0-1; KHR_mesh_quantization",

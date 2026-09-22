@@ -22,6 +22,7 @@
     "m3_fuel_reservoir.glb",
     "m3_grenade.glb",
     "m3_guard_post.glb",
+    "m3_launcher.glb",
     "m3_low_cover.glb",
     "m3_maintenance_hangar.glb",
     "m3_marksman.glb",
@@ -31,6 +32,7 @@
     "m3_pipe_plant.glb",
     "m3_refinery.glb",
     "m3_rifle.glb",
+    "m3_rocket.glb",
     "m3_security_wall.glb",
     "m3_smg.glb",
     "m3_utility_vehicle.glb",
@@ -80,9 +82,9 @@
     "throngva/the-wolf-called-want.mp3"
   ],
   "bytes": {
-    "models": 6212280,
+    "models": 6330116,
     "textures": 720622,
     "audio": 402789,
-    "total": 7335691
+    "total": 7453527
   }
 }

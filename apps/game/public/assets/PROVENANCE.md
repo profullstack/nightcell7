@@ -1,11 +1,12 @@
 # Asset provenance — IRON RAIN
 
-The current runtime contains **28 original NIGHTCELL 7 GLBs and 5 texture files**. All 27 non-approved models are newly built `m3_` assets. The approved `m2_carbine_fp.glb` and its three surface maps are retained. All other M2 runtime geometry and nine obsolete texture maps are removed.
+The current runtime contains **30 original NIGHTCELL 7 GLBs and 5 texture files**. All 29 non-approved models are newly built `m3_` assets. The approved `m2_carbine_fp.glb` and its three surface maps are retained. All other M2 runtime geometry and nine obsolete texture maps are removed.
 
 | Content                                                       | Origin                                                                                                                    |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Structures, vehicles, equipment, two operator bodies and rigs | Original geometry and animation in `tools/art/iron-rain/generate.py`                                                      |
 | World rifle variants                                          | Original approved C7 design family, regenerated for world scale                                                           |
+| M9 Hammerfall launcher and its rocket                         | Original geometry, `tools/art/iron-rain/generate.py` builders `launcher()` and `rocket()`, 2026-09-22                     |
 | Approved first-person rifle                                   | Unmodified original `m2_carbine_fp.glb`                                                                                   |
 | Concrete, blue paint, asphalt and ripstop atlas               | Built-in image generation, 2026-09-16; reusable source and recorded direction in `tools/art/iron-rain/texture-prompts.md` |
 | Environment image                                             | Original deterministic `tools/art/iron-rain/environment.py`                                                               |

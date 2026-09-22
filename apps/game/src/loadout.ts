@@ -255,6 +255,7 @@ export const ARMORY_ITEM = {
   C9: "c9",
   P11: "p11",
   B4: "b4",
+  M9: "m9",
 } as const;
 
 export type ArmoryItemId = (typeof ARMORY_ITEM)[keyof typeof ARMORY_ITEM];
@@ -313,6 +314,16 @@ export const ARMORY: readonly ArmoryItem[] = [
     blurb: "Shotgun. A slot, or reserve ammunition if carried.",
     price: 400,
     weapon: WEAPON.B4_BREACHER,
+  },
+  {
+    id: ARMORY_ITEM.M9,
+    name: getWeapon(WEAPON.M9_HAMMERFALL).displayName,
+    blurb: "Rocket launcher. One tube, a long reload, and a blast.",
+    // The dearest thing in the armory by a distance. Credits are earned at
+    // +100 a kill, so this is roughly eight kills: it should be the shot you
+    // save up for, not the one you open with.
+    price: 800,
+    weapon: WEAPON.M9_HAMMERFALL,
   },
 ];
 

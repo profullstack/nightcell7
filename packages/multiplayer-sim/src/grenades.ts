@@ -1,4 +1,9 @@
-import { GRENADE_SPEC, grenadeDamageAt, type GrenadeSpec } from "@nightcell7/game-core";
+import {
+  GRENADE_SPEC,
+  grenadeDamageAt,
+  type BlastProfile,
+  type GrenadeSpec,
+} from "@nightcell7/game-core";
 import { GRAVITY } from "./constants";
 import { raycastWorld } from "./hitscan";
 import type { CollisionMap } from "./map";
@@ -124,7 +129,9 @@ export function resolveBlast(
   ownerTeam: number,
   candidates: readonly BlastCandidate[],
   map: CollisionMap,
-  spec: GrenadeSpec = GRENADE_SPEC,
+  // A `BlastProfile`, not a `GrenadeSpec`: the rocket's detonation is the
+  // same model without a fuse or a bounce, and both satisfy this.
+  spec: BlastProfile = GRENADE_SPEC,
 ): BlastVictim[] {
   const victims: BlastVictim[] = [];
 

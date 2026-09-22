@@ -1,7 +1,8 @@
 import { WEAPON, type WeaponId } from "./ids";
+import type { BlastProfile } from "./grenades";
 
 /**
- * The four hero weapons (PRD §13.1).
+ * The hero weapons (PRD §13.1).
  *
  * "Four excellent weapons have more value than twenty weak weapons" — these
  * numbers are the shared tuning contract. The client uses them for prediction
@@ -10,6 +11,14 @@ import { WEAPON, type WeaponId } from "./ids";
  * live here rather than in either runtime.
  *
  * All names are fictional; no real trade dress (PRD §13.1).
+ *
+ * PRD §13.1 said four. The M9 HAMMERFALL is a fifth, and it is here because
+ * it is a different *kind* of weapon rather than a fifth flavour of the same
+ * one: every other entry is hitscan, and this one puts a projectile in the
+ * air with a blast at the end of it. "Four excellent weapons have more value
+ * than twenty weak weapons" is an argument against power creep, not against
+ * a second verb. It is bought with earned credits and is not purchasable with
+ * money, so the no-pay-to-win rule is untouched.
  */
 
 export interface WeaponSpec {
@@ -38,6 +47,17 @@ export interface WeaponSpec {
   readonly suppressed: boolean;
   /** Multiplayer availability. Campaign-only weapons never enter a match. */
   readonly multiplayer: boolean;
+  /**
+   * Muzzle speed of the projectile, m/s. Absent on every hitscan weapon, and
+   * its presence is what makes a weapon a launcher: the simulation branches on
+   * `isProjectileWeapon`, never on the weapon id, so a second launcher needs no
+   * new branch.
+   */
+  readonly projectileSpeedMps?: number;
+  /** Metres of drop per second squared. Flat-shooting, so far below gravity. */
+  readonly projectileGravity?: number;
+  /** Detonation, reusing the grenade blast model. */
+  readonly blast?: BlastProfile;
 }
 
 export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
@@ -119,7 +139,49 @@ export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
     // "no pay-to-win, no power creep" rule in practice (PRD §5.4).
     multiplayer: false,
   },
+  [WEAPON.M9_HAMMERFALL]: {
+    id: WEAPON.M9_HAMMERFALL,
+    displayName: "M9 Hammerfall",
+    // One tube, one rocket, a long reload. The cadence is the balance: it is
+    // the hardest-hitting thing in the yard and you get it back roughly once
+    // every four seconds, so a miss costs more than a miss with anything else.
+    rpm: 30,
+    magazineSize: 1,
+    reserveAmmo: 5,
+    reloadMs: 3400,
+    emptyReloadMs: 3400,
+    // Direct hit. The blast under it is what usually does the killing, and a
+    // direct hit adds this on top, so a contact shot is lethal and a near miss
+    // is survivable with armour.
+    damage: 65,
+    // A rocket does not care where it lands on a body.
+    headshotMultiplier: 1,
+    pellets: 1,
+    spreadRadians: 0,
+    // No falloff: a rocket carries its warhead the whole way.
+    falloffStartM: 400,
+    falloffEndM: 400,
+    minDamageFraction: 1,
+    maxRangeM: 400,
+    suppressed: false,
+    multiplayer: true,
+    projectileSpeedMps: 42,
+    projectileGravity: -2.6,
+    blast: {
+      innerRadiusM: 2.6,
+      outerRadiusM: 7.5,
+      maxDamage: 130,
+      // Firing it at a wall in your own face has to hurt, or the tube becomes
+      // a panic button at close range instead of a commitment.
+      selfDamageFraction: 0.75,
+    },
+  },
 };
+
+/** True when firing this puts a projectile in the air instead of a trace. */
+export function isProjectileWeapon(spec: WeaponSpec): boolean {
+  return (spec.projectileSpeedMps ?? 0) > 0 && spec.blast !== undefined;
+}
 
 export function getWeapon(id: WeaponId): WeaponSpec {
   const spec = WEAPON_SPECS[id];
