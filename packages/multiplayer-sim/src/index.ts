@@ -11,6 +11,7 @@ export * from "./map";
 export * from "./movement";
 export * from "./hitscan";
 export * from "./grenades";
+export * from "./rockets";
 export * from "./pickups";
 export * from "./spawn";
 export * from "./simulation";

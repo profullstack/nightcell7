@@ -61,6 +61,8 @@ export const MODELS = [
   "m3_rifle",
   "m3_smg",
   "m3_marksman",
+  "m3_launcher",
+  "m3_rocket",
   "m3_grenade",
   "m3_control_tower",
   "m3_refinery",

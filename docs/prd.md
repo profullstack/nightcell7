@@ -90,7 +90,7 @@ in `apps/site/public/media/yard/manifest.json`.
 | §23.1    | Free sandbox scenes need no account                            | `apps/game/src/modes.ts`, `access.ts` (`PLAY_MODE.SANDBOX`)                                    |
 | §12.4    | Health/armour, regen ceiling, no bullet sponges                | `packages/game-core/src/damage.ts`                                                             |
 | §12.6    | Difficulty changes tactics, not enemy health                   | `packages/game-core/src/difficulty.ts`                                                         |
-| §13.1    | Four hero weapons, fictional                                   | `packages/game-core/src/weapons.ts`                                                            |
+| §13.1    | Five hero weapons, fictional (see §13.1 note)                  | `packages/game-core/src/weapons.ts`                                                            |
 | §13.2    | One throwable: the frag grenade                                | `packages/game-core/src/grenades.ts`, `multiplayer-sim/src/grenades.ts`                        |
 | §13.3    | Friendly-fire and identification rules                         | `multiplayer-sim/src/hitscan.ts` (team filter), `grenades.ts` (`resolveBlast`)                 |
 | §17.2    | Single-repository mandate                                      | `pnpm-workspace.yaml`, `CLAUDE.md`                                                             |
@@ -127,6 +127,33 @@ in `apps/site/public/media/yard/manifest.json`.
 | §36      | Scope priorities                                               | this file + `README.md` status                                                                 |
 
 ---
+
+## §13.1 note — a fifth weapon, 2026-09-22
+
+§13.1 said four hero weapons, on the principle that "four excellent weapons
+have more value than twenty weak weapons". The **M9 Hammerfall** is a fifth,
+and the principle is intact.
+
+That line is an argument against _power creep and filler_: a fifth assault
+rifle with slightly different numbers would be exactly what it warns about.
+The M9 is not that. Every other weapon in the game is hitscan, and this one
+puts a projectile in the air with a blast at the end of it. It adds a verb,
+not a variant, and it is the only weapon whose shots can be dodged, led, or
+taken cover from after they are fired.
+
+It stays inside the locked rules:
+
+- **Not pay-to-win.** Bought with credits earned in play at 800, roughly eight
+  kills. Credits are never purchasable with money (`docs/prd.md`, "Prohibited
+  in V1"), so this adds nothing to the storefront.
+- **Not power creep.** One tube, a 3.4 s reload and five in reserve. A miss
+  costs more than a miss with anything else in the yard, and the self-damage
+  fraction is 0.75, so firing it at your own feet kills you.
+- **Fictional**, like the rest of the family. Original geometry, built by
+  `tools/art/iron-rain/generate.py` (`launcher()` and `rocket()`).
+
+If a sixth is ever proposed, it has to clear the same bar: a new verb, not a
+new stat line.
 
 ## Budgets held in code
 

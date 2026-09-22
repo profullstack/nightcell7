@@ -3,15 +3,15 @@
   "assetSheet": {
     "file": "iron-rain-overview.webp",
     "title": "IRON RAIN",
-    "subtitle": "27 redesigned models + the approved C7 rifle, rendered from the exported geometry",
+    "subtitle": "29 redesigned models + the approved C7 rifle, rendered from the exported geometry",
     "width": 1920,
-    "height": 2938,
+    "height": 3332,
     "version": "iron-rain-3",
-    "date": "2026-09-16",
+    "date": "2026-09-22",
     "generator": "tools/art/iron-rain/generate.py",
-    "models": 28,
+    "models": 30,
     "originalGeometry": true,
-    "note": "Matches apps/game/public/assets/models/ one for one: 27 m3_*.glb plus m2_carbine_fp.glb. Every tile is a render of the file that ships in the build, not concept art."
+    "note": "Matches apps/game/public/assets/models/ one for one: 29 m3_*.glb plus m2_carbine_fp.glb. Every tile is a render of the file that ships in the build, not concept art. Re-rendered when the M9 Hammerfall launcher and its rocket landed."
   },
   "frames": {
     "generatedAt": "2026-09-22T10:52:18.453Z",

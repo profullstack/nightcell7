@@ -11,9 +11,11 @@ import {
   fireIntervalMs,
   getWeapon,
   isMultiplayerLegal,
+  isProjectileWeapon,
   regenerate,
   type MatchRules,
   type WeaponId,
+  type WeaponSpec,
 } from "@nightcell7/game-core";
 import {
   BUTTON,
@@ -30,6 +32,7 @@ import {
   type BlastCandidate,
   type SimGrenade,
 } from "./grenades";
+import { rocketLaunchVelocity, stepRocket, type RocketTarget, type SimRocket } from "./rockets";
 import { PositionHistory, resolveHitscan, rewindTicks, type HitCandidate } from "./hitscan";
 import type { CollisionMap } from "./map";
 import {
@@ -212,6 +215,26 @@ export type SimEvent =
       tick: number;
     }
   | {
+      type: "rocket_fired";
+      rocketId: string;
+      ownerId: string;
+      team: number;
+      weaponId: WeaponId;
+      position: Vec3;
+      velocity: Vec3;
+      tick: number;
+    }
+  | {
+      type: "rocket_exploded";
+      rocketId: string;
+      ownerId: string;
+      position: Vec3;
+      /** The body it struck head-on, if any, before the blast was resolved. */
+      directHitId: string | null;
+      victims: readonly { playerId: string; damage: number }[];
+      tick: number;
+    }
+  | {
       type: "match_end";
       reason: "score_limit" | "time_limit";
       winningTeam: number | null;
@@ -265,6 +288,8 @@ export class MatchSimulation {
 
   /** Grenades currently in flight, keyed by id. */
   readonly grenades = new Map<string, SimGrenade>();
+  /** Rockets currently in flight, keyed by id. */
+  readonly rockets = new Map<string, SimRocket>();
 
   /** Health packs and weapon drops on the ground, keyed by id. */
   readonly pickups = new Map<string, SimPickup>();
@@ -275,6 +300,7 @@ export class MatchSimulation {
 
   private readonly recentDeaths: { position: Vec3; atMs: number }[] = [];
   private nextGrenadeSeq = 0;
+  private nextRocketSeq = 0;
   private nextPickupSeq = 0;
   private events: SimEvent[] = [];
   private emitStartNextStep = false;
@@ -506,6 +532,7 @@ export class MatchSimulation {
     // After movement and history: a grenade detonating this tick should test
     // against where players actually ended up, not where they started.
     this.stepGrenades();
+    this.stepRockets();
 
     this.regenerateAll();
     this.stepPickups();
@@ -649,7 +676,11 @@ export class MatchSimulation {
     ammo.magazine -= 1;
     player.nextFireAtMs = this.elapsedMs + fireIntervalMs(spec);
 
-    this.resolveShot(player, spec.id, frame);
+    // A launcher puts a projectile in the air; everything else traces. The
+    // branch is on the spec, not on the weapon id, so a second launcher needs
+    // no change here.
+    if (isProjectileWeapon(spec)) this.launchRocket(player, spec, frame);
+    else this.resolveShot(player, spec.id, frame);
   }
 
   private beginReload(player: SimPlayer): void {
@@ -745,12 +776,56 @@ export class MatchSimulation {
     }
   }
 
-  private detonate(grenade: SimGrenade): void {
-    const candidates: BlastCandidate[] = [...this.players.values()].map((player) => ({
+  /**
+   * Put a rocket in the air from the player's authoritative eye position.
+   *
+   * Same rule as `throwGrenade`: the client asked to fire, and that is all it
+   * contributed. Origin, direction and ammunition all come from server state.
+   */
+  private launchRocket(player: SimPlayer, spec: WeaponSpec, frame: InputFrame): void {
+    const eye: Vec3 = {
+      x: player.movement.position.x,
+      y:
+        player.movement.position.y +
+        (player.movement.crouching ? EYE_HEIGHT_CROUCHED : EYE_HEIGHT_STANDING),
+      z: player.movement.position.z,
+    };
+    const aim = directionFromAngles(frame.yaw, frame.pitch);
+
+    const rocket: SimRocket = {
+      id: `${this.matchId}:r${(this.nextRocketSeq += 1)}`,
+      ownerId: player.id,
+      ownerTeam: player.team,
+      weaponId: spec.id,
+      // Start a little down the bore. Spawning on the eye puts the rocket
+      // inside the firer's own capsule on the first substep.
+      position: add(eye, scale(aim, 0.6)),
+      velocity: rocketLaunchVelocity(spec, aim),
+      travelledM: 0,
+      detonated: false,
+      impact: null,
+    };
+
+    this.rockets.set(rocket.id, rocket);
+    this.events.push({
+      type: "rocket_fired",
+      rocketId: rocket.id,
+      ownerId: player.id,
+      team: player.team,
+      weaponId: spec.id,
+      position: { ...rocket.position },
+      velocity: { ...rocket.velocity },
+      tick: this.tick,
+    });
+  }
+
+  /** Advance every rocket and detonate the ones that hit something. */
+  private stepRockets(): void {
+    if (this.rockets.size === 0) return;
+
+    const targets: RocketTarget[] = [...this.players.values()].map((player) => ({
       id: player.id,
       team: player.team,
-      // Chest height. Measuring to the feet would let a blast at head height
-      // on a catwalk miss the person standing in it.
       center: {
         x: player.movement.position.x,
         y: player.movement.position.y + playerHeight(player.movement.crouching) * 0.5,
@@ -758,6 +833,108 @@ export class MatchSimulation {
       },
       alive: player.alive,
     }));
+
+    for (const rocket of [...this.rockets.values()]) {
+      stepRocket(rocket, TICK_MS, this.map, targets);
+      if (!rocket.detonated) continue;
+      this.rockets.delete(rocket.id);
+      this.detonateRocket(rocket);
+    }
+  }
+
+  private detonateRocket(rocket: SimRocket): void {
+    const spec = getWeapon(rocket.weaponId);
+    const blast = spec.blast;
+    if (!blast) return;
+
+    const center = rocket.impact?.point ?? rocket.position;
+    const owner = this.players.get(rocket.ownerId) ?? null;
+    const applied: { playerId: string; damage: number }[] = [];
+
+    // A direct hit lands before the blast and stacks with it, so a contact
+    // shot kills and a near miss does not.
+    const direct = new Map<string, number>();
+    if (rocket.impact?.directHitId) direct.set(rocket.impact.directHitId, spec.damage);
+
+    const victims = resolveBlast(
+      center,
+      rocket.ownerId,
+      rocket.ownerTeam,
+      this.blastCandidates(),
+      this.map,
+      blast,
+    );
+
+    const total = new Map<string, number>(direct);
+    for (const victim of victims) {
+      total.set(victim.playerId, (total.get(victim.playerId) ?? 0) + victim.damage);
+    }
+
+    for (const [playerId, raw] of total) {
+      const player = this.players.get(playerId);
+      if (!player || !player.alive) continue;
+      if (this.elapsedMs < player.spawnProtectedUntilMs) continue;
+
+      const dealt = this.scaleIncoming(player, raw);
+      const result = applyDamage(
+        { health: player.health, armor: player.armor },
+        dealt,
+        player.maxHealth,
+      );
+      player.health = result.vitals.health;
+      player.armor = result.vitals.armor;
+      player.lastDamagedAtMs = this.elapsedMs;
+      applied.push({ playerId: player.id, damage: dealt });
+
+      if (owner && owner.id !== player.id) {
+        player.recentDamage.set(owner.id, {
+          amount: (player.recentDamage.get(owner.id)?.amount ?? 0) + raw,
+          atMs: this.elapsedMs,
+        });
+      }
+
+      this.events.push({
+        type: "hit",
+        attackerId: rocket.ownerId,
+        victimId: player.id,
+        damage: dealt,
+        armorAbsorbed: result.armorAbsorbed,
+        headshot: false,
+        tick: this.tick,
+      });
+
+      if (result.killed) this.killPlayer(player, owner, rocket.weaponId, false);
+    }
+
+    this.events.push({
+      type: "rocket_exploded",
+      rocketId: rocket.id,
+      ownerId: rocket.ownerId,
+      position: { ...center },
+      directHitId: rocket.impact?.directHitId ?? null,
+      victims: applied,
+      tick: this.tick,
+    });
+  }
+
+  /** Everyone a blast could reach, at chest height. */
+  private blastCandidates(): BlastCandidate[] {
+    return [...this.players.values()].map((player) => ({
+      id: player.id,
+      team: player.team,
+      center: {
+        x: player.movement.position.x,
+        y: player.movement.position.y + playerHeight(player.movement.crouching) * 0.5,
+        z: player.movement.position.z,
+      },
+      alive: player.alive,
+    }));
+  }
+
+  private detonate(grenade: SimGrenade): void {
+    // Chest height. Measuring to the feet would let a blast at head height on
+    // a catwalk miss the person standing in it.
+    const candidates = this.blastCandidates();
 
     const victims = resolveBlast(
       grenade.position,

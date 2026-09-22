@@ -22,7 +22,7 @@ try {
     deviceScaleFactor: 1,
   });
   await page.setContent(
-    `<html><style>*{box-sizing:border-box}body{margin:0;padding:42px;background:#0d1415;color:#e9e8df;font:18px Arial}h1{font-size:44px;letter-spacing:-1px;margin:0 0 8px}header p{color:#a6b5b3;margin:0 0 30px}main{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}article{background:#182224;border:1px solid #344143}img{width:100%;display:block;aspect-ratio:4/3;object-fit:contain}footer{display:flex;justify-content:space-between;padding:13px 14px;font-size:14px;text-transform:uppercase}footer span{color:#a9b3b0;font-size:12px}</style><header><h1>NIGHTCELL 7 / IRON RAIN</h1><p>27 redesigned models + approved C7 rifle · actual exported geometry</p></header><main>${cards.join("")}</main></html>`,
+    `<html><style>*{box-sizing:border-box}body{margin:0;padding:42px;background:#0d1415;color:#e9e8df;font:18px Arial}h1{font-size:44px;letter-spacing:-1px;margin:0 0 8px}header p{color:#a6b5b3;margin:0 0 30px}main{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}article{background:#182224;border:1px solid #344143}img{width:100%;display:block;aspect-ratio:4/3;object-fit:contain}footer{display:flex;justify-content:space-between;padding:13px 14px;font-size:14px;text-transform:uppercase}footer span{color:#a9b3b0;font-size:12px}</style><header><h1>NIGHTCELL 7 / IRON RAIN</h1><p>${manifest.models.m2_carbine_fp ? Object.keys(manifest.models).length - 1 : Object.keys(manifest.models).length} redesigned models + approved C7 rifle · actual exported geometry</p></header><main>${cards.join("")}</main></html>`,
   );
   await page.screenshot({ path: repo + "/build/iron-rain/contact-sheet.png", fullPage: true });
   execFileSync("ffmpeg", [

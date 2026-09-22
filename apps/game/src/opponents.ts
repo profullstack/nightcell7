@@ -25,6 +25,7 @@ import {
   type SimGrenade,
   type SimPickup,
   type SimPlayer,
+  type SimRocket,
   type Vec3,
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
@@ -206,6 +207,7 @@ export class Opponents {
   private readonly shots: BotShot[] = [];
   private readonly localShots: LocalShot[] = [];
   private readonly grenadeViews = new Map<string, GrenadeView>();
+  private readonly rocketViews = new Map<string, GrenadeView>();
   private readonly pickupViews = new Map<string, PickupView>();
   private readonly explosions: Explosion[] = [];
   private readonly notices: string[] = [];
@@ -223,6 +225,7 @@ export class Opponents {
   /** What the player's side wears, and what the other side wears against it. */
   private palettes: { own: TeamPalette; enemy: TeamPalette };
   private readonly grenadeModel: AssetContainer | null;
+  private readonly rocketModel: AssetContainer | null;
   private readonly assets: AssetSet;
 
   constructor(
@@ -236,6 +239,7 @@ export class Opponents {
     if (!enemyModel || !friendlyModel) throw new Error("IRON RAIN operator models not loaded");
 
     this.grenadeModel = assets.models.get("m3_grenade") ?? null;
+    this.rocketModel = assets.models.get("m3_rocket") ?? null;
 
     const difficulty = options.difficulty ?? difficultyInfo(DEFAULT_SANDBOX_DIFFICULTY);
     const armorClass = armorClassInfo(options.armorClass ?? "standard");
@@ -679,6 +683,7 @@ export class Opponents {
     }
 
     this.syncGrenades();
+    this.syncRockets();
     this.syncPickups(deltaMs);
   }
 
@@ -721,6 +726,51 @@ export class Opponents {
     const [root] = placeAll(this.grenadeModel, `grenade_${id}`, [
       {
         position: new Vector3(grenade.position.x, grenade.position.y, grenade.position.z),
+      },
+    ]);
+    if (!root) return null;
+    for (const mesh of root.getChildMeshes()) mesh.isPickable = false;
+    return { root };
+  }
+
+  /**
+   * Keep one mesh per rocket in flight, and point it where it is going.
+   *
+   * Driven off `sim.rockets` for the same reason grenades are: the simulation
+   * map is the truth and the meshes follow it, so nothing can be left hanging
+   * in the air after the rocket it belonged to has gone.
+   */
+  private syncRockets(): void {
+    for (const [id, rocket] of this.sim.rockets) {
+      let view = this.rocketViews.get(id);
+      if (!view) {
+        const created = this.createRocketView(id, rocket);
+        if (!created) continue;
+        view = created;
+        this.rocketViews.set(id, view);
+      }
+      view.root.position.set(rocket.position.x, rocket.position.y, rocket.position.z);
+      // Nose along the velocity. A rocket that flies sideways reads as debris.
+      const v = rocket.velocity;
+      const speed = Math.hypot(v.x, v.y, v.z);
+      if (speed > 0.001) {
+        view.root.rotation.y = Math.atan2(v.x, v.z);
+        view.root.rotation.x = -Math.asin(Math.max(-1, Math.min(1, v.y / speed)));
+      }
+    }
+
+    for (const [id, view] of this.rocketViews) {
+      if (this.sim.rockets.has(id)) continue;
+      view.root.dispose();
+      this.rocketViews.delete(id);
+    }
+  }
+
+  private createRocketView(id: string, rocket: SimRocket): GrenadeView | null {
+    if (!this.rocketModel) return null;
+    const [root] = placeAll(this.rocketModel, `rocket_${id}`, [
+      {
+        position: new Vector3(rocket.position.x, rocket.position.y, rocket.position.z),
       },
     ]);
     if (!root) return null;
@@ -884,6 +934,26 @@ export class Opponents {
           break;
         }
 
+        case "rocket_exploded": {
+          const view = this.rocketViews.get(event.rocketId);
+          if (view) {
+            view.root.dispose();
+            this.rocketViews.delete(event.rocketId);
+          }
+          const listener = this.sim.players.get(LOCAL_ID)?.movement.position;
+          this.explosions.push({
+            position: { ...event.position },
+            distanceM: listener
+              ? Math.hypot(
+                  event.position.x - listener.x,
+                  event.position.y - listener.y,
+                  event.position.z - listener.z,
+                )
+              : 0,
+          });
+          break;
+        }
+
         case "grenade_exploded": {
           const view = this.grenadeViews.get(event.grenadeId);
           if (view) {
@@ -958,5 +1028,7 @@ export class Opponents {
     this.pickupViews.clear();
     for (const view of this.grenadeViews.values()) view.root.dispose();
     this.grenadeViews.clear();
+    for (const view of this.rocketViews.values()) view.root.dispose();
+    this.rocketViews.clear();
   }
 }

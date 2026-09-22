@@ -118,6 +118,9 @@ export const WEAPON_WORLD_MODEL: Readonly<Record<WeaponId, ModelName>> = {
   [WEAPON.P11]: "m3_smg",
   [WEAPON.B4_BREACHER]: "m3_marksman",
   [WEAPON.M7_LANCE]: "m3_marksman",
+  // The launcher has its own silhouette, and it is the whole point of it:
+  // a fighter carrying one has to read as a threat from across the yard.
+  [WEAPON.M9_HAMMERFALL]: "m3_launcher",
 };
 
 export interface ViewmodelSpec {
@@ -136,4 +139,7 @@ export const WEAPON_VIEWMODEL: Readonly<Record<WeaponId, ViewmodelSpec>> = {
   [WEAPON.P11]: { model: "m3_smg", fitLengthM: 0.36 },
   [WEAPON.B4_BREACHER]: { model: "m3_marksman", fitLengthM: 0.6 },
   [WEAPON.M7_LANCE]: { model: "m3_marksman", fitLengthM: 0.62 },
+  // Fitted longer than the rifles, because the tube reading as oversized in
+  // the hands is exactly the feedback a rocket launcher should give.
+  [WEAPON.M9_HAMMERFALL]: { model: "m3_launcher", fitLengthM: 0.82 },
 };

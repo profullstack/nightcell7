@@ -96,6 +96,11 @@ describe("generated models", () => {
       "m3_rifle",
       "m3_smg",
       "m3_marksman",
+      // The launcher is carried, and the rocket only ever exists in flight:
+      // its collision is resolved in the simulation against the map, not by a
+      // hull on the mesh.
+      "m3_launcher",
+      "m3_rocket",
       "m3_grenade",
     ]);
 
@@ -123,6 +128,7 @@ describe("generated models", () => {
       "m3_rifle",
       "m3_smg",
       "m3_marksman",
+      "m3_launcher",
       "m3_grenade",
     ]) {
       const nodes = names(glbJson(join(MODELS_DIR, `${weapon}.glb`)).nodes);

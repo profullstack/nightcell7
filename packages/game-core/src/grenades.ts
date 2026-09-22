@@ -15,7 +15,25 @@ import { GADGET, type GadgetId } from "./ids";
  * campaign fiction rather than multiplayer content.
  */
 
-export interface GrenadeSpec {
+/**
+ * Just the numbers a detonation needs.
+ *
+ * `GrenadeSpec` satisfies it, and so does a launcher's `blast`, so one blast
+ * model serves the throwable and the rocket without the rocket inheriting a
+ * fuse, a bounce coefficient or a carry count it does not have.
+ */
+export interface BlastProfile {
+  /** Full damage within this distance of the centre. */
+  readonly innerRadiusM: number;
+  /** Damage reaches zero at this distance. */
+  readonly outerRadiusM: number;
+  /** Damage at the centre of the blast. */
+  readonly maxDamage: number;
+  /** Share of the blast its owner takes. */
+  readonly selfDamageFraction: number;
+}
+
+export interface GrenadeSpec extends BlastProfile {
   readonly id: GadgetId;
   readonly displayName: string;
   /** Time from leaving the hand to detonation. Not cookable in V1. */
@@ -89,7 +107,7 @@ export const GRENADE_SPEC: GrenadeSpec = {
  *
  * Pure, so the server, the client's prediction and the tests all agree.
  */
-export function grenadeDamageAt(distanceM: number, spec: GrenadeSpec = GRENADE_SPEC): number {
+export function grenadeDamageAt(distanceM: number, spec: BlastProfile = GRENADE_SPEC): number {
   if (!Number.isFinite(distanceM) || distanceM < 0) return 0;
   if (distanceM <= spec.innerRadiusM) return spec.maxDamage;
   if (distanceM >= spec.outerRadiusM) return 0;

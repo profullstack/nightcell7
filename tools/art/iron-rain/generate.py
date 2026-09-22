@@ -319,9 +319,57 @@ def weapon(kind):
    if len(o.data.polygons)>120:mod=o.modifiers.new('World weapon LOD','DECIMATE');mod.ratio=.32;bpy.ops.object.modifier_apply(modifier=mod.name)
   elif o.name.startswith('SOCKET_') and o.location.y<-.18:o.location.y=-.18+(o.location.y+.18)*(target-.18)/(.612-.18)
  finish(kind)
+def launcher():
+ # M9 HAMMERFALL. A tube, not a rifle, so it is built from primitives rather
+ # than scaled off S.rifle() like the other three. Forward is -Y and the
+ # muzzle socket sits on the bore axis, matching the C7 family, so the same
+ # SOCKET_WEAPON hand attachment and the same muzzle VFX anchor both work.
+ reset()
+ C('Launch tube',(0,-.16,0),.058,1.00,'nc7_alloy','Y',24)
+ T('Muzzle ring',(0,-.655,0),.071,.056,.036,'nc7_dark','Y',24)
+ T('Fore collar',(0,-.40,0),.067,.056,.05,'nc7_coating','Y',24)
+ T('Rear collar',(0,.10,0),.067,.056,.05,'nc7_coating','Y',24)
+ # Venturi: the back of a recoilless launcher is open, and the flare is the
+ # silhouette that tells a player at range this is not a rifle.
+ C('Venturi',(0,.40,0),.079,.15,'nc7_alloy','Y',24)
+ T('Blast ring',(0,.475,0),.088,.070,.022,'nc7_dark','Y',24)
+ box('Shoulder rest',(0,.24,-.072),(.07,.20,.055),'nc7_polymer')
+ box('Cheek plate',(.052,.16,.028),(.016,.17,.05),'nc7_polymer')
+ # Trigger group under the balance point, fore grip ahead of it.
+ g=box('Pistol grip',(0,.02,-.115),(.042,.058,.15),'nc7_polymer');g.rotation_euler.x=-.20
+ box('Trigger guard',(0,-.055,-.062),(.03,.075,.012),'nc7_dark')
+ box('Trigger',(0,-.048,-.078),(.012,.02,.03),'nc7_dark')
+ f=box('Fore grip',(0,-.34,-.10),(.038,.05,.12),'nc7_polymer');f.rotation_euler.x=.16
+ # Optic block and its lens, on the bore line so the first-person view lines up.
+ box('Optic body',(0,-.10,.084),(.05,.20,.05),'nc7_dark')
+ C('Optic lens',(0,-.198,.084),.019,.012,'nc7_lens','Y',16)
+ box('Rail',(0,-.10,.058),(.042,.34,.012),'nc7_dark')
+ box('Warhead housing',(0,-.60,0),(.064,.10,.064),'nc7_coating')
+ label('M9',(0,.02,.052),.05)
+ L.add_socket('MUZZLE',(0,-.70,0))
+ L.add_socket('SIGHT',(0,-.10,.112))
+ L.add_socket('GRIP_R',(0,.02,-.10))
+ L.add_socket('GRIP_L',(0,-.34,-.085))
+ finish('launcher')
+def rocket():
+ # The projectile the launcher puts in the air. Small, and only ever seen in
+ # flight, so it is a body, a nose and four fins: anything finer is invisible
+ # at the speed it travels and still costs the download budget.
+ reset()
+ C('Rocket body',(0,.02,0),.031,.20,'nc7_coating','Y',18)
+ E('Nose cone',(0,-.115,0),(.031,.055,.031),'nc7_dark',18,10)
+ T('Body band',(0,-.02,0),.034,.030,.016,'nc7_dark','Y',18)
+ C('Motor',(0,.135,0),.026,.05,'nc7_alloy','Y',18)
+ T('Nozzle',(0,.162,0),.028,.018,.018,'nc7_dark','Y',18)
+ for i in range(4):
+  a=math.tau*i/4
+  fin=box('Fin',(math.sin(a)*.043,.115,math.cos(a)*.043),(.006,.07,.05),'nc7_alloy')
+  fin.rotation_euler.y=-a
+ L.add_socket('MUZZLE',(0,-.15,0))
+ finish('rocket')
 def grenade():
  reset();E('Oval grenade',(0,0,.06),(.036,.036,.055),'ir_blue',24,16);C('Safety collar',(0,0,.114),.021,.019,'ir_steel','Z',16);box('Safety lever',(0,.026,.085),(.018,.012,.078),'ir_steel').rotation_euler.x=.28;T('Pull ring',(0,-.027,.125),.014,.01,.003,'ir_steel','X',20);L.add_socket('MUZZLE',(0,-.045,.10));finish('grenade')
-BUILDERS={'cargo_module':cargo,'security_wall':wall,'fuel_reservoir':tanks,'catwalk':catwalk,'pipe_plant':pipes,'command_bunker':bunker,'access_stair':stairs,'floodlight':lamp,'patrol_vehicle':vehicle,'utility_vehicle':lambda:vehicle(True),'fuel_drum':drums,'drum_pallet':lambda:drums(True),'blast_wall':lambda:cover(True),'low_cover':cover,'water_unit':water,'field_case':case,'field_shelter':shelter,'guard_post':tower,'control_tower':lambda:tower(True),'refinery':refinery,'maintenance_hangar':hangar,'operator_nightcell':operator,'operator_directorate':lambda:operator(True),'rifle':lambda:weapon('rifle'),'smg':lambda:weapon('smg'),'marksman':lambda:weapon('marksman'),'grenade':grenade}
+BUILDERS={'cargo_module':cargo,'security_wall':wall,'fuel_reservoir':tanks,'catwalk':catwalk,'pipe_plant':pipes,'command_bunker':bunker,'access_stair':stairs,'floodlight':lamp,'patrol_vehicle':vehicle,'utility_vehicle':lambda:vehicle(True),'fuel_drum':drums,'drum_pallet':lambda:drums(True),'blast_wall':lambda:cover(True),'low_cover':cover,'water_unit':water,'field_case':case,'field_shelter':shelter,'guard_post':tower,'control_tower':lambda:tower(True),'refinery':refinery,'maintenance_hangar':hangar,'operator_nightcell':operator,'operator_directorate':lambda:operator(True),'rifle':lambda:weapon('rifle'),'smg':lambda:weapon('smg'),'marksman':lambda:weapon('marksman'),'launcher':launcher,'rocket':rocket,'grenade':grenade}
 only=sys.argv[sys.argv.index('--only')+1].split(',') if '--only' in sys.argv else None
 for name,fn in BUILDERS.items():
  if only and name not in only:continue

@@ -41,6 +41,7 @@ export const WEAPON = {
   C9_KESTREL: "c9-kestrel",
   B4_BREACHER: "b4-breacher",
   M7_LANCE: "m7-lance",
+  M9_HAMMERFALL: "m9-hammerfall",
 } as const;
 export type WeaponId = (typeof WEAPON)[keyof typeof WEAPON];
 
