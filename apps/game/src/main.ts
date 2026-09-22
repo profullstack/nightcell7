@@ -4,6 +4,7 @@ import { decideAccess, loadViewer, parseMode } from "./access";
 import { modeLabel, renderGate } from "./gate";
 import { createHud, renderFault } from "./hud";
 import { GAME_MODE, preferredMode, rememberMode } from "./modes";
+import { difficultyInfo, preferredDifficulty, rememberDifficulty } from "./difficulty";
 import { TrainingTargets } from "./targets";
 import { requestedVantage } from "./photo";
 import { PlayerController } from "./player";
@@ -151,8 +152,22 @@ async function boot(): Promise<void> {
   // ammunition, health, grenades and pickups are resolved. An empty roster is
   // a supported configuration, not a degenerate one.
   const gameMode = preferredMode(window.location.search, safeStorage());
+  const difficulty = preferredDifficulty(window.location.search, safeStorage());
   const roster = gameMode === GAME_MODE.DEATHMATCH ? {} : ({ enemies: 0, friendlies: 0 } as const);
-  const opponents = new Opponents(scene, world.assets, { ...roster, shadows: world.shadows });
+  const opponents = new Opponents(scene, world.assets, {
+    ...roster,
+    shadows: world.shadows,
+    difficulty: difficultyInfo(difficulty),
+  });
+
+  // Mode and difficulty are both set at boot: the yard is dressed and the
+  // bots are tuned once, so changing either reloads with both in the URL.
+  const reloadWith = (next: { mode?: string; difficulty?: string }) => {
+    const params = new URLSearchParams();
+    params.set("mode", next.mode ?? gameMode);
+    params.set("difficulty", next.difficulty ?? difficulty);
+    window.location.search = `?${params.toString()}`;
+  };
 
   // Stationary targets, for the range only. They are presentation-only hit
   // volumes; nothing here is scored.
@@ -173,7 +188,12 @@ async function boot(): Promise<void> {
     // for something that happens once before a match.
     onModeChange: (next) => {
       rememberMode(next, safeStorage());
-      if (next !== gameMode) window.location.search = `?mode=${next}`;
+      if (next !== gameMode) reloadWith({ mode: next });
+    },
+    difficulty,
+    onDifficultyChange: (next) => {
+      rememberDifficulty(next, safeStorage());
+      if (next !== difficulty) reloadWith({ difficulty: next });
     },
     onStart: () => player.requestLock(),
   });

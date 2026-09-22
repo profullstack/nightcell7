@@ -38,6 +38,17 @@ const PITCH_LIMIT = (89 * Math.PI) / 180;
 const KEY_TURN_RATE = 2.4;
 
 /**
+ * Largest mouse movement one event may carry, in pixels.
+ *
+ * A 1000 Hz mouse flicked hard reports well under 100 px per event; a
+ * 125 Hz one under 300. Anything beyond this is the browser reporting a
+ * cursor warp — the jump to the window centre on pointer lock — as motion.
+ */
+const MAX_MOVEMENT_PX = 400;
+/** Mouse motion is ignored for this long after the lock is taken. */
+const LOCK_SETTLE_MS = 150;
+
+/**
  * Stagger: what a hit does to the player's body.
  *
  * Movement drops to a shuffle for `STAGGER_MS`, and the view takes a jolt
@@ -94,6 +105,7 @@ export class PlayerController {
   /** Absolute slot from a number key, or a wheel step; null when nothing asked. */
   private weaponRequested: { slot: number } | { step: number } | null = null;
   private lastFrame: InputFrame | null = null;
+  private lockedAt = -Infinity;
   private staggerUntil = 0;
   private kickPitch = 0;
   private kickYaw = 0;
@@ -147,6 +159,16 @@ export class PlayerController {
 
     const onMouseMove = (e: MouseEvent) => {
       if (!this.locked) return;
+      // The first movement after taking the lock can be the cursor's jump
+      // to the window centre reported as motion, which turns the view to
+      // wherever the cursor happened to be — into the sky, the floor, or
+      // the tent beside the spawn. Two guards: nothing counts in the first
+      // moments after the lock, and no single event may be larger than a
+      // hand can move a mouse between two polls.
+      if (performance.now() - this.lockedAt < LOCK_SETTLE_MS) return;
+      if (Math.abs(e.movementX) > MAX_MOVEMENT_PX || Math.abs(e.movementY) > MAX_MOVEMENT_PX) {
+        return;
+      }
       this.yaw += e.movementX * this.sensitivity;
       const dy = e.movementY * this.sensitivity * (this.invertY ? -1 : 1);
       this.pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, this.pitch + dy));
@@ -166,6 +188,7 @@ export class PlayerController {
 
     const onLockChange = () => {
       this.locked = document.pointerLockElement === this.canvas;
+      if (this.locked) this.lockedAt = performance.now();
       if (!this.locked) {
         // Dropping lock must also drop every held key, or the player keeps
         // walking into a wall while the pause overlay is up.

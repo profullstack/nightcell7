@@ -1,6 +1,12 @@
 import type { ControllerStatus } from "./player";
 import type { LocalStatus } from "./opponents";
 import { DEFAULT_GAME_MODE, GAME_MODES, modeInfo, type GameMode } from "./modes";
+import {
+  DEFAULT_SANDBOX_DIFFICULTY,
+  SANDBOX_DIFFICULTIES,
+  difficultyInfo,
+  type SandboxDifficultyId,
+} from "./difficulty";
 
 /**
  * HUD and start gate.
@@ -15,6 +21,9 @@ export interface HudOptions {
   /** Preselected mode, and the sink for whichever the player picks. */
   mode?: GameMode;
   onModeChange?: (mode: GameMode) => void;
+  /** Preselected difficulty, and the sink for whichever the player picks. */
+  difficulty?: SandboxDifficultyId;
+  onDifficultyChange?: (difficulty: SandboxDifficultyId) => void;
   readonly renderer: string;
   readonly mapName: string;
   readonly mapChecksum: string;
@@ -248,6 +257,33 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
 
   modes.append(blurb);
   gate.append(modes);
+
+  // Difficulty picker. Same construction as the mode picker, for the same
+  // reasons; a separate group so the two choices read as two questions.
+  let tier: SandboxDifficultyId = options.difficulty ?? DEFAULT_SANDBOX_DIFFICULTY;
+  const tiers = el("fieldset", "modes modes--difficulty");
+  tiers.append(el("legend", "modes__legend", "Difficulty"));
+  const tierBlurb = el("p", "modes__blurb", difficultyInfo(tier).blurb);
+  for (const entry of SANDBOX_DIFFICULTIES) {
+    const label = el("label", "modes__option");
+    label.dataset.interactive = "";
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "nc7-difficulty";
+    input.value = entry.id;
+    input.checked = entry.id === tier;
+    input.addEventListener("change", () => {
+      if (!input.checked) return;
+      tier = entry.id;
+      tierBlurb.textContent = entry.blurb;
+      options.onDifficultyChange?.(entry.id);
+    });
+    label.append(input);
+    label.append(el("span", "modes__name", entry.name));
+    tiers.append(label);
+  }
+  tiers.append(tierBlurb);
+  gate.append(tiers);
 
   const button = el("button", "gate__button", "Deploy to Ardavan");
   button.type = "button";

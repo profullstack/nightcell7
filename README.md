@@ -13,6 +13,25 @@ includes a free server-authoritative multiplayer alpha.
 
 ---
 
+## Gameplay
+
+The public demo at [nightcell7.com/play](https://nightcell7.com/play?mode=demo):
+Team Deathmatch in Ardavan Yard against Directorate bots, with a Nightcell
+squad alongside you. Health packs, weapon drops off your kills, a status bar,
+and three difficulty tiers (Easy is the default).
+
+|                                                                                                                                    |                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| ![The deploy gate: pick a mode and a difficulty, read the controls, enter the yard.](docs/screenshots/deploy-gate-ec5f760ad7.webp) | ![First contact at the Nightcell spawn: the C9 Kestrel, a squadmate ahead.](docs/screenshots/first-contact-88722b50e6.webp)                  |
+| ![Moving up the centre lane between the containers.](docs/screenshots/into-the-yard-03072ec35f.webp)                               | ![Holding the spawn exit: stamina, armour, magazine and reserve on the status bar, frag ready.](docs/screenshots/under-fire-0741cc961c.webp) |
+
+Every frame is reproducible: `tools/art/capture-gameplay.mjs` deploys into the
+built game, plays a scripted sequence, and writes `docs/screenshots/manifest.json`
+with the commit it was captured from. That script is the provenance CLAUDE.md
+requires for a public asset.
+
+---
+
 ## One repository, one origin, one deployment target
 
 This is a **single mandatory monorepo** (PRD §17.2). The marketing site, game,
