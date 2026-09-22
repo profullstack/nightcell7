@@ -213,7 +213,9 @@ describe("public combat demo with shipped operator models", () => {
       expect(died).toBe(true);
       expect(respawn).not.toBeNull();
       expect(f.opponents.localStatus().alive).toBe(true);
-      expect(f.opponents.localStatus().health).toBe(100);
+      // Back at full stamina, which starts above a bot's 100.
+      expect(f.opponents.localStatus().maxHealth).toBeGreaterThan(100);
+      expect(f.opponents.localStatus().health).toBe(f.opponents.localStatus().maxHealth);
     } finally {
       f.dispose();
     }

@@ -38,11 +38,18 @@ export interface DamageResult {
 /**
  * Apply damage to vitals. Pure: callers own the state, which keeps this usable
  * from the authoritative server, the offline campaign and unit tests alike.
+ *
+ * `maxHealth` is the fighter's stamina: 100 in a match, higher for a player
+ * who has built it up in the sandbox. Health above it is clamped down.
  */
-export function applyDamage(vitals: Readonly<Vitals>, amount: number): DamageResult {
+export function applyDamage(
+  vitals: Readonly<Vitals>,
+  amount: number,
+  maxHealth: number = MAX_HEALTH,
+): DamageResult {
   const incoming = Math.max(0, amount);
   const armorBefore = clamp(vitals.armor, 0, MAX_ARMOR);
-  const healthBefore = clamp(vitals.health, 0, MAX_HEALTH);
+  const healthBefore = clamp(vitals.health, 0, Math.max(MAX_HEALTH, maxHealth));
 
   const absorbable = incoming * ARMOR_ABSORPTION;
   const armorDamage = Math.min(armorBefore, absorbable);

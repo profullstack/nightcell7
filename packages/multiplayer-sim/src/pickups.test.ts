@@ -246,9 +246,98 @@ describe("health packs", () => {
       expiresAtMs: null,
       spawnIndex: null,
     };
-    const taker = { health: 80, weapons: [], ammo: [] };
-    expect(applyPickup(taker, pack, rules)).toEqual({ kind: "health", healed: 20 });
+    const taker = { health: 80, maxHealth: 100, weapons: [], ammo: [] };
+    expect(applyPickup(taker, pack, rules)).toEqual({
+      kind: "health",
+      healed: 20,
+      staminaGained: 0,
+      stamina: 100,
+    });
     expect(taker.health).toBe(100);
+  });
+
+  it("builds stamina with every pack, up to the cap, and heals into the new room", () => {
+    const rules = { ...DEFAULT_PICKUP_RULES, healAmount: 50, staminaPerPack: 25, staminaCap: 175 };
+    const pack: SimPickup = {
+      id: "p",
+      kind: PICKUP_KIND.HEALTH,
+      position: { x: 0, y: 0, z: 0 },
+      heal: 50,
+      weaponId: null,
+      magazine: 0,
+      reserve: 0,
+      expiresAtMs: null,
+      spawnIndex: null,
+    };
+    // Full health is still worth a pack while there is stamina to gain.
+    const taker = { health: 150, maxHealth: 150, weapons: [], ammo: [] };
+    expect(applyPickup(taker, pack, rules)).toEqual({
+      kind: "health",
+      healed: 25,
+      staminaGained: 25,
+      stamina: 175,
+    });
+    expect(taker.health).toBe(175);
+    // At the cap and full, the pack stays on the ground.
+    expect(applyPickup(taker, pack, rules)).toBeNull();
+    // At the cap but hurt, it heals.
+    taker.health = 100;
+    expect(applyPickup(taker, pack, rules)).toEqual({
+      kind: "health",
+      healed: 50,
+      staminaGained: 0,
+      stamina: 175,
+    });
+  });
+
+  it("keeps stamina across a redeploy and scales damage for humans only", () => {
+    const sim = new MatchSimulation({
+      matchId: "t",
+      map: FLAT_MAP,
+      pickups: { healthSpawns: [], staminaPerPack: 25, staminaCap: 300 },
+      humanIncomingDamage: 0.5,
+    });
+    const me = sim.addPlayer({
+      id: "me",
+      userId: "me",
+      displayName: "Me",
+      preferredTeam: 0,
+      maxHealth: 150,
+    });
+    const bot = sim.addPlayer({
+      id: "bot",
+      userId: "bot",
+      displayName: "Bot",
+      isBot: true,
+      preferredTeam: 1,
+    });
+    sim.startNow();
+    stepFor(sim, 1_600);
+    expect(me.health).toBe(150);
+    expect(bot.health).toBe(100);
+
+    // The bot shoots me: half damage. I shoot the bot: full damage.
+    me.armor = 0;
+    bot.armor = 0;
+    sim.applyWeaponIntent("bot", frame({ yaw: -AIM_PLUS_X, buttons: BUTTON.FIRE }));
+    sim.applyWeaponIntent("me", frame({ yaw: AIM_PLUS_X, buttons: BUTTON.FIRE }));
+    const events = sim.step();
+    const hits = events.filter((e) => e.type === "hit");
+    const onMe = hits.find((e) => e.type === "hit" && e.victimId === "me");
+    const onBot = hits.find((e) => e.type === "hit" && e.victimId === "bot");
+    if (onMe?.type !== "hit" || onBot?.type !== "hit") throw new Error("both should hit");
+    expect(onMe.damage).toBeCloseTo(onBot.damage * 0.5, 5);
+    expect(150 - me.health).toBeCloseTo(onMe.damage, 5);
+
+    // Build stamina, die, come back with it.
+    me.maxHealth = 200;
+    me.health = 1;
+    me.alive = false;
+    me.respawnAtMs = sim.elapsedMs + TICK_MS;
+    stepFor(sim, 100);
+    expect(me.alive).toBe(true);
+    expect(me.maxHealth).toBe(200);
+    expect(me.health).toBe(200);
   });
 });
 
@@ -295,6 +384,7 @@ describe("weapon drops", () => {
     };
     const taker = {
       health: 100,
+      maxHealth: 100,
       weapons: [WEAPON.C9_KESTREL, WEAPON.P11],
       ammo: [
         { magazine: 30, reserve: 150 },
@@ -328,6 +418,7 @@ describe("weapon drops", () => {
     };
     const full = {
       health: 100,
+      maxHealth: 100,
       weapons: [WEAPON.P11],
       ammo: [{ magazine: 15, reserve: p11.reserveAmmo * rules.reserveCapMultiplier }],
     };
@@ -335,6 +426,7 @@ describe("weapon drops", () => {
 
     const hands = {
       health: 100,
+      maxHealth: 100,
       weapons: [WEAPON.C9_KESTREL, WEAPON.B4_BREACHER],
       ammo: [
         { magazine: 1, reserve: 1 },
