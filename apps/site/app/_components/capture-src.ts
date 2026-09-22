@@ -14,6 +14,11 @@
  * the raw files. With the ETag Next already sends, an unchanged image costs a
  * 304 instead of a re-download.
  */
-export function captureSrc(file: string): string {
-  return `/media/yard/${file}`;
+/**
+ * `dir` is the subdirectory of `/media`, and it travels on the shot rather than
+ * being threaded through the gallery components as a prop. A shot knows where
+ * it lives; a lightbox three levels up should not have to be told.
+ */
+export function captureSrc(file: string, dir = "yard"): string {
+  return `/media/${dir}/${file}`;
 }

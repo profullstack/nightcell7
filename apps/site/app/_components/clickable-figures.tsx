@@ -41,11 +41,60 @@ export function ClickablePlate({
         aria-label={`View full size: ${shot.caption}`}
       >
         <Image
-          src={captureSrc(shot.file)}
+          src={captureSrc(shot.file, shot.dir)}
           alt={shot.caption}
           width={width}
           height={height}
           sizes="(min-width: 1100px) 1100px, 100vw"
+        />
+        <span className="gallery__expand" aria-hidden="true">
+          Expand
+        </span>
+      </button>
+      <figcaption>
+        <span className="plate__label">{label}</span>
+        {shot.caption}
+      </figcaption>
+      <Lightbox shots={[shot]} index={open} onClose={() => setOpen(null)} onNavigate={setOpen} />
+    </figure>
+  );
+}
+
+/**
+ * The asset contact sheet.
+ *
+ * A separate figure from `ClickablePlate` because a plate crops to 21:9 and
+ * this image is taller than it is wide — cropping a contact sheet removes the
+ * assets, which are the entire content. It is capped by height instead, and
+ * the real reading of it happens in the lightbox, which zooms to 4x.
+ */
+export function ClickableSheet({
+  shot,
+  label,
+  width,
+  height,
+}: {
+  shot: LightboxShot;
+  label: string;
+  width: number;
+  height: number;
+}) {
+  const [open, setOpen] = useState<number | null>(null);
+
+  return (
+    <figure className="sheet">
+      <button
+        type="button"
+        className="gallery__zoom"
+        onClick={() => setOpen(0)}
+        aria-label={`View full size: ${shot.caption}`}
+      >
+        <Image
+          src={captureSrc(shot.file, shot.dir)}
+          alt={shot.caption}
+          width={width}
+          height={height}
+          sizes="(min-width: 900px) 900px, 100vw"
         />
         <span className="gallery__expand" aria-hidden="true">
           Expand
@@ -84,7 +133,7 @@ export function ClickableStrip({
                 aria-label={`View full size: ${shot.caption}`}
               >
                 <Image
-                  src={captureSrc(shot.file)}
+                  src={captureSrc(shot.file, shot.dir)}
                   alt={shot.caption}
                   width={width}
                   height={height}

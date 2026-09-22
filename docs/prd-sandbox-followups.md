@@ -158,10 +158,11 @@ camera, the frag detonates off-screen, and there are no title cards.
   headless page of `apps/site` or a static HTML card, captured the same way).
 - 1920x1080 at 30 fps, H.264 High, crf 20 to 23, `faststart`, limited range,
   AAC. Under 15 MB at 1080p, or ship 720p in the repo and 1080p on the site.
-- Music: confirm the soundtrack licence covers promotional use before the
-  film goes anywhere but the repo. The tracks under
-  `apps/game/public/audio/music/throngva/` ship in the game today, but no
-  licence text is checked in beside them. Add one.
+- Music: **settled.** The concern here was that no licence text was checked in
+  beside `apps/game/public/audio/music/throngva/`. There is one, a directory
+  up: `apps/game/public/audio/PROVENANCE.md` records the tracks as original
+  work by Þrøngva written for this game by the project owner, not licensed
+  from a third party. Nothing to clear, so promotional use is fine.
 
 ### 5.3 How to get kills on camera
 
@@ -176,9 +177,20 @@ a minute.
 ### 5.4 Where it goes
 
 - `docs/trailer/` in the repo (provenance).
-- `apps/site/public/media/trailer.mp4` with a `<video>` on the home page and
-  `og:video` for link previews.
+- `apps/site/public/media/trailer/` with a `<video>` on the home page and
+  `og:video` for link previews. A directory rather than a bare
+  `media/trailer.mp4`, to match `media/yard/` and carry a manifest beside the
+  file.
 - The Steam store page when that exists (`docs/prd-steam.md`).
+
+**Done for v1, 2026-09-22.** The film shipped to the site ahead of v2 rather
+than waiting for it: the home page had no moving image at all, which is worse
+than alpha footage that says it is alpha footage. It sits in its own section
+directly under the hero, and on `/press` with a download link. Both carry
+`TrailerNotice` — alpha footage of the multiplayer map, no title cards, not
+campaign material. When v2 lands it replaces the file in `docs/trailer/`, gets
+copied across, and both manifests are rewritten; the page copy follows the
+manifest and needs no edit.
 
 Estimate: two days, most of it rehearsal.
 

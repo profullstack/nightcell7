@@ -1,0 +1,21 @@
+{
+  "file": "nightcell7-trailer.mp4",
+  "poster": "poster.webp",
+  "posterAt": 3.4,
+  "posterSha256": "ec77cd446c",
+  "sourceOfTruth": "docs/trailer/manifest.json",
+  "generatedAt": "2026-09-22T11:23:52.389Z",
+  "commit": "c867e670ea7d4627039e67fa9a5ee2a1c17f19fa",
+  "tool": "tools/art/trailer.mjs",
+  "sha256": "b322ab2597",
+  "bytes": 7049183,
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "seconds": 26.27,
+  "music": "apps/game/public/audio/music/throngva/ironwood-oath.mp3",
+  "musicTitle": "Ironwood Oath",
+  "musicArtist": "Þrøngva",
+  "version": 1,
+  "note": "Byte-identical copy of the film in docs/trailer/ — same sha256. Alpha footage of the multiplayer map, not campaign material. Trailer v2 (docs/prd-sandbox-followups.md §5) replaces it."
+}

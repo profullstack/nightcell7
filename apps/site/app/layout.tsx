@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
 import captures from "../public/media/yard/manifest.json";
+import trailer from "../public/media/trailer/manifest.json";
 
 const shareShot =
   captures.shots.find((shot) => shot.name === "yard-approach") ?? captures.shots[0]!;
@@ -17,6 +18,16 @@ const shareImage = `/media/yard/${shareShot.file}`;
  * Set PUBLIC_ORIGIN to override; flip this default when .com goes live.
  */
 const ORIGIN = process.env.PUBLIC_ORIGIN ?? "https://nightcell7.up.railway.app";
+
+/**
+ * Absolute, unlike `shareImage`.
+ *
+ * Next resolves a relative `openGraph.images` entry against `metadataBase` but
+ * leaves `openGraph.videos` alone, so the tag shipped as `/media/trailer/…` —
+ * a path no crawler can fetch. Declared after ORIGIN because it reads it, and a
+ * `const` read above its own initialiser is a module-eval crash, not a warning.
+ */
+const shareVideo = `${ORIGIN}/media/trailer/${trailer.file}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(ORIGIN),
@@ -42,6 +53,17 @@ export const metadata: Metadata = {
         width: captures.viewport.width,
         height: captures.viewport.height,
         alt: shareShot.caption,
+      },
+    ],
+    // og:video, so a shared link previews the film rather than a still where
+    // the platform supports it. The image above stays the fallback: most
+    // crawlers will not play a 7 MB MP4, and og:image is what they show.
+    videos: [
+      {
+        url: shareVideo,
+        width: trailer.width,
+        height: trailer.height,
+        type: "video/mp4",
       },
     ],
   },

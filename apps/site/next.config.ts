@@ -36,6 +36,21 @@ const config: NextConfig = {
         source: "/media/yard/:path*",
         headers: [{ key: "cache-control", value: "public, max-age=0, must-revalidate" }],
       },
+      {
+        // The trailer keeps its filename across re-renders for the same reason
+        // the captures do, so it gets the same revalidate-always rule. The
+        // file is only fetched when a visitor presses play (`preload="none"`),
+        // and an unchanged one costs a 304 rather than 7 MB.
+        source: "/media/trailer/:path*",
+        headers: [{ key: "cache-control", value: "public, max-age=0, must-revalidate" }],
+      },
+      {
+        // The gameplay frames and the asset sheet are regenerated whenever the
+        // art pass or the build changes, and the sheet keeps its filename, so
+        // it gets the same rule as everything else under /media.
+        source: "/media/art/:path*",
+        headers: [{ key: "cache-control", value: "public, max-age=0, must-revalidate" }],
+      },
     ];
   },
 };

@@ -4,6 +4,8 @@ import { CATALOG, formatPrice } from "@nightcell7/entitlements";
 import { HeroPlot, LeilaSigil, RookSigil, SignalCell } from "./art";
 import { CopyCommand } from "./_components/copy-command";
 import { CaptureGallery, heroCapture } from "./gallery";
+import { TrailerFilm, TrailerNotice } from "./trailer";
+import { AssetSheet, GameplayFrames, SHEET_SUMMARY } from "./art-pass";
 import { captureSrc } from "./_components/capture-src";
 
 /**
@@ -68,6 +70,36 @@ export default function HomePage() {
               macOS and Linux · <a href="/downloads">Windows and package managers</a>
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* The film sits ahead of the PRD's section order deliberately: it is the
+          hook's proof, and a storefront that makes a visitor scroll past three
+          sections of prose to find out what the game looks like has buried it
+          (docs/prd-sandbox-followups.md §5.4). */}
+      <section className="section">
+        <div className="shell">
+          <p className="section__label">Alpha footage</p>
+          <h2>Twenty-six seconds in Ardavan Yard.</h2>
+          <p className="lede">
+            No cutscene, no cinematic camera, no edit. This is the multiplayer sandbox rendered
+            straight out of the current build.
+          </p>
+          <TrailerFilm label="Gameplay trailer" />
+          <TrailerNotice />
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="shell">
+          <p className="section__label">In play</p>
+          <h2>Operators, weapons, and a status bar that means something.</h2>
+          <p className="lede">
+            The same four frames the repository ships as its gameplay record. Nothing is posed:
+            these come out of the playable build with the squad, the fire and the HUD where they
+            fall.
+          </p>
+          <GameplayFrames />
         </div>
       </section>
 
@@ -156,6 +188,18 @@ export default function HomePage() {
             Every frame below is captured in engine from the current build.
           </p>
           <CaptureGallery />
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="shell">
+          <p className="section__label">The art pass</p>
+          <h2>Every model in the build, on one sheet.</h2>
+          <p className="lede">
+            {SHEET_SUMMARY} No placeholder cubes, no marketplace kitbash standing in for work that
+            has not been done: what is on the sheet is what loads when you press play.
+          </p>
+          <AssetSheet />
         </div>
       </section>
 
