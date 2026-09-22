@@ -11,13 +11,17 @@ const shareImage = `/media/yard/${shareShot.file}`;
 /**
  * Canonical origin.
  *
- * CLAUDE.md names nightcell7.com as the canonical public origin, and it stays
- * the target. Until the domain is cut over, the deployed Railway host is the
- * only origin that actually resolves, and an absolute OG/canonical URL pointing
- * at a domain that does not serve the site yet is worse than no tag at all.
- * Set PUBLIC_ORIGIN to override; flip this default when .com goes live.
+ * CLAUDE.md names nightcell7.com as the canonical public origin. This used to
+ * default to the Railway host, because pointing an absolute OG or canonical URL
+ * at a domain that does not serve the site yet is worse than no tag at all, and
+ * the note said to flip it when .com went live.
+ *
+ * It is live: nightcell7.com serves the whole site, so every share card and
+ * canonical URL now names the domain we actually want indexed rather than the
+ * deploy host. Set PUBLIC_ORIGIN to override, which is what a preview
+ * deployment should do.
  */
-const ORIGIN = process.env.PUBLIC_ORIGIN ?? "https://nightcell7.up.railway.app";
+const ORIGIN = process.env.PUBLIC_ORIGIN ?? "https://nightcell7.com";
 
 /**
  * Absolute, unlike `shareImage`.
