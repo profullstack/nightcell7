@@ -13,11 +13,13 @@ import {
 import {
   ARDAVAN_YARD,
   BotController,
+  DEFAULT_PICKUP_RULES,
   MatchSimulation,
   PICKUP_KIND,
   TEAM_IDS,
   TICK_MS,
   add,
+  applyPickup,
   scale,
   type SimEvent,
   type SimGrenade,
@@ -27,11 +29,14 @@ import {
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
 import type { InputFrame } from "@nightcell7/multiplayer-protocol";
-import { TDM_RULES, getWeapon, type WeaponId } from "@nightcell7/game-core";
+import { MAX_ARMOR, TDM_RULES, getWeapon, type WeaponId } from "@nightcell7/game-core";
+import { ARMORY_ITEM, armorClassInfo, type ArmorClassId, type ArmoryItem } from "./loadout";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
 import { difficultyInfo, DEFAULT_SANDBOX_DIFFICULTY, type SandboxDifficulty } from "./difficulty";
 import {
   SANDBOX_PICKUPS,
+  SANDBOX_STAMINA_CAP,
+  SANDBOX_STAMINA_PER_PACK,
   SANDBOX_STARTING_STAMINA,
   WEAPON_WORLD_MODEL,
   botLoadout,
@@ -57,6 +62,10 @@ export interface OpponentOptions {
   readonly shadows?: ShadowGenerator;
   /** How hard the yard hits back. Easy unless told otherwise. */
   readonly difficulty?: SandboxDifficulty;
+  /** Which faction the player fights for. The other one is the enemy. */
+  readonly team?: number;
+  /** Armour class: plates on deploy and redeploy, and a stamina trade. */
+  readonly armorClass?: ArmorClassId;
 }
 
 /** Speed above which the run cycle replaces the walk cycle, m/s. */
@@ -194,6 +203,12 @@ export class Opponents {
   private localRespawn: { position: Vec3; yaw: number } | null = null;
   private reloadStarted = false;
   private lastReloadingUntilMs = 0;
+  private packsTaken = 0;
+  /** Armour the player redeploys with; the armour class decides it. */
+  private spawnArmor: number;
+  /** The armour class's stamina trade currently applied to the player. */
+  private armorStaminaBonus: number;
+  private readonly playerTeam: number;
   private readonly grenadeModel: AssetContainer | null;
   private readonly assets: AssetSet;
 
@@ -210,6 +225,12 @@ export class Opponents {
     this.grenadeModel = assets.models.get("m3_grenade") ?? null;
 
     const difficulty = options.difficulty ?? difficultyInfo(DEFAULT_SANDBOX_DIFFICULTY);
+    const armorClass = armorClassInfo(options.armorClass ?? "standard");
+    this.spawnArmor = armorClass.armor;
+    this.armorStaminaBonus = armorClass.staminaBonus;
+    this.playerTeam = options.team ?? TEAM_IDS.NIGHTCELL;
+    const enemyTeam =
+      this.playerTeam === TEAM_IDS.NIGHTCELL ? TEAM_IDS.DIRECTORATE : TEAM_IDS.NIGHTCELL;
 
     this.sim = new MatchSimulation({
       matchId: "sandbox",
@@ -227,27 +248,33 @@ export class Opponents {
     });
 
     // The player, so the bots have someone to fight.
-    this.sim.addPlayer({
+    const local = this.sim.addPlayer({
       id: LOCAL_ID,
       userId: LOCAL_ID,
       displayName: "You",
-      preferredTeam: TEAM_IDS.NIGHTCELL,
-      maxHealth: SANDBOX_STARTING_STAMINA,
+      preferredTeam: this.playerTeam,
+      maxHealth: Math.max(50, SANDBOX_STARTING_STAMINA + armorClass.staminaBonus),
     });
+    local.armor = this.spawnArmor;
 
     const enemyCount = options.enemies ?? ENEMY_COUNT;
     const friendlyCount = options.friendlies ?? FRIENDLY_COUNT;
 
     // Alternate joins so authoritative balancing honors the intended factions.
     // Adding four enemies in a row silently moved e2 onto the player's team.
+    // Which faction is "enemy" follows the player's side; the models follow
+    // the faction, so a Directorate player fights Nightcell irregulars.
+    const modelFor = (team: number) => (team === TEAM_IDS.DIRECTORATE ? enemyModel : friendlyModel);
+    const nameFor = (team: number, i: number) =>
+      `${team === TEAM_IDS.DIRECTORATE ? "Directorate" : "Nightcell"} ${i + 1}`;
     const roster = Array.from({ length: Math.max(enemyCount, friendlyCount) }, (_, i) => [
       ...(i < enemyCount
         ? [
             {
               id: `bot-e${i}`,
-              team: TEAM_IDS.DIRECTORATE,
-              model: enemyModel,
-              name: `Directorate ${i + 1}`,
+              team: enemyTeam,
+              model: modelFor(enemyTeam),
+              name: nameFor(enemyTeam, i),
               loadout: botLoadout(true, i),
             },
           ]
@@ -256,9 +283,9 @@ export class Opponents {
         ? [
             {
               id: `bot-f${i}`,
-              team: TEAM_IDS.NIGHTCELL,
-              model: friendlyModel,
-              name: `Nightcell ${i + 1}`,
+              team: this.playerTeam,
+              model: modelFor(this.playerTeam),
+              name: nameFor(this.playerTeam, i),
               loadout: botLoadout(false, i),
             },
           ]
@@ -282,7 +309,7 @@ export class Opponents {
         new BotController(
           id,
           1000 + i * 37,
-          entry.team === TEAM_IDS.DIRECTORATE ? difficulty.enemyTuning : undefined,
+          entry.team === enemyTeam ? difficulty.enemyTuning : undefined,
         ),
       );
 
@@ -292,7 +319,11 @@ export class Opponents {
       const pads = spawnsForTeam(ARDAVAN_YARD, player.team);
       const offset = spawnOffsets.get(player.team) ?? 0;
       spawnOffsets.set(player.team, offset + 1);
-      const pad = pads[offset % pads.length];
+      // The player takes their team's first pad (see main.ts), and nothing
+      // moves until the gate drops, so a squadmate placed there stands with
+      // their visor against the camera for the whole deploy screen.
+      const skip = player.team === this.playerTeam ? 1 : 0;
+      const pad = pads[(offset + skip) % pads.length];
       if (pad) {
         player.movement.position = { ...pad.position };
         player.movement.yaw = pad.yaw;
@@ -331,7 +362,7 @@ export class Opponents {
         clips: placed.clips,
         current: "",
         dead: false,
-        friendly: player.team === TEAM_IDS.NIGHTCELL,
+        friendly: player.team === this.playerTeam,
       });
     });
 
@@ -388,6 +419,89 @@ export class Opponents {
     // The sim throws along the player's own aim, and `update` only syncs yaw.
     local.movement.pitch = pitch;
     return this.sim.throwGrenade(LOCAL_ID) !== null;
+  }
+
+  /**
+   * Buy something from the armory. Applies to the simulation's player at
+   * once. Returns false when there was nothing to gain — full health, full
+   * reserve, no free slot — so the caller can keep the credits.
+   */
+  grant(item: ArmoryItem): boolean {
+    const local = this.sim.players.get(LOCAL_ID);
+    if (!local) return false;
+    switch (item.id) {
+      case ARMORY_ITEM.AMMO: {
+        let changed = false;
+        local.weapons.forEach((id, i) => {
+          const spec = getWeapon(id);
+          const ammo = local.ammo[i];
+          if (!ammo) return;
+          if (ammo.magazine < spec.magazineSize || ammo.reserve < spec.reserveAmmo) changed = true;
+          ammo.magazine = Math.max(ammo.magazine, spec.magazineSize);
+          ammo.reserve = Math.max(ammo.reserve, spec.reserveAmmo);
+        });
+        return changed;
+      }
+      case ARMORY_ITEM.MEDKIT:
+        if (local.health >= local.maxHealth) return false;
+        local.health = local.maxHealth;
+        return true;
+      case ARMORY_ITEM.PLATES:
+        if (local.armor >= MAX_ARMOR) return false;
+        local.armor = MAX_ARMOR;
+        return true;
+      case ARMORY_ITEM.CONDITIONING: {
+        if (local.maxHealth >= SANDBOX_STAMINA_CAP) return false;
+        const gained = Math.min(SANDBOX_STAMINA_PER_PACK, SANDBOX_STAMINA_CAP - local.maxHealth);
+        local.maxHealth += gained;
+        local.health += gained;
+        return true;
+      }
+      default: {
+        if (!item.weapon) return false;
+        const spec = getWeapon(item.weapon);
+        const outcome = applyPickup(
+          local,
+          {
+            id: `armory-${item.id}`,
+            kind: PICKUP_KIND.WEAPON,
+            position: { ...local.movement.position },
+            heal: 0,
+            weaponId: item.weapon,
+            magazine: spec.magazineSize,
+            reserve: spec.reserveAmmo,
+            expiresAtMs: null,
+            spawnIndex: null,
+          },
+          { ...DEFAULT_PICKUP_RULES, ...SANDBOX_PICKUPS },
+        );
+        return outcome !== null;
+      }
+    }
+  }
+
+  /**
+   * Change the armour class between deployments: plates now and on every
+   * redeploy, and the stamina trade moved from the old class to the new.
+   */
+  setArmorClass(id: ArmorClassId): void {
+    const armorClass = armorClassInfo(id);
+    this.spawnArmor = armorClass.armor;
+    const local = this.sim.players.get(LOCAL_ID);
+    if (local) {
+      local.armor = this.spawnArmor;
+      const delta = armorClass.staminaBonus - this.armorStaminaBonus;
+      local.maxHealth = Math.max(50, local.maxHealth + delta);
+      local.health = Math.min(local.health + Math.max(0, delta), local.maxHealth);
+    }
+    this.armorStaminaBonus = armorClass.staminaBonus;
+  }
+
+  /** Health packs the player took since the last call. */
+  drainPacksTaken(): number {
+    const taken = this.packsTaken;
+    this.packsTaken = 0;
+    return taken;
   }
 
   /** Grenades the local player has left, for the HUD. */
@@ -707,12 +821,16 @@ export class Opponents {
         case "respawn":
           if (event.playerId === LOCAL_ID) {
             this.localRespawn = { position: { ...event.position }, yaw: event.yaw };
+            // The simulation issues match armour; the armour class overrides it.
+            const local = this.sim.players.get(LOCAL_ID);
+            if (local) local.armor = this.spawnArmor;
           }
           break;
 
         case "pickup_taken": {
           if (event.playerId !== LOCAL_ID) break;
           if (event.kind === PICKUP_KIND.HEALTH) {
+            this.packsTaken += 1;
             const stamina = event.staminaGained > 0 ? ` · stamina ${event.stamina}` : "";
             this.notices.push(`+${Math.round(event.healed)} health${stamina}`);
           } else if (event.weaponId) {

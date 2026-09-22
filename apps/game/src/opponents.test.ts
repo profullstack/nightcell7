@@ -13,6 +13,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { BUTTON } from "@nightcell7/multiplayer-protocol";
 import { type MatchSimulation, PICKUP_KIND, TEAM_IDS, TICK_MS } from "@nightcell7/multiplayer-sim";
+import { ARDAVAN_YARD, spawnsForTeam } from "@nightcell7/multiplayer-sim";
 import { Opponents } from "./opponents";
 import { type AssetSet } from "./assets";
 
@@ -79,6 +80,20 @@ describe("public combat demo with shipped operator models", () => {
             .getChildMeshes()
             .some((m) => m.getTotalVertices() > 0 && m.isEnabled() && m.isVisible),
         ).toBe(true);
+      }
+    } finally {
+      f.dispose();
+    }
+  });
+
+  it("keeps the squad off the player's own spawn pad", async () => {
+    const f = await fixture();
+    try {
+      const mine = spawnsForTeam(ARDAVAN_YARD, TEAM_IDS.NIGHTCELL)[0]!.position;
+      for (const [id, p] of f.inspect.sim.players) {
+        if (id === "local-player") continue;
+        const d = Math.hypot(p.movement.position.x - mine.x, p.movement.position.z - mine.z);
+        expect(d, `${id} on the player's pad`).toBeGreaterThan(2);
       }
     } finally {
       f.dispose();

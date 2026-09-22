@@ -7,6 +7,20 @@ import {
   difficultyInfo,
   type SandboxDifficultyId,
 } from "./difficulty";
+import {
+  ARMOR_CLASSES,
+  ARMORY,
+  COLORS,
+  CREDITS_PER_KILL,
+  CREDITS_PER_PACK,
+  DEFAULT_LOADOUT,
+  GENDERS,
+  SIDES,
+  affordable,
+  armorClassInfo,
+  type ArmoryItemId,
+  type Loadout,
+} from "./loadout";
 
 /**
  * HUD and start gate.
@@ -24,6 +38,12 @@ export interface HudOptions {
   /** Preselected difficulty, and the sink for whichever the player picks. */
   difficulty?: SandboxDifficultyId;
   onDifficultyChange?: (difficulty: SandboxDifficultyId) => void;
+  /** The operator: side, gender, armour, colour. Every change is reported whole. */
+  loadout?: Loadout;
+  onLoadoutChange?: (loadout: Loadout) => void;
+  /** Credits on hand, and the purchase sink. Returns whether the sale went through. */
+  credits?: number;
+  onBuy?: (item: ArmoryItemId) => boolean;
   readonly renderer: string;
   readonly mapName: string;
   readonly mapChecksum: string;
@@ -42,6 +62,8 @@ export interface Hud {
   /** A one-line notice above the status bar — a pickup, mostly. Fades on its own. */
   notify(text: string): void;
   setLocked(locked: boolean): void;
+  /** Credits on hand; re-enables and disables the armory's buttons. */
+  setCredits(credits: number): void;
   dispose(): void;
 }
 
@@ -284,6 +306,140 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   }
   tiers.append(tierBlurb);
   gate.append(tiers);
+
+  // ------------------------------------------------------------- operator
+  //
+  // Side, gender, armour, colour. The figure standing in the yard behind
+  // the gate is this choice made visible; see preview.ts.
+  let loadout: Loadout = options.loadout ?? DEFAULT_LOADOUT;
+  const changeLoadout = (next: Partial<Loadout>) => {
+    loadout = { ...loadout, ...next };
+    options.onLoadoutChange?.(loadout);
+  };
+  const operator = el("div", "operator");
+  operator.dataset.interactive = "";
+
+  const radios = <T extends string>(
+    legendText: string,
+    entries: readonly { id: T; name: string; disabled?: boolean; note?: string }[],
+    current: T,
+    onPick: (id: T) => void,
+    extra?: (entry: { id: T }) => HTMLElement | null,
+  ) => {
+    const group = el("fieldset", "modes modes--compact");
+    group.append(el("legend", "modes__legend", legendText));
+    for (const entry of entries) {
+      const label = el("label", "modes__option");
+      label.dataset.interactive = "";
+      if (entry.disabled) {
+        label.classList.add("modes__option--disabled");
+        label.title = entry.note ?? "";
+      }
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `nc7-${legendText.toLowerCase().replace(/\s+/g, "-")}`;
+      input.value = entry.id;
+      input.checked = entry.id === current;
+      input.disabled = Boolean(entry.disabled);
+      input.addEventListener("change", () => {
+        if (input.checked) onPick(entry.id);
+      });
+      label.append(input);
+      const swatch = extra?.(entry);
+      if (swatch) label.append(swatch);
+      label.append(
+        el(
+          "span",
+          "modes__name",
+          entry.disabled ? `${entry.name} · ${entry.note ?? ""}` : entry.name,
+        ),
+      );
+      group.append(label);
+    }
+    return group;
+  };
+
+  const armorBlurb = el("p", "modes__blurb", armorClassInfo(loadout.armor).blurb);
+  operator.append(
+    radios("Side", SIDES, loadout.side, (side) => changeLoadout({ side })),
+    radios(
+      "Gender",
+      GENDERS.map((g) => ({ id: g.id, name: g.name, disabled: !g.available, note: g.note })),
+      loadout.gender,
+      (gender) => changeLoadout({ gender }),
+    ),
+    radios("Armour", ARMOR_CLASSES, loadout.armor, (armor) => {
+      armorBlurb.textContent = armorClassInfo(armor).blurb;
+      changeLoadout({ armor });
+    }),
+  );
+  operator.append(armorBlurb);
+  operator.append(
+    radios(
+      "Colour",
+      COLORS,
+      loadout.color,
+      (color) => changeLoadout({ color }),
+      (entry) => {
+        const color = COLORS.find((c) => c.id === entry.id);
+        if (!color) return null;
+        const swatch = el("i", "swatch");
+        swatch.style.setProperty("--band", color.band);
+        swatch.style.setProperty("--cloth", color.cloth);
+        return swatch;
+      },
+    ),
+  );
+  gate.append(operator);
+
+  // --------------------------------------------------------------- armory
+  //
+  // Credits earned in the yard, spent between deployments. Free of money
+  // while the game is being built; the note says so, in the interface.
+  let credits = options.credits ?? 0;
+  const armory = el("div", "armory");
+  armory.dataset.interactive = "";
+  const armoryHead = el("div", "armory__head");
+  armoryHead.append(el("p", "hud__label", "Armory"));
+  const creditsValue = el("p", "armory__credits", `${credits} CR`);
+  armoryHead.append(creditsValue);
+  armory.append(armoryHead);
+  const rack = el("div", "armory__rack");
+  const buyButtons: { button: HTMLButtonElement; price: number }[] = [];
+  for (const item of ARMORY) {
+    const button = el("button", "armory__item");
+    button.type = "button";
+    button.append(el("b", undefined, item.name));
+    button.append(el("span", "armory__price", `${item.price} CR`));
+    button.append(el("small", undefined, item.blurb));
+    button.addEventListener("click", () => {
+      if (!options.onBuy) return;
+      const bought = options.onBuy(item.id);
+      button.classList.remove("armory__item--bought", "armory__item--nothing");
+      // Reflow so a second click re-triggers the animation.
+      void button.offsetWidth;
+      button.classList.add(bought ? "armory__item--bought" : "armory__item--nothing");
+    });
+    buyButtons.push({ button, price: item.price });
+    rack.append(button);
+  }
+  armory.append(rack);
+  armory.append(
+    el(
+      "p",
+      "armory__note",
+      `Test build: credits only, no money. +${CREDITS_PER_KILL} per kill, +${CREDITS_PER_PACK} per health pack.`,
+    ),
+  );
+  gate.append(armory);
+
+  const refreshArmory = () => {
+    creditsValue.textContent = `${credits} CR`;
+    for (const entry of buyButtons) {
+      entry.button.disabled = !affordable(credits, { price: entry.price } as never);
+    }
+  };
+  refreshArmory();
 
   const button = el("button", "gate__button", "Deploy to Ardavan");
   button.type = "button";
@@ -549,6 +705,11 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     setLocked(locked: boolean): void {
       hud.dataset.active = String(locked);
       gate.hidden = locked;
+    },
+
+    setCredits(next: number): void {
+      credits = Math.max(0, Math.floor(next));
+      refreshArmory();
     },
 
     dispose(): void {
