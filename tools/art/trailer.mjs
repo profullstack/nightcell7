@@ -330,7 +330,9 @@ async function main() {
       MUSIC,
       "-filter_complex",
       [
-        `[0:v]format=yuv420p,fade=t=in:st=0:d=0.8,fade=t=out:st=${(seconds - 1).toFixed(2)}:d=1[v]`,
+        // JPEG frames are full-range; video players expect limited range,
+        // and a full-range flag leaves the film washed out in some of them.
+        `[0:v]scale=in_range=jpeg:out_range=mpeg,format=yuv420p,fade=t=in:st=0:d=0.8,fade=t=out:st=${(seconds - 1).toFixed(2)}:d=1[v]`,
         `[1:a]atrim=0:${seconds.toFixed(2)},volume=0.9[amb]`,
         `[2:a]atrim=0:${seconds.toFixed(2)},afade=t=in:st=0:d=1,afade=t=out:st=${(seconds - 2.5).toFixed(2)}:d=2.5,volume=0.7[mus]`,
         `[amb][mus]amix=inputs=2:duration=first:normalize=0[a]`,
@@ -344,7 +346,7 @@ async function main() {
       "-preset",
       "slow",
       "-crf",
-      "21",
+      "23",
       "-profile:v",
       "high",
       "-level",

@@ -25,6 +25,13 @@ and three difficulty tiers (Easy is the default).
 | ![The deploy gate: pick a mode, a difficulty and an operator, buy from the armory, enter the yard.](docs/screenshots/deploy-gate-1b35359fbd.webp) | ![First contact at the Nightcell spawn: the C9 Kestrel, a squadmate ahead.](docs/screenshots/first-contact-54dc296018.webp)                  |
 | ![Moving up the centre lane between the containers.](docs/screenshots/into-the-yard-009e7490df.webp)                                              | ![Holding the spawn exit: stamina, armour, magazine and reserve on the status bar, frag ready.](docs/screenshots/under-fire-d206ba6647.webp) |
 
+**Trailer**: [`docs/trailer/nightcell7-trailer.mp4`](docs/trailer/nightcell7-trailer.mp4),
+26 seconds, 1280x720, H.264 High / AAC in an MP4 with faststart, so it plays in
+every browser and on phones. Rendered by `tools/art/trailer.mjs`, which steps
+the game on a virtual clock so each frame is exactly 1/30 s of play whatever
+the render speed, then encodes with ffmpeg under the game's own ambience and
+a track from its soundtrack. `docs/trailer/manifest.json` carries the commit.
+
 Every frame is reproducible: `tools/art/capture-gameplay.mjs` deploys into the
 built game, plays a scripted sequence, and writes `docs/screenshots/manifest.json`
 with the commit it was captured from. That script is the provenance CLAUDE.md
