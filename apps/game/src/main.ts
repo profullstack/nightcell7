@@ -1,6 +1,5 @@
 import { FreeCamera, Scene, Vector3 } from "@babylonjs/core";
 import { ARDAVAN_YARD, mapChecksum, spawnsForTeam, TEAM_IDS } from "@nightcell7/multiplayer-sim";
-import { fireIntervalMs, getWeapon, MULTIPLAYER_LOADOUT } from "@nightcell7/game-core";
 import { decideAccess, loadViewer, parseMode } from "./access";
 import { modeLabel, renderGate } from "./gate";
 import { createHud, renderFault } from "./hud";
@@ -29,6 +28,9 @@ function safeStorage(): Storage | undefined {
     return undefined;
   }
 }
+
+/** Minimum gap between dry-fire clicks while the trigger is held on empty. */
+const DRY_FIRE_INTERVAL_MS = 400;
 
 /**
  * Game entry point.
@@ -135,11 +137,6 @@ async function boot(): Promise<void> {
   const audio = new GameAudio();
   void audio.load();
 
-  // Cadence comes from the same weapon table the server enforces, so the sound
-  // cannot drift away from the rate of fire that actually happens.
-  const primary = MULTIPLAYER_LOADOUT[0];
-  const fireInterval = primary ? fireIntervalMs(getWeapon(primary)) : 100;
-
   // Muzzle flash, tracers and impacts. Presentation only — the server owns
   // hit registration; this decides where to draw a spark.
   const effects = new WeaponEffects(scene, ARDAVAN_YARD);
@@ -150,9 +147,9 @@ async function boot(): Promise<void> {
   // What is in the yard, decided by the chosen mode.
   //
   // `Opponents` is built in every mode, including the ones with no bots: it
-  // owns the `MatchSimulation`, which is where the player's own grenade count,
-  // cooldown and blast are resolved. An empty roster is a supported
-  // configuration, not a degenerate one.
+  // owns the `MatchSimulation`, which is where the player's own weapon,
+  // ammunition, health, grenades and pickups are resolved. An empty roster is
+  // a supported configuration, not a degenerate one.
   const gameMode = preferredMode(window.location.search, safeStorage());
   const roster = gameMode === GAME_MODE.DEATHMATCH ? {} : ({ enemies: 0, friendlies: 0 } as const);
   const opponents = new Opponents(scene, world.assets, { ...roster, shadows: world.shadows });
@@ -201,7 +198,7 @@ async function boot(): Promise<void> {
   }
 
   const dynamicResolution = new DynamicResolution(engine);
-  let lastShotAt = 0;
+  let lastDryFireAt = 0;
 
   engine.runRenderLoop(() => {
     const deltaMs = engine.getDeltaTime();
@@ -212,9 +209,9 @@ async function boot(): Promise<void> {
     const status = player.status();
     viewmodel.update(deltaMs, status.speed, camera.rotation.y, camera.rotation.x);
 
-    // Footsteps advance with distance travelled, so they track sprinting and
-    // crouching without a separate state machine.
     if (status.locked) {
+      // Footsteps advance with distance travelled, so they track sprinting and
+      // crouching without a separate state machine.
       audio.step(
         (status.speed * deltaMs) / 1000,
         status.grounded,
@@ -222,49 +219,117 @@ async function boot(): Promise<void> {
         status.position.y > 5.5,
       );
 
-      // Grenades. The throw goes through the same simulation the bots use, so
-      // the count, the cooldown and the blast are all decided there rather
-      // than here — this only asks and then plays the result.
-      if (player.consumeThrowRequest()) {
-        if (opponents.throwGrenade(camera.rotation.x)) audio.reload();
-      }
+      if (!status.dead) {
+        // Grenades. The throw goes through the same simulation the bots use,
+        // so the count, the cooldown and the blast are all decided there
+        // rather than here — this only asks and then plays the result.
+        if (player.consumeThrowRequest()) {
+          if (opponents.throwGrenade(camera.rotation.x)) audio.reload();
+        }
 
-      if (status.firing && performance.now() - lastShotAt >= fireInterval) {
-        lastShotAt = performance.now();
-        audio.fire();
+        if (player.consumeReloadRequest()) opponents.reloadLocal();
+        const change = player.consumeWeaponRequest();
+        if (change) {
+          if ("slot" in change) opponents.switchLocal(change.slot);
+          else opponents.cycleLocal(change.step);
+        }
 
-        // The tracer starts at the muzzle so it reads as coming from the gun,
-        // but the trace itself is cast from the eye: the muzzle sits below and
-        // right of the sight line, and tracing from there puts rounds visibly
-        // off the crosshair at close range.
-        const eye = camera.globalPosition;
-        const aim = camera.getDirection(Vector3.Forward());
-        const muzzle = viewmodel.muzzlePosition() ?? eye;
-
-        // A target only counts if it is in front of whatever the round would
-        // otherwise hit, so one standing behind a container cannot be shot
-        // through it.
-        const reach = effects.trace(eye, aim).distance;
-        const from = { x: eye.x, y: eye.y, z: eye.z };
-        const along = { x: aim.x, y: aim.y, z: aim.z };
-        const onTarget =
-          opponents.tryHit(from, along, reach) ?? targets?.tryHit(from, along, reach) ?? null;
-        // A hit on a person gets the heavy burst.
-        effects.fire(muzzle, eye, aim, onTarget?.point, onTarget !== null);
+        // The trigger. Same rule as the grenade: the simulation decides
+        // whether a round leaves the barrel, and what it hit.
+        const frame = player.lastInput();
+        if (frame) opponents.applyLocalInput(frame);
       }
     }
+
     effects.update();
     if (status.locked) opponents.update(deltaMs, status.position, camera.rotation.y);
     targets?.update();
-    // Draw whatever the bots shot at this tick, so incoming fire is visible.
+
+    const local = opponents.localStatus();
+    const inHand = local.weapons[local.slot];
+    if (inHand && viewmodel.setWeapon(inHand.id)) {
+      // A new mesh in hand means a new mesh to keep out of the muzzle flash.
+      effects.excludeFromFlash(viewmodel.meshes());
+    }
+
+    // What the player's rounds did this frame.
+    for (const shot of opponents.drainLocalShots()) {
+      audio.fire();
+      // The tracer starts at the muzzle so it reads as coming from the gun,
+      // but the trace itself is cast from the eye: the muzzle sits below and
+      // right of the sight line, and tracing from there puts rounds visibly
+      // off the crosshair at close range.
+      const eye = camera.globalPosition;
+      const aim = camera.getDirection(Vector3.Forward());
+      const muzzle = viewmodel.muzzlePosition() ?? eye;
+
+      let point = shot.point;
+      let hitPerson = point !== null;
+      if (!point && targets) {
+        // Range targets are presentation-only volumes the simulation does
+        // not know about; only a round that reached nobody can hit one, and
+        // only if it is in front of whatever the round would otherwise hit.
+        const reach = effects.trace(eye, aim).distance;
+        const onTarget = targets.tryHit(
+          { x: eye.x, y: eye.y, z: eye.z },
+          { x: aim.x, y: aim.y, z: aim.z },
+          reach,
+        );
+        if (onTarget) {
+          point = onTarget.point;
+          hitPerson = true;
+        }
+      }
+      // A hit on a person gets the heavy burst; a miss sparks off the world.
+      effects.fire(muzzle, eye, aim, point ?? undefined, hitPerson);
+    }
+
+    // Trigger held on an empty weapon: a click, so the silence is not a bug.
+    if (
+      status.firing &&
+      inHand &&
+      inHand.magazine === 0 &&
+      inHand.reserve === 0 &&
+      performance.now() - lastDryFireAt >= DRY_FIRE_INTERVAL_MS
+    ) {
+      lastDryFireAt = performance.now();
+      audio.ui("error");
+    }
+    if (opponents.drainReloadStarted()) audio.reload();
+
+    // Incoming fire, so a fight is visible from the receiving end.
     for (const shot of opponents.drainShots()) {
-      effects.tracerOnly(shot.from, shot.to);
+      const to =
+        shot.to ??
+        effects.trace(
+          new Vector3(shot.from.x, shot.from.y, shot.from.z),
+          new Vector3(shot.direction.x, shot.direction.y, shot.direction.z),
+        ).point;
+      effects.tracerOnly(shot.from, to);
     }
     for (const blast of opponents.drainExplosions()) {
       effects.explode(new Vector3(blast.position.x, blast.position.y, blast.position.z));
       audio.explosion(blast.distanceM);
     }
-    hud.update(status, engine.getFps(), opponents.grenadeCount());
+
+    // Taking damage, dying, coming back.
+    const damage = opponents.drainDamage();
+    if (damage > 0) {
+      hud.flashDamage(damage);
+      audio.hurt();
+    }
+    if (opponents.drainLocalDeath()) player.setDead(true);
+    const respawn = opponents.drainLocalRespawn();
+    if (respawn) {
+      player.teleport(respawn.position, respawn.yaw);
+      player.setDead(false);
+    }
+    for (const notice of opponents.drainNotices()) {
+      hud.notify(notice);
+      audio.pickup();
+    }
+
+    hud.update(status, engine.getFps(), local);
     scene.render();
   });
 

@@ -8,7 +8,9 @@ import {
   type Material,
   type Mesh,
 } from "@babylonjs/core";
+import { WEAPON, type WeaponId } from "@nightcell7/game-core";
 import { placeAll, type AssetSet } from "./assets";
+import { WEAPON_VIEWMODEL } from "./sandbox-rules";
 
 import { TACTICAL_VIEW_ALBEDO_SCALE, TACTICAL_WORLD_ALBEDO_SCALE } from "./tactical-materials";
 
@@ -34,6 +36,12 @@ import { TACTICAL_VIEW_ALBEDO_SCALE, TACTICAL_WORLD_ALBEDO_SCALE } from "./tacti
  * The muzzle transform (`SOCKET_MUZZLE`) is a *presentation* anchor only. The
  * authoritative shot origin is derived from the server's player position, never
  * from this node, so a tampered viewmodel cannot move where bullets come from.
+ *
+ * The weapon in hand can change: a pickup off a dead fighter swaps the mesh
+ * (`setWeapon`). Everything the rest of the game holds on to — the fill light,
+ * the muzzle lookup, the rendering group — is re-established on every mount,
+ * so a swap is the same code path as the first weapon rather than a special
+ * case that drifts.
  */
 
 /** Camera-relative position, tuned against the in-game 90-degree field of view. */
@@ -41,12 +49,6 @@ const REST = new Vector3(0.21, -0.185, 0.324);
 
 /** The glTF handedness transform lives below our placement node; +Z is forward. */
 const BASE_YAW = 0;
-
-/** Preserve the previous apparent 0.50 m weapon length with the 0.958 m C7. */
-const VIEW_SCALE = 0.525;
-
-/** Original C7 viewmodel; opponents use the simplified C7 world variants. */
-const WEAPON = "m2_carbine_fp" as const;
 
 /** How far the weapon may trail the view, in radians of camera rotation. */
 const SWAY_LIMIT = 0.045;
@@ -57,31 +59,91 @@ const BOB_SPEED = 0.011;
 const BOB_AMOUNT = 0.011;
 
 export class Viewmodel {
-  private readonly root: TransformNode;
-  private readonly muzzle: TransformNode | null;
+  private root: TransformNode;
+  private muzzle: TransformNode | null = null;
+  private weapon: WeaponId;
+  private readonly fill: HemisphericLight;
   private bobPhase = 0;
   private swayYaw = 0;
   private swayPitch = 0;
   private lastYaw: number;
   private lastPitch: number;
 
-  constructor(scene: Scene, camera: Camera, assets: AssetSet) {
-    const container = assets.models.get(WEAPON);
-    if (!container) throw new Error(`${WEAPON} model not loaded`);
+  constructor(
+    private readonly scene: Scene,
+    private readonly camera: Camera,
+    private readonly assets: AssetSet,
+    weapon: WeaponId = WEAPON.C9_KESTREL,
+  ) {
+    // A light that only ever touches the weapon.
+    //
+    // The yard is a night scene lit by distant sodium lamps, so a weapon held
+    // at the camera sits in shadow almost everywhere and renders as a black
+    // cut-out. Every first-person game solves this with a rig light; without
+    // it the gun is only visible when the player happens to stand under a lamp.
+    // `includedOnlyMeshes` keeps it strictly off the world, so it cannot
+    // brighten level geometry or give away a player's position.
+    this.fill = new HemisphericLight("viewmodel-fill", new Vector3(-0.3, 1, -0.6), scene);
+    // Neutral fill preserves the C7's authored material colors under the yard exposure.
+    this.fill.intensity = 0.78;
+    this.fill.diffuse = new Color3(0.72, 0.73, 0.78);
+    this.fill.groundColor = new Color3(0.2, 0.17, 0.14);
+    this.fill.specular = new Color3(0.3, 0.32, 0.38);
+    this.fill.parent = camera;
+
+    this.weapon = weapon;
+    this.root = this.mount(weapon);
+    scene.setRenderingAutoClearDepthStencil(1, true, true, false);
+
+    const rotation = (camera as unknown as { rotation?: Vector3 }).rotation;
+    this.lastYaw = rotation?.y ?? 0;
+    this.lastPitch = rotation?.x ?? 0;
+  }
+
+  /** The weapon currently in hand. */
+  get weaponId(): WeaponId {
+    return this.weapon;
+  }
+
+  /**
+   * Put a different weapon in hand. Returns true when the mesh changed, so
+   * the caller can refresh anything that holds the old mesh list (the muzzle
+   * flash exclusion does).
+   */
+  setWeapon(weapon: WeaponId): boolean {
+    if (weapon === this.weapon) return false;
+    this.root.dispose();
+    this.weapon = weapon;
+    this.root = this.mount(weapon);
+    return true;
+  }
+
+  private mount(weapon: WeaponId): TransformNode {
+    const spec = WEAPON_VIEWMODEL[weapon];
+    const fallback = WEAPON_VIEWMODEL[WEAPON.C9_KESTREL];
+    const container = this.assets.models.get(spec.model) ?? this.assets.models.get(fallback.model);
+    if (!container) throw new Error(`${spec.model} model not loaded`);
 
     // `unique` because the materials below are per-viewmodel: an instanced
     // mesh shares its source's material and ignores assignment to it.
-    const [root] = placeAll(
-      container,
-      "viewmodel",
-      [{ position: REST.clone(), scaling: new Vector3(VIEW_SCALE, VIEW_SCALE, VIEW_SCALE) }],
-      { unique: true },
-    );
-    if (!root) throw new Error(`${WEAPON} produced no root node`);
+    const [root] = placeAll(container, "viewmodel", [{ position: REST.clone() }], {
+      unique: true,
+    });
+    if (!root) throw new Error(`${spec.model} produced no root node`);
 
-    this.root = root;
-    this.root.parent = camera;
-    this.root.rotation = new Vector3(0, BASE_YAW, 0);
+    // Fit to the hand. The first-person carbine keeps its tuned scale; a
+    // world mesh standing in for another weapon is sized by its longest
+    // extent so a 1.1 m marksman rifle does not fill the screen.
+    let scale = spec.scale ?? 1;
+    if (spec.scale === undefined && spec.fitLengthM !== undefined) {
+      root.computeWorldMatrix(true);
+      const { min, max } = root.getHierarchyBoundingVectors(true);
+      const longest = Math.max(max.x - min.x, max.y - min.y, max.z - min.z);
+      if (longest > 1e-3) scale = spec.fitLengthM / longest;
+    }
+    root.scaling = new Vector3(scale, scale, scale);
+    root.parent = this.camera;
+    root.rotation = new Vector3(0, BASE_YAW, 0);
 
     // Give the weapon its own material instances with a much weaker
     // environment contribution.
@@ -97,7 +159,7 @@ export class Viewmodel {
     // value set here was landing on nothing — forcing the weapon bright red as
     // a test changed precisely one thing on screen: nothing.
     const localised = new Map<Material, Material>();
-    for (const mesh of this.root.getChildMeshes() as Mesh[]) {
+    for (const mesh of root.getChildMeshes() as Mesh[]) {
       const source = mesh.material;
       if (!source) continue;
       let clone = localised.get(source);
@@ -120,7 +182,7 @@ export class Viewmodel {
       mesh.material = clone;
     }
 
-    for (const mesh of this.root.getChildMeshes() as Mesh[]) {
+    for (const mesh of root.getChildMeshes() as Mesh[]) {
       // Drawn after the world, over a cleared depth buffer, so it can never
       // intersect level geometry.
       mesh.renderingGroupId = 1;
@@ -130,32 +192,15 @@ export class Viewmodel {
       mesh.receiveShadows = false;
       mesh.alwaysSelectAsActiveMesh = true;
     }
-    scene.setRenderingAutoClearDepthStencil(1, true, true, false);
 
-    // A light that only ever touches the weapon.
-    //
-    // The yard is a night scene lit by distant sodium lamps, so a weapon held
-    // at the camera sits in shadow almost everywhere and renders as a black
-    // cut-out. Every first-person game solves this with a rig light; without
-    // it the gun is only visible when the player happens to stand under a lamp.
-    // `includedOnlyMeshes` keeps it strictly off the world, so it cannot
-    // brighten level geometry or give away a player's position.
-    const fill = new HemisphericLight("viewmodel-fill", new Vector3(-0.3, 1, -0.6), scene);
-    // Neutral fill preserves the C7's authored material colors under the yard exposure.
-    fill.intensity = 0.78;
-    fill.diffuse = new Color3(0.72, 0.73, 0.78);
-    fill.groundColor = new Color3(0.2, 0.17, 0.14);
-    fill.specular = new Color3(0.3, 0.32, 0.38);
-    fill.includedOnlyMeshes = this.root.getChildMeshes();
-    fill.parent = camera;
+    this.fill.includedOnlyMeshes = root.getChildMeshes();
 
     this.muzzle =
-      (this.root.getDescendants().find((node) => node.name.includes("SOCKET_MUZZLE")) as
+      (root.getDescendants().find((node) => node.name.includes("SOCKET_MUZZLE")) as
         TransformNode | undefined) ?? null;
 
-    const rotation = (camera as unknown as { rotation?: Vector3 }).rotation;
-    this.lastYaw = rotation?.y ?? 0;
-    this.lastPitch = rotation?.x ?? 0;
+    void this.scene;
+    return root;
   }
 
   /** Every mesh belonging to the weapon, for light exclusion. */
@@ -202,6 +247,7 @@ export class Viewmodel {
 
   dispose(): void {
     this.root.dispose();
+    this.fill.dispose();
   }
 }
 

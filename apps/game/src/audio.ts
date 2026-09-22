@@ -264,6 +264,48 @@ export class GameAudio {
     this.playBuffer("reload", 0.7, 1);
   }
 
+  /**
+   * Taking a hit: a short thump low under the ear.
+   *
+   * Synthesised rather than sampled. There is no recorded hurt sound in the
+   * set, and a grunt would need a voice and a licence; a pitch-dropping sine
+   * is a body blow every player already reads without one.
+   */
+  hurt(): void {
+    if (this.context.state !== "running") return;
+    const now = this.context.currentTime;
+    const osc = this.context.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(110, now);
+    osc.frequency.exponentialRampToValueAtTime(38, now + 0.16);
+    const gain = this.context.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.7, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+    osc.connect(gain).connect(this.master);
+    osc.start(now);
+    osc.stop(now + 0.22);
+  }
+
+  /** Picking something up: two quick rising blips. Synthesised, as above. */
+  pickup(): void {
+    if (this.context.state !== "running") return;
+    const now = this.context.currentTime;
+    [660, 990].forEach((frequency, i) => {
+      const at = now + i * 0.075;
+      const osc = this.context.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(frequency, at);
+      const gain = this.context.createGain();
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.35, at + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.07);
+      osc.connect(gain).connect(this.master);
+      osc.start(at);
+      osc.stop(at + 0.08);
+    });
+  }
+
   ui(kind: "hover" | "click" | "error"): void {
     this.playBuffer(`ui_${kind}`, 0.6, 1);
   }

@@ -203,6 +203,208 @@ body {
   color: var(--hud-dim);
 }
 
+/* ------------------------------------------------------------ status bar */
+
+/* Health, weapon and frag in one row. Three groups with a hairline between
+   them, so the eye lands on the number it wants without reading the rest. */
+.status {
+  grid-auto-flow: column;
+  align-items: end;
+  gap: 0;
+  bottom: 30px;
+}
+
+.status__group {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: center;
+  padding: 0 1.4rem;
+  min-width: 7.5rem;
+}
+
+.status__group + .status__group {
+  border-left: 1px solid color-mix(in srgb, var(--bone-300) 16%, transparent);
+}
+
+.status__health {
+  font-size: 2.1rem;
+}
+
+.status__health--critical {
+  color: var(--signal-red);
+  animation: status-critical 900ms ease-in-out infinite;
+}
+
+@keyframes status-critical {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* The bar under the number: a filled hairline, no rounded ends. */
+.status__bar {
+  width: 6.5rem;
+  height: 3px;
+  background: color-mix(in srgb, var(--bone-300) 18%, transparent);
+}
+
+.status__fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--bone-100);
+  transition: width 160ms linear;
+}
+
+.status__health--critical ~ .status__bar .status__fill {
+  background: var(--signal-red);
+}
+
+.status__weapon {
+  color: var(--bone-300);
+}
+
+.status__ammo {
+  font-size: 2.1rem;
+}
+
+.status__ammo span {
+  font-size: 0.95rem;
+  margin-left: 0.35rem;
+  color: var(--hud-dim);
+}
+
+.status__ammo--low b {
+  color: var(--dust-gold);
+}
+
+.status__ammo--empty b {
+  color: var(--signal-red);
+}
+
+.status__state {
+  min-height: 0.8rem;
+  color: var(--dust-gold);
+}
+
+/* Weapon slots: the number key, then the name. Active is bright. */
+.slots {
+  display: flex;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  color: var(--hud-dim);
+}
+
+.slots__slot b {
+  font-weight: 400;
+  margin-right: 0.3rem;
+  color: var(--bone-300);
+}
+
+.slots__slot--active {
+  color: var(--bone-100);
+}
+
+.slots__slot--active b {
+  color: var(--signal-cyan);
+}
+
+/* Pickup notices, stacked just above the status bar. */
+.notices {
+  position: absolute;
+  left: 50%;
+  bottom: 150px;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 0.3rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.notice {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.14em;
+  color: var(--dust-gold);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+  transition: opacity 500ms ease-out;
+}
+
+.notice--fading {
+  opacity: 0;
+}
+
+/* ----------------------------------------------------------- damage / KIA */
+
+/* Red at the edges, clear in the centre where the target is. Opacity is
+   written by the HUD each frame and bleeds off; the element never animates
+   on its own, so reduced-motion needs no special case. */
+.hurt {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    90% 75% at 50% 50%,
+    transparent 45%,
+    color-mix(in srgb, var(--signal-red) 55%, transparent) 100%
+  );
+}
+
+.kia {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  text-align: center;
+}
+
+/* An author `display` beats the browser's own `[hidden] { display: none }`,
+   so without this the overlay showed over a living player. */
+.kia[hidden] {
+  display: none;
+}
+
+.kia__mark {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 4.2rem;
+  letter-spacing: 0.3em;
+  line-height: 1;
+  color: var(--signal-red);
+}
+
+.kia__sub {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.3em;
+  color: var(--bone-300);
+}
+
+.hud--dead .reticle {
+  opacity: 0.25;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status__health--critical {
+    animation: none;
+  }
+
+  .status__fill,
+  .notice {
+    transition: none;
+  }
+}
+
 .hud__sub {
   font-size: 0.62rem;
   letter-spacing: 0.22em;

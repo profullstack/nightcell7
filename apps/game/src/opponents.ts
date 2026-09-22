@@ -1,27 +1,35 @@
 import {
+  Color3,
+  MeshBuilder,
+  StandardMaterial,
+  TransformNode,
   Vector3,
   type AnimationGroup,
   type AssetContainer,
   type Mesh,
   type Scene,
   type ShadowGenerator,
-  type TransformNode,
 } from "@babylonjs/core";
 import {
   ARDAVAN_YARD,
-  rayAabb,
   BotController,
   MatchSimulation,
+  PICKUP_KIND,
   TEAM_IDS,
   TICK_MS,
+  add,
+  scale,
   type SimEvent,
   type SimGrenade,
+  type SimPickup,
   type SimPlayer,
   type Vec3,
   spawnsForTeam,
 } from "@nightcell7/multiplayer-sim";
+import type { InputFrame } from "@nightcell7/multiplayer-protocol";
+import { TDM_RULES, getWeapon, type WeaponId } from "@nightcell7/game-core";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
-import { TDM_RULES } from "@nightcell7/game-core";
+import { SANDBOX_PICKUPS, WEAPON_WORLD_MODEL, botLoadout } from "./sandbox-rules";
 import { TEAM_PALETTE, brightenCharacter } from "./targets";
 
 /** Enemies on the Directorate side, and friendlies on the player's. */
@@ -48,7 +56,7 @@ const RUN_SPEED = 5.2;
 /** Below this the bot is treated as standing still. */
 const IDLE_SPEED = 0.35;
 
-/** How long a downed bot stays down before the sandbox puts it back. */
+/** How long a downed fighter — bot or player — stays down before respawning. */
 const RESPAWN_MS = 6000;
 
 const LOCAL_ID = "local-player";
@@ -56,6 +64,13 @@ const LOCAL_ID = "local-player";
 /** A grenade in flight, and the mesh following it. */
 interface GrenadeView {
   readonly root: TransformNode;
+}
+
+/** A pickup on the ground, and the mesh drawing it. */
+interface PickupView {
+  readonly root: TransformNode;
+  readonly baseY: number;
+  phase: number;
 }
 
 /** A detonation the renderer still has to draw. */
@@ -74,9 +89,42 @@ interface BotView {
   readonly friendly: boolean;
 }
 
+/** A round fired by a bot. `to` is null on a miss; the renderer traces those. */
 export interface BotShot {
   readonly from: Vec3;
-  readonly to: Vec3;
+  readonly direction: Vec3;
+  readonly to: Vec3 | null;
+}
+
+/** A round the local player fired, as the simulation resolved it. */
+export interface LocalShot {
+  readonly origin: Vec3;
+  readonly direction: Vec3;
+  /** Where it landed on a fighter, or null when it hit nobody. */
+  readonly point: Vec3 | null;
+}
+
+export interface WeaponSlotStatus {
+  readonly id: WeaponId;
+  readonly name: string;
+  readonly magazine: number;
+  readonly magazineSize: number;
+  readonly reserve: number;
+}
+
+/** Everything the HUD shows about the local player, read from the simulation. */
+export interface LocalStatus {
+  readonly alive: boolean;
+  readonly health: number;
+  readonly armor: number;
+  /** Milliseconds until redeploy; zero while alive. */
+  readonly respawnInMs: number;
+  readonly slot: number;
+  readonly weapons: readonly WeaponSlotStatus[];
+  readonly reloading: boolean;
+  readonly grenades: number;
+  readonly kills: number;
+  readonly deaths: number;
 }
 
 /**
@@ -119,25 +167,30 @@ export class Opponents {
   private accumulatorMs = 0;
   /** Shots fired by bots since the last drain, for the renderer to draw. */
   private readonly shots: BotShot[] = [];
+  private readonly localShots: LocalShot[] = [];
   private readonly grenadeViews = new Map<string, GrenadeView>();
+  private readonly pickupViews = new Map<string, PickupView>();
   private readonly explosions: Explosion[] = [];
+  private readonly notices: string[] = [];
+  private damageTaken = 0;
+  private localDied = false;
+  private localRespawn: { position: Vec3; yaw: number } | null = null;
+  private reloadStarted = false;
+  private lastReloadingUntilMs = 0;
   private readonly grenadeModel: AssetContainer | null;
+  private readonly assets: AssetSet;
 
-  constructor(_scene: Scene, assets: AssetSet, options: OpponentOptions = {}) {
+  constructor(
+    private readonly scene: Scene,
+    assets: AssetSet,
+    options: OpponentOptions = {},
+  ) {
+    this.assets = assets;
     const enemyModel = assets.models.get("m3_operator_directorate");
     const friendlyModel = assets.models.get("m3_operator_nightcell");
     if (!enemyModel || !friendlyModel) throw new Error("IRON RAIN operator models not loaded");
 
     this.grenadeModel = assets.models.get("m3_grenade") ?? null;
-
-    // Weapons for the bots.
-    //
-    // They fought empty-handed until now, which read as unfinished from any
-    // distance. Two silhouettes rather than one: the Directorate carries the
-    // rifle, Nightcell the SMG, so which side a figure is on is legible before
-    // the tint confirms it.
-    const weaponFor = (team: number) =>
-      assets.models.get(team === TEAM_IDS.DIRECTORATE ? "m3_rifle" : "m3_smg") ?? null;
 
     this.sim = new MatchSimulation({
       matchId: "sandbox",
@@ -150,6 +203,7 @@ export class Opponents {
         scoreLimit: Number.MAX_SAFE_INTEGER,
         respawnDelayMs: RESPAWN_MS,
       },
+      pickups: SANDBOX_PICKUPS,
     });
 
     // The player, so the bots have someone to fight.
@@ -173,6 +227,7 @@ export class Opponents {
               team: TEAM_IDS.DIRECTORATE,
               model: enemyModel,
               name: `Directorate ${i + 1}`,
+              loadout: botLoadout(true, i),
             },
           ]
         : []),
@@ -183,6 +238,7 @@ export class Opponents {
               team: TEAM_IDS.NIGHTCELL,
               model: friendlyModel,
               name: `Nightcell ${i + 1}`,
+              loadout: botLoadout(false, i),
             },
           ]
         : []),
@@ -197,6 +253,7 @@ export class Opponents {
         displayName: entry.name,
         isBot: true,
         preferredTeam: entry.team,
+        loadout: entry.loadout,
       });
       // Seeded per bot so a session is reproducible and they do not all make
       // the same decision on the same tick.
@@ -233,7 +290,10 @@ export class Opponents {
         player.team === TEAM_IDS.NIGHTCELL ? TEAM_PALETTE.friendly : TEAM_PALETTE.enemy,
       );
 
-      attachWeapon(placed.root, weaponFor(player.team), id);
+      // The weapon in hand is the one the fighter will drop, so the silhouette
+      // tells the player what a kill is worth.
+      const primary = player.weapons[0];
+      attachWeapon(placed.root, primary ? this.weaponModel(primary) : null, id);
       for (const mesh of placed.root.getChildMeshes()) {
         if (mesh.getTotalVertices() > 0) options.shadows?.addShadowCaster(mesh, false);
       }
@@ -252,57 +312,41 @@ export class Opponents {
     for (const [id, view] of this.views) this.syncView(view, this.sim.players.get(id)!);
   }
 
-  /**
-   * The player shooting a bot.
-   *
-   * Damage goes through the simulation's own player state rather than a
-   * parallel bookkeeping of my own, so a bot dies to the same health pool the
-   * server would use. Respawn is handled here because this sandbox has no
-   * match loop driving round state.
-   */
-  tryHit(origin: Vec3, direction: Vec3, maxDistance: number): { point: Vec3 } | null {
-    let nearest: SimPlayer | null = null;
-    let nearestPoint: Vec3 | null = null;
-    let nearestDistance = maxDistance;
-
-    for (const [id] of this.views) {
-      const player = this.sim.players.get(id);
-      if (!player || !player.alive) continue;
-      if (this.views.get(id)?.friendly) continue; // no friendly fire in the sandbox
-      const p = player.movement.position;
-      const hit = rayAabb(
-        origin,
-        direction,
-        {
-          min: { x: p.x - 0.3, y: p.y, z: p.z - 0.3 },
-          max: { x: p.x + 0.3, y: p.y + 1.8, z: p.z + 0.3 },
-        },
-        nearestDistance,
-      );
-      if (!hit) continue;
-      nearestDistance = hit.distance;
-      nearestPoint = hit.point;
-      nearest = player;
-    }
-
-    if (!nearest || !nearestPoint) return null;
-
-    // A head hit is worth roughly triple, matching the weapon table's intent
-    // without duplicating its falloff maths for a presentational sandbox.
-    const headshot = nearestPoint.y > nearest.movement.position.y + 1.48;
-    nearest.health -= headshot ? 95 : 34;
-    if (nearest.health <= 0) {
-      nearest.health = 0;
-      nearest.alive = false;
-      nearest.respawnAtMs = this.sim.elapsedMs + RESPAWN_MS;
-      nearest.pendingInputs.length = 0;
-      nearest.triggerHeld = false;
-    }
-
-    return { point: nearestPoint };
+  private weaponModel(weapon: WeaponId): AssetContainer | null {
+    return this.assets.models.get(WEAPON_WORLD_MODEL[weapon]) ?? null;
   }
 
-  /** Bot shots fired since the last call, and clears the queue. */
+  // ------------------------------------------------------------ the player
+
+  /**
+   * The local player's trigger, reload and aim for this frame.
+   *
+   * Handed to the simulation rather than resolved here, so the sandbox
+   * enforces the same cadence, magazine and hit rules a match would, and a
+   * hit costs the bot the same health it would cost a human. What the shot
+   * did comes back through `drainLocalShots`.
+   */
+  applyLocalInput(frame: InputFrame): void {
+    this.sim.applyWeaponIntent(LOCAL_ID, frame);
+  }
+
+  reloadLocal(): void {
+    this.sim.requestReload(LOCAL_ID);
+  }
+
+  switchLocal(slot: number): void {
+    this.sim.requestWeaponSwitch(LOCAL_ID, slot);
+  }
+
+  /** Next or previous weapon, wrapping. */
+  cycleLocal(step: number): void {
+    const local = this.sim.players.get(LOCAL_ID);
+    if (!local || local.weapons.length < 2) return;
+    const count = local.weapons.length;
+    const next = (((local.weaponSlot + step) % count) + count) % count;
+    this.sim.requestWeaponSwitch(LOCAL_ID, next);
+  }
+
   /**
    * The local player throws a grenade.
    *
@@ -324,6 +368,48 @@ export class Opponents {
     return this.sim.players.get(LOCAL_ID)?.grenades ?? 0;
   }
 
+  /** Vitals, weapon and ammunition, straight from the simulation. */
+  localStatus(): LocalStatus {
+    const local = this.sim.players.get(LOCAL_ID);
+    if (!local) {
+      return {
+        alive: true,
+        health: 0,
+        armor: 0,
+        respawnInMs: 0,
+        slot: 0,
+        weapons: [],
+        reloading: false,
+        grenades: 0,
+        kills: 0,
+        deaths: 0,
+      };
+    }
+    return {
+      alive: local.alive,
+      health: Math.round(local.health),
+      armor: Math.round(local.armor),
+      respawnInMs: local.alive ? 0 : Math.max(0, local.respawnAtMs - this.sim.elapsedMs),
+      slot: local.weaponSlot,
+      weapons: local.weapons.map((id, i) => {
+        const spec = getWeapon(id);
+        return {
+          id,
+          name: spec.displayName,
+          magazine: local.ammo[i]?.magazine ?? 0,
+          magazineSize: spec.magazineSize,
+          reserve: local.ammo[i]?.reserve ?? 0,
+        };
+      }),
+      reloading: this.sim.elapsedMs < local.reloadingUntilMs,
+      grenades: local.grenades,
+      kills: local.kills,
+      deaths: local.deaths,
+    };
+  }
+
+  // ---------------------------------------------------------------- drains
+
   /** Detonations since the last call, for the renderer to draw and play. */
   drainExplosions(): Explosion[] {
     const drained = [...this.explosions];
@@ -335,6 +421,45 @@ export class Opponents {
     return this.shots.splice(0, this.shots.length);
   }
 
+  drainLocalShots(): LocalShot[] {
+    return this.localShots.splice(0, this.localShots.length);
+  }
+
+  /** Damage the local player took since the last call. */
+  drainDamage(): number {
+    const taken = this.damageTaken;
+    this.damageTaken = 0;
+    return taken;
+  }
+
+  /** True once, when the local player has just been killed. */
+  drainLocalDeath(): boolean {
+    const died = this.localDied;
+    this.localDied = false;
+    return died;
+  }
+
+  /** Where the simulation just put the local player back, if it did. */
+  drainLocalRespawn(): { position: Vec3; yaw: number } | null {
+    const respawn = this.localRespawn;
+    this.localRespawn = null;
+    return respawn;
+  }
+
+  /** True once per reload the simulation accepted. */
+  drainReloadStarted(): boolean {
+    const started = this.reloadStarted;
+    this.reloadStarted = false;
+    return started;
+  }
+
+  /** One line each: what the player just picked up. */
+  drainNotices(): string[] {
+    return this.notices.splice(0, this.notices.length);
+  }
+
+  // ---------------------------------------------------------------- update
+
   /**
    * Advance the simulation and the visuals.
    *
@@ -344,10 +469,11 @@ export class Opponents {
    */
   update(deltaMs: number, playerPosition: Vec3, playerYaw: number): void {
     const local = this.sim.players.get(LOCAL_ID);
-    if (local) {
+    // The controller owns where a living player is. A dead one is the
+    // simulation's until it respawns them, and the controller follows.
+    if (local && local.alive) {
       local.movement.position = { ...playerPosition };
       local.movement.yaw = playerYaw;
-      local.alive = true;
     }
 
     this.accumulatorMs += Math.min(deltaMs, 250); // never spiral after a stall
@@ -357,6 +483,14 @@ export class Opponents {
       this.consume(this.sim.step());
     }
 
+    if (local) {
+      const reloadingUntil = local.reloadingUntilMs;
+      if (reloadingUntil !== this.lastReloadingUntilMs) {
+        if (reloadingUntil > this.sim.elapsedMs) this.reloadStarted = true;
+        this.lastReloadingUntilMs = reloadingUntil;
+      }
+    }
+
     for (const [id, view] of this.views) {
       const player = this.sim.players.get(id);
       if (!player) continue;
@@ -364,6 +498,7 @@ export class Opponents {
     }
 
     this.syncGrenades();
+    this.syncPickups(deltaMs);
   }
 
   /**
@@ -412,48 +547,173 @@ export class Opponents {
     return { root };
   }
 
+  /**
+   * One mesh per pickup on the ground, same map-is-truth rule as grenades.
+   *
+   * They hover and turn slowly. A weapon lying flat in the dark is a prop;
+   * one floating and turning is the oldest signal in the genre for "walk
+   * over this", and the yard is dark enough to need it.
+   */
+  private syncPickups(deltaMs: number): void {
+    for (const [id, pickup] of this.sim.pickups) {
+      let view = this.pickupViews.get(id);
+      if (!view) {
+        const created = this.createPickupView(id, pickup);
+        if (!created) continue;
+        view = created;
+        this.pickupViews.set(id, view);
+      }
+      view.phase += deltaMs * 0.0025;
+      view.root.position.y = view.baseY + 0.45 + Math.sin(view.phase) * 0.06;
+      view.root.rotation.y = view.phase * 0.6;
+    }
+
+    for (const [id, view] of this.pickupViews) {
+      if (this.sim.pickups.has(id)) continue;
+      view.root.dispose();
+      this.pickupViews.delete(id);
+    }
+  }
+
+  private createPickupView(id: string, pickup: SimPickup): PickupView | null {
+    const p = pickup.position;
+    if (pickup.kind === PICKUP_KIND.WEAPON && pickup.weaponId) {
+      const model = this.weaponModel(pickup.weaponId);
+      if (!model) return null;
+      const [root] = placeAll(model, `pickup_${id}`, [{ position: new Vector3(p.x, p.y, p.z) }]);
+      if (!root) return null;
+      // Tipped rather than level, so it reads as dropped, not racked.
+      root.rotation.z = 0.35;
+      for (const mesh of root.getChildMeshes()) mesh.isPickable = false;
+      return { root, baseY: p.y, phase: Math.random() * Math.PI * 2 };
+    }
+
+    // A health pack: an olive field case with a pale cross. Built rather
+    // than imported — there is no medical prop in the set, and a box with a
+    // cross is legible from across the yard, which is the whole job.
+    const root = new TransformNode(`pickup_${id}`, this.scene);
+    root.position.set(p.x, p.y, p.z);
+
+    const caseMaterial = new StandardMaterial(`pickup_${id}_case`, this.scene);
+    caseMaterial.diffuseColor = new Color3(0.3, 0.36, 0.24);
+    caseMaterial.specularColor = new Color3(0.08, 0.08, 0.08);
+    caseMaterial.emissiveColor = new Color3(0.05, 0.07, 0.04);
+
+    const crossMaterial = new StandardMaterial(`pickup_${id}_cross`, this.scene);
+    crossMaterial.diffuseColor = new Color3(0.95, 0.94, 0.88);
+    crossMaterial.emissiveColor = new Color3(0.75, 0.74, 0.66);
+    crossMaterial.specularColor = Color3.Black();
+
+    const body = MeshBuilder.CreateBox(
+      `pickup_${id}_body`,
+      { width: 0.5, height: 0.26, depth: 0.36 },
+      this.scene,
+    );
+    body.material = caseMaterial;
+    const barAcross = MeshBuilder.CreateBox(
+      `pickup_${id}_bar_a`,
+      { width: 0.3, height: 0.025, depth: 0.09 },
+      this.scene,
+    );
+    const barAlong = MeshBuilder.CreateBox(
+      `pickup_${id}_bar_b`,
+      { width: 0.09, height: 0.025, depth: 0.3 },
+      this.scene,
+    );
+    for (const bar of [barAcross, barAlong]) {
+      bar.material = crossMaterial;
+      bar.position.y = 0.135;
+    }
+    for (const mesh of [body, barAcross, barAlong]) {
+      mesh.parent = root;
+      mesh.isPickable = false;
+      mesh.receiveShadows = false;
+    }
+    return { root, baseY: p.y, phase: Math.random() * Math.PI * 2 };
+  }
+
   private consume(events: readonly SimEvent[]): void {
     for (const event of events) {
-      if (event.type === "kill") {
-        const view = this.views.get(event.victimId);
-        if (view && !view.dead) {
-          view.dead = true;
-          this.play(view, "death", false);
+      switch (event.type) {
+        case "shot": {
+          const landed =
+            event.distance === null
+              ? null
+              : add(event.origin, scale(event.direction, event.distance));
+          if (event.playerId === LOCAL_ID) {
+            this.localShots.push({
+              origin: event.origin,
+              direction: event.direction,
+              point: landed,
+            });
+          } else if (this.sim.players.get(event.playerId)?.isBot) {
+            // Incoming fire, hits and misses alike, so a fight is visible
+            // from the receiving end.
+            this.shots.push({ from: event.origin, direction: event.direction, to: landed });
+          }
+          break;
         }
-        continue;
-      }
 
-      if (event.type === "grenade_exploded") {
-        const view = this.grenadeViews.get(event.grenadeId);
-        if (view) {
-          view.root.dispose();
-          this.grenadeViews.delete(event.grenadeId);
+        case "hit":
+          if (event.victimId === LOCAL_ID) this.damageTaken += event.damage;
+          break;
+
+        case "kill": {
+          if (event.victimId === LOCAL_ID) {
+            this.localDied = true;
+            break;
+          }
+          const view = this.views.get(event.victimId);
+          if (view && !view.dead) {
+            view.dead = true;
+            this.play(view, "death", false);
+          }
+          break;
         }
-        const listener = this.sim.players.get(LOCAL_ID)?.movement.position;
-        this.explosions.push({
-          position: { ...event.position },
-          distanceM: listener
-            ? Math.hypot(
-                event.position.x - listener.x,
-                event.position.y - listener.y,
-                event.position.z - listener.z,
-              )
-            : 0,
-        });
-        continue;
-      }
 
-      // Incoming fire. Only landed rounds are drawn: the simulation reports
-      // hits, not trigger pulls, and a tracer for every miss would need the
-      // bot's aim ray, which is internal to the controller.
-      if (event.type === "hit") {
-        const attacker = this.sim.players.get(event.attackerId);
-        const victim = this.sim.players.get(event.victimId);
-        if (!attacker || !victim || !attacker.isBot) continue;
-        this.shots.push({
-          from: { ...attacker.movement.position, y: attacker.movement.position.y + 1.5 },
-          to: { ...victim.movement.position, y: victim.movement.position.y + 1.2 },
-        });
+        case "respawn":
+          if (event.playerId === LOCAL_ID) {
+            this.localRespawn = { position: { ...event.position }, yaw: event.yaw };
+          }
+          break;
+
+        case "pickup_taken": {
+          if (event.playerId !== LOCAL_ID) break;
+          if (event.kind === PICKUP_KIND.HEALTH) {
+            this.notices.push(`+${Math.round(event.healed)} health`);
+          } else if (event.weaponId) {
+            const name = getWeapon(event.weaponId).displayName;
+            this.notices.push(
+              event.added
+                ? `${name} — slot ${event.slot + 1}`
+                : `+${event.ammoAdded} ${name} rounds`,
+            );
+          }
+          break;
+        }
+
+        case "grenade_exploded": {
+          const view = this.grenadeViews.get(event.grenadeId);
+          if (view) {
+            view.root.dispose();
+            this.grenadeViews.delete(event.grenadeId);
+          }
+          const listener = this.sim.players.get(LOCAL_ID)?.movement.position;
+          this.explosions.push({
+            position: { ...event.position },
+            distanceM: listener
+              ? Math.hypot(
+                  event.position.x - listener.x,
+                  event.position.y - listener.y,
+                  event.position.z - listener.z,
+                )
+              : 0,
+          });
+          break;
+        }
+
+        default:
+          break;
       }
     }
   }
@@ -502,5 +762,9 @@ export class Opponents {
       view.root.dispose();
     }
     this.views.clear();
+    for (const view of this.pickupViews.values()) view.root.dispose();
+    this.pickupViews.clear();
+    for (const view of this.grenadeViews.values()) view.root.dispose();
+    this.grenadeViews.clear();
   }
 }
