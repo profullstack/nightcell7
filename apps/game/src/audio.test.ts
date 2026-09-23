@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+import SOUNDTRACK from "virtual:soundtrack";
 import { titleFromStem, toTrack } from "./audio";
 
 /**
- * The soundtrack is discovered by globbing `public/audio/music/<artist>/`
+ * The soundtrack is discovered by globbing `public/audio/music/<artist>/[<album>/]`
  * (see the `soundtrack()` plugin in `vite.config.ts`), so titles and artist
  * names are derived from paths rather than written by hand.
  *
@@ -34,26 +35,54 @@ describe("track titles", () => {
 });
 
 describe("tracks from paths", () => {
-  it("maps artist folder to display name and builds the path", () => {
-    expect(toTrack("throngva/runes-on-ice.mp3")).toEqual({
-      file: "music/throngva/runes-on-ice.mp3",
-      title: "Runes on Ice",
+  const ALBUM = "Þrøngva/After the Winter of Want";
+
+  it("reads artist, album and title from an album folder", () => {
+    expect(toTrack(`${ALBUM}/003. Ironwood Oath.mp3`)).toEqual({
+      file: `music/${ALBUM}/003. Ironwood Oath.mp3`,
+      title: "Ironwood Oath",
       artist: "Þrøngva",
+      album: "After the Winter of Want",
     });
   });
 
-  it("handles spaces and a mixed-case extension", () => {
-    expect(toTrack("throngva/More Than Enough.mp3")).toEqual({
-      file: "music/throngva/More Than Enough.mp3",
+  it("drops the track number however many digits it has", () => {
+    expect(toTrack(`${ALBUM}/015. The Wolf Called Want (Part 2).mp3`).title).toBe(
+      "The Wolf Called Want (Part 2)",
+    );
+    expect(toTrack(`${ALBUM}/20. Valhalla on Loop.mp3`).title).toBe("Valhalla on Loop");
+  });
+
+  it("keeps a number that is part of the title", () => {
+    // Only "<digits>. " at the start is a track number.
+    expect(toTrack("Þrøngva/1999.mp3").title).toBe("1999");
+  });
+
+  it("still takes a song straight under the artist, with no album", () => {
+    expect(toTrack("Þrøngva/More Than Enough.mp3")).toEqual({
+      file: "music/Þrøngva/More Than Enough.mp3",
       title: "More Than Enough",
       artist: "Þrøngva",
     });
-    expect(toTrack("throngva/Loud.MP3").title).toBe("Loud");
+    expect(toTrack("Þrøngva/Loud.MP3").title).toBe("Loud");
   });
 
   it("falls back to the folder name for an unknown artist", () => {
     // A new artist should appear sensibly without needing a code change,
     // which is the whole point of globbing the directory.
     expect(toTrack("kaviran/dust-line.mp3").artist).toBe("Kaviran");
+  });
+});
+
+describe("the shipped soundtrack", () => {
+  // The real glob over public/audio/music, through the same plugin the build uses.
+  it("finds every track on the album, including inside the album folder", () => {
+    const album = SOUNDTRACK.filter((f) => f.startsWith("Þrøngva/After the Winter of Want/"));
+    expect(album).toHaveLength(20);
+    expect(SOUNDTRACK.every((f) => f.toLowerCase().endsWith(".mp3"))).toBe(true);
+  });
+
+  it("no longer ships the old tracks", () => {
+    expect(SOUNDTRACK.filter((f) => f.startsWith("throngva/"))).toEqual([]);
   });
 });

@@ -28,7 +28,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = resolve(fileURLToPath(new URL(".", import.meta.url)));
@@ -353,14 +353,11 @@ function main() {
         audio,
         // Streamed on demand, so outside the shell budget entirely. Listed as
         // artist/song so provenance is readable straight from the manifest.
+        // Album folders are walked too: artist/album/song.
         music: existsSync(join(AUDIO_OUT, "music"))
-          ? readdirSync(join(AUDIO_OUT, "music"), { withFileTypes: true })
-              .filter((e) => e.isDirectory())
-              .flatMap((artist) =>
-                readdirSync(join(AUDIO_OUT, "music", artist.name))
-                  .filter((f) => f.endsWith(".mp3"))
-                  .map((f) => `${artist.name}/${f}`),
-              )
+          ? readdirSync(join(AUDIO_OUT, "music"), { recursive: true })
+              .map((f) => String(f).split(sep).join("/"))
+              .filter((f) => f.includes("/") && f.toLowerCase().endsWith(".mp3"))
               .sort()
           : [],
         bytes: {

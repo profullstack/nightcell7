@@ -58,7 +58,10 @@ const WIDTH = Number(opt("width", 1280));
 const HEIGHT = Number(opt("height", 720));
 const FPS = Number(opt("fps", 30));
 const PORT = Number(opt("port", 8903));
-const MUSIC = resolve(ROOT, opt("music", join(AUDIO, "music/throngva/ironwood-oath.mp3")));
+const MUSIC = resolve(
+  ROOT,
+  opt("music", join(AUDIO, "music/Þrøngva/After the Winter of Want/003. Ironwood Oath.mp3")),
+);
 const AMBIENCE = join(AUDIO, "ambience_yard.mp3");
 const FRAME_MS = 1000 / FPS;
 
