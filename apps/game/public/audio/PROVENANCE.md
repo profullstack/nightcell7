@@ -108,6 +108,34 @@ Streamed by an `<audio>` element on demand and deliberately outside the 15 MB
 shell budget (PRD §30): the game is playable before a note arrives. The PWA
 service worker does not precache it.
 
+### Second album: _When the Ravens Lied_
+
+Twelve tracks by **Þrøngva** in `music/Þrøngva/When the Ravens Lied/`, same
+sound as the first album. The source is a lyric sheet,
+`docs/music/when-the-ravens-lied/album.md`, carrying the concept, every lyric
+and a style direction per section. `tools/music/generate-album.mjs` renders it
+with the ElevenLabs Music API, which accepts the sheet as a composition plan.
+It keeps an uncompressed WAV master in `build/music-wav/`, which is not
+committed, and ships a 320 kbps, 48 kHz MP3 tagged with title, album, track
+number and lyrics. The same script's `--suno` flag writes paste-ready Suno
+sheets to `docs/music/when-the-ravens-lied/suno/`, the path the first album
+took.
+
+| #   | Title                      |
+| --- | -------------------------- |
+| 001 | Huginn Brings the Word     |
+| 002 | Who Fired First            |
+| 003 | Loki's Mirror              |
+| 004 | Merchant of the Long Knife |
+| 005 | Ledger of Ash              |
+| 006 | Heimdall Does Not Sleep    |
+| 007 | Same Rain on Both Shields  |
+| 008 | Lower the Spear            |
+| 009 | Muninn Remembers           |
+| 010 | Longship Bounce            |
+| 011 | Not Our Ragnarök           |
+| 012 | True Dawn                  |
+
 ### Removed: the earlier `music/throngva/` set
 
 Seven earlier files in `music/throngva/` were deleted on 2026-09-23 at the
