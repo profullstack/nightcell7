@@ -82,6 +82,30 @@ describe("the shipped soundtrack", () => {
     expect(SOUNDTRACK.every((f) => f.toLowerCase().endsWith(".mp3"))).toBe(true);
   });
 
+  it("finds the second album, in track order, with titles from the lyric sheet", () => {
+    const tracks = SOUNDTRACK.filter((f) => f.startsWith("Þrøngva/When the Ravens Lied/")).map(
+      toTrack,
+    );
+    expect(tracks).toHaveLength(12);
+    expect(tracks.every((t) => t.artist === "Þrøngva" && t.album === "When the Ravens Lied")).toBe(
+      true,
+    );
+    expect(tracks.map((t) => t.title)).toEqual([
+      "Huginn Brings the Word",
+      "Who Fired First",
+      "Loki's Mirror",
+      "Merchant of the Long Knife",
+      "Ledger of Ash",
+      "Heimdall Does Not Sleep",
+      "Same Rain on Both Shields",
+      "Lower the Spear",
+      "Muninn Remembers",
+      "Longship Bounce",
+      "Not Our Ragnarök",
+      "True Dawn",
+    ]);
+  });
+
   it("no longer ships the old tracks", () => {
     expect(SOUNDTRACK.filter((f) => f.startsWith("throngva/"))).toEqual([]);
   });
