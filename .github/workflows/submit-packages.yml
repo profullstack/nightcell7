@@ -80,6 +80,10 @@ jobs:
       TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
       BUCKET_DEPLOY_KEY: ${{ secrets.BUCKET_DEPLOY_KEY }}
       AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+      # WinGet is a pull request to microsoft/winget-pkgs, which means forking
+      # it: the Actions GITHUB_TOKEN cannot fork another organisation's repo,
+      # so this is a personal token, as it is on pairux.com.
+      PKG_SUBMIT_TOKEN: ${{ secrets.PKG_SUBMIT_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v5
@@ -139,10 +143,15 @@ jobs:
           git diff --staged --quiet || git commit -m "nightcell7-bin: update"
           git push
 
-      # winget requires a PR to microsoft/winget-pkgs, which is a review
-      # process rather than a push. The manifests are attached to the run for a
-      # human to submit with wingetcreate.
-      - name: WinGet note
+      # WinGet takes packages by pull request. tools/release/submit-winget.mjs
+      # forks winget-pkgs under the token's account, puts the manifests on a
+      # branch and opens the PR; Microsoft's pipeline and a moderator review it.
+      # The version comes from the manifest itself, so this step cannot submit
+      # a version the generator did not produce.
+      - name: WinGet
+        if: env.PKG_SUBMIT_TOKEN != ''
         run: |
-          echo "WinGet manifests are in the run artifacts."
-          echo "Submit with: wingetcreate submit dist/packaging/winget"
+          M=dist/packaging/winget/Profullstack.Nightcell7.yaml
+          [ -f "$M" ] || { echo "No WinGet manifests in this run; skipping."; exit 0; }
+          V=$(grep -m1 '^PackageVersion:' "$M" | awk '{print $2}')
+          node tools/release/submit-winget.mjs --version "$V" --dir dist/packaging/winget
