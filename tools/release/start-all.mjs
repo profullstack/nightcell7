@@ -16,10 +16,9 @@
  * server is dead is worse than an honest restart.
  */
 import { spawn } from "node:child_process";
-import http from "node:http";
-import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { createGameServer } from "./game-static.mjs";
 
 const ROOT = process.cwd();
 const PUBLIC_PORT = Number(process.env.PORT ?? 8080);
@@ -60,81 +59,9 @@ function start(name, command, args, env) {
   return child;
 }
 
-/**
- * Minimal static server for the built game.
- *
- * A dependency-free replacement for the separate `game-web` Caddy service.
- * Content-hashed assets are cached hard; the shell must revalidate so an
- * update is actually picked up (PRD §27.4).
- */
+/** Serve the built game; see `game-static.mjs`. */
 function startGameStatic() {
-  const dist = path.join(ROOT, "apps/game/dist");
-  const types = {
-    ".html": "text/html; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".webmanifest": "application/manifest+json",
-    ".svg": "image/svg+xml",
-    ".png": "image/png",
-    ".webp": "image/webp",
-    ".woff2": "font/woff2",
-    ".ktx2": "image/ktx2",
-    ".glb": "model/gltf-binary",
-    ".webm": "audio/webm",
-    ".mp3": "audio/mpeg",
-    ".wasm": "application/wasm",
-  };
-
-  const server = http.createServer((req, res) => {
-    const url = (req.url ?? "/").split("?")[0];
-
-    if (url === "/health/live" || url === "/health/ready") {
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", service: "game-web" }));
-      return;
-    }
-
-    // Strip the /play prefix the gateway forwards.
-    let relative = url.replace(/^\/play/, "") || "/";
-    if (relative.endsWith("/")) relative += "index.html";
-
-    // Resolve and confirm the result stays inside dist — a static server is a
-    // classic path-traversal surface.
-    const resolved = path.resolve(dist, `.${relative}`);
-    if (!resolved.startsWith(dist)) {
-      res.writeHead(403).end();
-      return;
-    }
-
-    fs.readFile(resolved, (error, data) => {
-      if (error) {
-        // SPA fallback so client-side routes work on reload.
-        fs.readFile(path.join(dist, "index.html"), (fallbackError, html) => {
-          if (fallbackError) {
-            res.writeHead(404, { "content-type": "application/json" });
-            res.end(JSON.stringify({ error: "not_found" }));
-            return;
-          }
-          res.writeHead(200, {
-            "content-type": "text/html; charset=utf-8",
-            "cache-control": "no-cache",
-          });
-          res.end(html);
-        });
-        return;
-      }
-
-      const ext = path.extname(resolved);
-      const hashed = /\.[a-f0-9]{8,}\./.test(path.basename(resolved));
-      res.writeHead(200, {
-        "content-type": types[ext] ?? "application/octet-stream",
-        "cache-control": hashed ? "public, max-age=31536000, immutable" : "no-cache",
-      });
-      res.end(data);
-    });
-  });
-
+  const server = createGameServer(path.join(ROOT, "apps/game/dist"));
   server.listen(PORTS.game, () => log("game-web", `listening on ${PORTS.game}`));
   children.push({ name: "game-web", child: { kill: () => server.close() } });
 }
