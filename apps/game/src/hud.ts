@@ -10,14 +10,15 @@ import {
 import {
   ARMOR_CLASSES,
   ARMORY,
+  CHARACTERS,
   COLORS,
   CREDITS_PER_KILL,
   CREDITS_PER_PACK,
   DEFAULT_LOADOUT,
-  GENDERS,
   SIDES,
   affordable,
   armorClassInfo,
+  withCharacter,
   type ArmoryItemId,
   type Loadout,
   type SideId,
@@ -40,7 +41,7 @@ export interface HudOptions {
   /** Preselected difficulty, and the sink for whichever the player picks. */
   difficulty?: SandboxDifficultyId;
   onDifficultyChange?: (difficulty: SandboxDifficultyId) => void;
-  /** The operator: side, gender, armour, colour. Every change is reported whole. */
+  /** The operator: character (and side), armour, colour. Every change is reported whole. */
   loadout?: Loadout;
   onLoadoutChange?: (loadout: Loadout) => void;
   /** Credits on hand, and the purchase sink. Returns whether the sale went through. */
@@ -361,12 +362,13 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
 
   // ------------------------------------------------------------- operator
   //
-  // Side, gender, armour, colour. The figure standing in the yard behind
+  // Character, armour, colour. The figure standing in the yard behind
   // the gate is this choice made visible; see preview.ts.
   let loadout: Loadout = options.loadout ?? DEFAULT_LOADOUT;
-  const changeLoadout = (next: Partial<Loadout>) => {
-    loadout = { ...loadout, ...next };
-    if (next.side && !briefing.hidden) renderBriefing(next.side);
+  const changeLoadout = (next: Loadout) => {
+    const sideChanged = next.side !== loadout.side;
+    loadout = next;
+    if (sideChanged && !briefing.hidden) renderBriefing(next.side);
     options.onLoadoutChange?.(loadout);
   };
   const operator = el("div", "operator");
@@ -412,18 +414,48 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     return group;
   };
 
+  // Who to be. Cards rather than a bare radio row because the portrait is the
+  // point, but still radios underneath, for arrow keys and screen readers.
+  // Grouped by side in the same order the website uses, two a side.
+  const cast = el("fieldset", "modes cast");
+  cast.append(el("legend", "modes__legend", "Deploy as"));
+  for (const side of SIDES) {
+    const column = el("div", "cast__side");
+    column.append(el("p", "cast__faction", side.name));
+    for (const entry of CHARACTERS.filter((c) => c.side === side.id)) {
+      const label = el("label", "cast__card");
+      label.dataset.interactive = "";
+      label.dataset.side = entry.side;
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "nc7-character";
+      input.value = entry.id;
+      input.checked = entry.id === loadout.character;
+      input.addEventListener("change", () => {
+        if (input.checked) changeLoadout(withCharacter(loadout, entry.id));
+      });
+      const portrait = document.createElement("img");
+      portrait.className = "cast__portrait";
+      portrait.src = `${import.meta.env.BASE_URL}assets/portraits/${entry.portrait}`;
+      portrait.alt = "";
+      portrait.width = 160;
+      portrait.height = 240;
+      portrait.loading = "lazy";
+      portrait.decoding = "async";
+      const text = el("span", "cast__text");
+      text.append(el("span", "cast__name", entry.name), el("span", "cast__role", entry.role));
+      label.append(input, portrait, text);
+      column.append(label);
+    }
+    cast.append(column);
+  }
+  gate.append(cast);
+
   const armorBlurb = el("p", "modes__blurb", armorClassInfo(loadout.armor).blurb);
   operator.append(
-    radios("Side", SIDES, loadout.side, (side) => changeLoadout({ side })),
-    radios(
-      "Gender",
-      GENDERS.map((g) => ({ id: g.id, name: g.name, disabled: !g.available, note: g.note })),
-      loadout.gender,
-      (gender) => changeLoadout({ gender }),
-    ),
     radios("Armour", ARMOR_CLASSES, loadout.armor, (armor) => {
       armorBlurb.textContent = armorClassInfo(armor).blurb;
-      changeLoadout({ armor });
+      changeLoadout({ ...loadout, armor });
     }),
   );
   operator.append(armorBlurb);
@@ -432,7 +464,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
       "Colour",
       COLORS,
       loadout.color,
-      (color) => changeLoadout({ color }),
+      (color) => changeLoadout({ ...loadout, color }),
       (entry) => {
         const color = COLORS.find((c) => c.id === entry.id);
         if (!color) return null;

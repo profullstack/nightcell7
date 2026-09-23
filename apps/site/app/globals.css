@@ -486,6 +486,145 @@ a {
   margin: 0;
 }
 
+/* ------------------------------------------------------------ cast portraits */
+
+/* A card led by a painted portrait. The painting bleeds to the card's edges
+   and fades into the card colour, so the copy below reads as the same object. */
+.side--portrait {
+  padding-top: 0;
+}
+
+.side__art {
+  display: block;
+  margin: 0 calc(-1 * clamp(1.75rem, 4vw, 3rem)) 0.4rem;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+}
+
+.side--rook .side__art,
+.side--leila .side__art {
+  aspect-ratio: 5 / 4;
+}
+
+.side__art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--ink-900) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+.side__portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 22%;
+  filter: saturate(0.85);
+  transition:
+    transform var(--motion-component) var(--ease-standard),
+    filter var(--motion-component) var(--ease-standard);
+}
+
+.side--portrait:hover .side__portrait,
+.side--portrait:focus-within .side__portrait {
+  transform: scale(1.02);
+  filter: saturate(1);
+}
+
+/* The sigil sits over the painting on a portrait card; drop it below it. */
+.side--portrait .side__sigil {
+  top: auto;
+  bottom: 1rem;
+}
+
+.side__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+/* ----------------------------------------------------------------- dossier */
+
+.dossier__hero {
+  --accent: var(--signal-red);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  align-items: end;
+  margin: 0.5rem 0 2.5rem;
+}
+
+.dossier__hero--leila {
+  --accent: var(--signal-cyan);
+}
+
+@media (min-width: 768px) {
+  .dossier__hero {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  }
+}
+
+.dossier__portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 16%, transparent);
+  border-bottom: 2px solid var(--accent);
+  background: var(--ink-900);
+}
+
+.dossier__route {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.dossier__note {
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--bone-300) 75%, transparent);
+}
+
+.prose ul.contacts {
+  list-style: none;
+  padding-left: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.contacts li {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.contacts__face {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: cover;
+  object-position: 50% 18%;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 25%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side__portrait {
+    transition: none;
+  }
+
+  .side--portrait:hover .side__portrait,
+  .side--portrait:focus-within .side__portrait {
+    transform: none;
+  }
+}
+
 /* -------------------------------------------------------------- timeline */
 
 .timeline {

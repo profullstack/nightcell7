@@ -1,0 +1,46 @@
+{
+  "portraits": {
+    "leila": {
+      "name": "Leila Farzan",
+      "model": "gpt-image-2",
+      "generated": "2026-09-23T22:42:19.845Z",
+      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA woman in her early thirties, an Iranian counterintelligence officer and signals analyst, sharp intelligent eyes, focused and sceptical expression, dark hair mostly covered by a plain charcoal headscarf. Plain dark olive field uniform jacket with no markings, a compact radio headset over one ear. The rim light is a muted signal cyan.",
+      "sha256": "626ce170e4ca0f4ecd013e99fdf3365578986665fda5e0631596d9cfdf4bef5f"
+    },
+    "kade": {
+      "name": "Silas Kade",
+      "model": "gpt-image-2",
+      "generated": "2026-09-23T22:42:26.818Z",
+      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA man in his late forties, a private military contractor's tactical director, close-cropped fair hair, clean-shaven, cold appraising stare, expensive dark softshell jacket over a slim unmarked plate carrier, the calm of a logistics manager. The rim light is a muted sodium orange.",
+      "sha256": "09461a6e78f791cbd0a2d0b26d621c623d9127859fb247563697e5a9132a0381"
+    },
+    "daryan": {
+      "name": "Colonel Arman Daryan",
+      "model": "gpt-image-2",
+      "generated": "2026-09-23T22:46:51.905Z",
+      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA Persian man of Iranian heritage in his early fifties, olive skin, a senior Iranian intelligence officer and career staff officer, long narrow face, prominent nose, clean-shaven, short black hair greying at the sides, thin rectangular steel-rimmed glasses, an analyst's tired precise eyes, collar of a plain dark olive service shirt under a dark overcoat with no insignia, a professional being handed a hard decision, not a villain. He must not resemble any real public figure. The rim light is a muted signal cyan.",
+      "sha256": "d1d41f8d35f4ac220743b8e103f32b60cfe65743c221dfda03ee9e62e95073bc"
+    },
+    "vey": {
+      "name": "Director Mara Vey",
+      "model": "gpt-image-2",
+      "generated": "2026-09-23T22:42:33.073Z",
+      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA woman in her early fifties, the director of a covert program, silver hair in a severe short cut, composed and unreadable, immaculate dark civilian suit and a thin headset microphone, lit partly by the glow of screens off camera. The rim light is a muted signal red.",
+      "sha256": "a970013b07d1cc87aa4987e0f7e05b98e663b68a04dd9e2b3c4752187f429a50"
+    },
+    "rook": {
+      "name": "Rook",
+      "model": "gpt-image-2",
+      "generated": "2026-09-23T22:42:38.734Z",
+      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA man in his late thirties, an American deep-cover operative, lean and weathered, short dark hair, several days of stubble, tired watchful eyes. Plain dark field jacket over a charcoal plate carrier with no markings, a headset around his neck. The rim light is a muted signal red.",
+      "sha256": "4718467495ca4ec65f6e46f94b7dff843efecfbc68bfde8122f0d0d79edfc78b"
+    },
+    "vale": {
+      "name": "Jonas Vale",
+      "model": "gpt-image-2",
+      "generated": "2026-09-23T22:42:40.380Z",
+      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA man in his mid fifties, an intelligence handler, grey at the temples, lined face, reading glasses pushed up on his head, worn civilian raincoat over a dark sweater, carrying himself like someone who has kept secrets for thirty years, quietly worried. The rim light is a muted amber.",
+      "sha256": "9b2f44d72bd4f383059b3872401d97e2b7673a9662875c88b923049f9ae44fbe"
+    }
+  }
+}

@@ -113,3 +113,15 @@ third-party source.
 `icon.svg` / `icon-512.png` are the application mark; see
 `apps/game/public/PROVENANCE.md`. Regenerate the rasters with
 `node tools/art/icons.mjs` rather than editing them by hand.
+
+## `characters/*.webp`: cast portraits
+
+- **Source:** AI-generated painted portraits (OpenAI `gpt-image-2`, 2026-09-23),
+  one per named character. Not photographs, not traced, not from another game.
+- **Record:** `docs/art/characters/README.md` (licence, review, AI disclosure)
+  and `docs/art/characters/manifest.json` (exact prompt, model, date, sha256 of
+  each raw master).
+- **Generator:** `node tools/art/portraits/generate.mjs`; the raw PNG masters
+  are `docs/art/characters/raw/`. These files are 600 x 900 WebP copies of them.
+- **Status:** published. Cultural-consultant review of the Iranian characters is
+  pending with the rest of the theatre.

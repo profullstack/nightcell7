@@ -8,6 +8,7 @@ import {
   type SideId,
 } from "@nightcell7/game-core";
 import { LeilaSigil, RookSigil } from "../art";
+import { PLAYABLE, Portrait, playHref } from "../portraits";
 
 export const metadata: Metadata = {
   title: "Cast",
@@ -70,19 +71,27 @@ export default function CastPage() {
           <p className="lede">
             Each campaign is one person&rsquo;s night, told from inside their institution. The
             people below are who they answer to, who they meet, and who is working against both of
-            them.
+            them. Pick who to be: four of them can be deployed in the free demo today.
           </p>
 
           <div className="split">
             {PROTAGONISTS.map(({ side, name, route, line, dossier, Sigil }) => (
-              <article className={`side side--${side}`} key={side}>
+              <article className={`side side--${side} side--portrait`} key={side}>
+                <a className="side__art" href={`/characters/${side}`} tabIndex={-1}>
+                  <Portrait id={side} name={name} className="side__portrait" priority />
+                </a>
                 <Sigil className="side__sigil" />
                 <p className="side__route">{route}</p>
                 <h3>{name}</h3>
                 <p>{line}</p>
-                <a className="button button--ghost" href={`/characters/${side}`}>
-                  {dossier}
-                </a>
+                <div className="side__actions">
+                  <a className="button button--primary" href={playHref(side)}>
+                    Play as {name.split(" ")[0]}
+                  </a>
+                  <a className="button button--ghost" href={`/characters/${side}`}>
+                    {dossier}
+                  </a>
+                </div>
               </article>
             ))}
           </div>
@@ -100,7 +109,10 @@ export default function CastPage() {
 
           <div className="split">
             {SUPPORTING_CAST.map((member) => (
-              <article className="side side--cast" key={member.id} id={member.id}>
+              <article className="side side--cast side--portrait" key={member.id} id={member.id}>
+                <div className="side__art">
+                  <Portrait id={member.id} name={member.name} className="side__portrait" />
+                </div>
                 <p className="side__route">{faction(member.faction).name}</p>
                 <h3>{member.name}</h3>
                 <p>{member.summary}</p>
@@ -109,7 +121,16 @@ export default function CastPage() {
                   <dd>{member.role}</dd>
                   <dt>Met in</dt>
                   <dd>{seenInLabel(member.seenIn)}</dd>
+                  <dt>In the yard</dt>
+                  <dd>{PLAYABLE.has(member.id) ? "Playable" : "Not an operator"}</dd>
                 </dl>
+                {PLAYABLE.has(member.id) ? (
+                  <div className="side__actions">
+                    <a className="button button--ghost" href={playHref(member.id)}>
+                      Play as {member.name.split(" ").at(-1)}
+                    </a>
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>

@@ -94,6 +94,9 @@ async function boot(): Promise<void> {
   // Enter at a real spawn of the chosen side rather than an arbitrary camera
   // position, so the yard is entered the way a match would be.
   const loadout = preferredLoadout(window.location.search, safeStorage());
+  // Remembered at once: a "Play as" link from the website carries the character
+  // in the URL, and changing the mode or difficulty reloads without it.
+  rememberLoadout(loadout, safeStorage());
   const team = sideTeam(loadout.side);
   const spawn = spawnsForTeam(ARDAVAN_YARD, team)[0];
   if (!spawn) throw new Error("map has no spawn for the chosen side");

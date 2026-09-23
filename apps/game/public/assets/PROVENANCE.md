@@ -202,3 +202,10 @@ The whole armoury costs 2 KB of texture: Synty colour these by UV region
 against a 512px atlas rather than by detail, and `Weapons_01` is the neutral
 gunmetal — the other nine are camo and tiger-stripe finishes that would tie
 every weapon to one faction.
+
+## `portraits/*.webp`
+
+Deploy-gate thumbnails of the painted cast portraits: the same images as the
+site's `media/characters/`, derived at 320 px tall from the raw masters by
+`tools/art/portraits/generate.mjs`. AI-generated (OpenAI `gpt-image-2`,
+2026-09-23); full record in `docs/art/characters/README.md`.
