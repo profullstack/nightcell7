@@ -10,6 +10,7 @@ import {
 } from "@nightcell7/game-core";
 import { PageShell } from "../../_components/page-shell";
 import { CapturePlate } from "../../gallery";
+import { Portrait, playHref } from "../../portraits";
 
 /**
  * Character dossiers.
@@ -123,12 +124,28 @@ export default async function CharacterPage({ params }: { params: Promise<{ side
   const circle = CIRCLES[dossier.side];
   const commander = castMember(circle.answersTo);
   const crossings = circle.crosses.map(castMember);
+  const firstName = dossier.name.split(" ")[0];
 
   return (
     <PageShell label={`${dossier.route} — dossier`} title={dossier.name} lede={dossier.role}>
-      <CapturePlate name={dossier.plate} label={dossier.route} />
+      <div className={`dossier__hero dossier__hero--${dossier.side}`}>
+        <Portrait id={dossier.side} name={dossier.name} className="dossier__portrait" priority />
+        <div className="dossier__intro">
+          <p className="dossier__route">{dossier.route}</p>
+          <p>{dossier.summary}</p>
+          <p>
+            <a className="button button--primary" href={playHref(dossier.side)}>
+              Play as {firstName}
+            </a>
+          </p>
+          <p className="dossier__note">
+            Opens the free demo in Ardavan Yard with {firstName} chosen on the deploy gate. The
+            campaign itself unlocks with the episode.
+          </p>
+        </div>
+      </div>
 
-      <p>{dossier.summary}</p>
+      <CapturePlate name={dossier.plate} label={dossier.route} />
 
       <h3>What they believe</h3>
       <p>{dossier.believes}</p>
@@ -137,21 +154,29 @@ export default async function CharacterPage({ params }: { params: Promise<{ side
       <p>{dossier.discovers}</p>
 
       <h3>Who they answer to</h3>
-      <p>
-        <a href={`/characters#${commander.id}`}>
-          <strong>{commander.name}</strong>
-        </a>{" "}
-        &mdash; {commander.role}, {faction(commander.faction).name}
-      </p>
+      <ul className="contacts">
+        <li>
+          <Portrait id={commander.id} name={commander.name} className="contacts__face" />
+          <span>
+            <a href={`/characters#${commander.id}`}>
+              <strong>{commander.name}</strong>
+            </a>{" "}
+            &mdash; {commander.role}, {faction(commander.faction).name}
+          </span>
+        </li>
+      </ul>
 
       <h3>Who they cross paths with</h3>
-      <ul>
+      <ul className="contacts">
         {crossings.map((member) => (
           <li key={member.id}>
-            <a href={`/characters#${member.id}`}>
-              <strong>{member.name}</strong>
-            </a>{" "}
-            &mdash; {member.role}, {faction(member.faction).name}
+            <Portrait id={member.id} name={member.name} className="contacts__face" />
+            <span>
+              <a href={`/characters#${member.id}`}>
+                <strong>{member.name}</strong>
+              </a>{" "}
+              &mdash; {member.role}, {faction(member.faction).name}
+            </span>
           </li>
         ))}
       </ul>

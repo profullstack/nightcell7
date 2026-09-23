@@ -8,7 +8,7 @@ import {
 } from "@babylonjs/core";
 import { ARDAVAN_YARD, EYE_HEIGHT_STANDING, isClearOfSolids } from "@nightcell7/multiplayer-sim";
 import { placeAnimated, type AssetSet } from "./assets";
-import { SIDE, colorInfo, type Loadout } from "./loadout";
+import { characterInfo, colorInfo, type Loadout } from "./loadout";
 import { brightenCharacter } from "./targets";
 
 /**
@@ -48,9 +48,7 @@ export class LoadoutPreview {
   /** Show this loadout's figure, replacing whatever was shown before. */
   show(loadout: Loadout): void {
     this.hide();
-    const model = this.assets.models.get(
-      loadout.side === SIDE.DIRECTORATE ? "m3_operator_directorate" : "m3_operator_nightcell",
-    );
+    const model = this.assets.models.get(characterInfo(loadout.character).figure);
     if (!model) return;
 
     const placed = placeAnimated(model, "preview", { position: Vector3.Zero(), rotationY: 0 });

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { TEAM_IDS } from "@nightcell7/multiplayer-sim";
 import {
@@ -8,9 +9,9 @@ import {
   CREDITS_PER_KILL,
   CREDITS_PER_PACK,
   CREDITS_START,
+  CHARACTER,
+  CHARACTERS,
   DEFAULT_LOADOUT,
-  GENDER,
-  GENDERS,
   SIDE,
   affordable,
   armoryItem,
@@ -19,6 +20,7 @@ import {
   rememberLoadout,
   saveCredits,
   sideTeam,
+  withCharacter,
 } from "./loadout";
 
 function memoryStorage(initial: Record<string, string> = {}): Storage {
@@ -41,11 +43,26 @@ describe("loadout choices", () => {
     expect(sideTeam(SIDE.DIRECTORATE)).toBe(TEAM_IDS.DIRECTORATE);
   });
 
-  it("offers a second gender only once its art exists", () => {
-    const female = GENDERS.find((entry) => entry.id === GENDER.FEMALE);
-    expect(female?.available).toBe(false);
-    expect(female?.note).toBeTruthy();
-    expect(GENDERS.find((entry) => entry.id === GENDER.MALE)?.available).toBe(true);
+  it("offers the same number of characters on each side, protagonist first", () => {
+    const nightcell = CHARACTERS.filter((c) => c.side === SIDE.NIGHTCELL);
+    const directorate = CHARACTERS.filter((c) => c.side === SIDE.DIRECTORATE);
+    expect(nightcell.length).toBe(directorate.length);
+    expect(nightcell[0]?.id).toBe(CHARACTER.ROOK);
+    expect(directorate[0]?.id).toBe(CHARACTER.LEILA);
+    expect(new Set(CHARACTERS.map((c) => c.id)).size).toBe(CHARACTERS.length);
+  });
+
+  it("ships a portrait for every playable character", () => {
+    for (const character of CHARACTERS) {
+      const file = new URL(`../public/assets/portraits/${character.portrait}`, import.meta.url);
+      expect(existsSync(file), character.portrait).toBe(true);
+    }
+  });
+
+  it("takes the side from the character", () => {
+    const leila = withCharacter(DEFAULT_LOADOUT, CHARACTER.LEILA);
+    expect(leila.side).toBe(SIDE.DIRECTORATE);
+    expect(withCharacter(leila, CHARACTER.VALE).side).toBe(SIDE.NIGHTCELL);
   });
 
   it("makes armour a trade, not a free upgrade", () => {
@@ -73,8 +90,8 @@ describe("loadout persistence", () => {
   it("round-trips a remembered loadout", () => {
     const storage = memoryStorage();
     const chosen = {
+      character: CHARACTER.DARYAN,
       side: SIDE.DIRECTORATE,
-      gender: GENDER.MALE,
       armor: ARMOR_CLASS.HEAVY,
       color: "ember",
     } as const;
@@ -84,24 +101,52 @@ describe("loadout persistence", () => {
 
   it("lets the query string pick the side over the remembered one", () => {
     const storage = memoryStorage({
-      "nc7.loadout": JSON.stringify({ ...DEFAULT_LOADOUT, side: SIDE.DIRECTORATE }),
+      "nc7.loadout": JSON.stringify({ ...DEFAULT_LOADOUT, character: CHARACTER.LEILA }),
     });
     expect(preferredLoadout("?side=nightcell", storage).side).toBe(SIDE.NIGHTCELL);
+    expect(preferredLoadout("?side=nightcell", storage).character).toBe(CHARACTER.ROOK);
     expect(preferredLoadout("?side=martian", storage).side).toBe(SIDE.DIRECTORATE);
+  });
+
+  it("lets a Play as link pick the character, and the side with it", () => {
+    const storage = memoryStorage({
+      "nc7.loadout": JSON.stringify({ ...DEFAULT_LOADOUT, character: CHARACTER.VALE }),
+    });
+    const leila = preferredLoadout("?character=leila", storage);
+    expect(leila.character).toBe(CHARACTER.LEILA);
+    expect(leila.side).toBe(SIDE.DIRECTORATE);
+    expect(preferredLoadout("?character=kade", storage).character).toBe(CHARACTER.VALE);
+  });
+
+  it("upgrades a loadout remembered before characters existed", () => {
+    const storage = memoryStorage({
+      "nc7.loadout": JSON.stringify({
+        side: "directorate",
+        gender: "male",
+        armor: "light",
+        color: "olive",
+      }),
+    });
+    expect(preferredLoadout("", storage)).toEqual({
+      character: CHARACTER.LEILA,
+      side: SIDE.DIRECTORATE,
+      armor: ARMOR_CLASS.LIGHT,
+      color: "olive",
+    });
   });
 
   it("falls back one field at a time on a stale or hand-edited entry", () => {
     const storage = memoryStorage({
       "nc7.loadout": JSON.stringify({
+        character: "mirage", // no such person
         side: "directorate",
-        gender: "female", // not available yet
         armor: "titanium",
         color: "ember",
       }),
     });
     expect(preferredLoadout("", storage)).toEqual({
+      character: CHARACTER.LEILA,
       side: SIDE.DIRECTORATE,
-      gender: GENDER.MALE,
       armor: ARMOR_CLASS.STANDARD,
       color: "ember",
     });

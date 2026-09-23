@@ -1,11 +1,13 @@
 import { WEAPON, getWeapon, type WeaponId } from "@nightcell7/game-core";
 import { TEAM_IDS } from "@nightcell7/multiplayer-sim";
 import { SANDBOX_STAMINA_CAP } from "./sandbox-rules";
+import type { ModelName } from "./assets";
 
 /**
  * The operator the player deploys as, and the armory they buy from.
  *
- * Chosen on the deploy gate: side, gender, armour class, colour. Persisted
+ * Chosen on the deploy gate: character (and with it the side), armour class,
+ * colour. Persisted
  * so the gate reopens as it was left. Pure data and pure functions, so the
  * numbers are testable without a renderer; the preview figure and the
  * purchase effects live where the scene and the simulation are.
@@ -50,32 +52,82 @@ export function sideTeam(side: SideId): number {
   return SIDES.find((entry) => entry.id === side)?.team ?? TEAM_IDS.NIGHTCELL;
 }
 
-// ----------------------------------------------------------------- gender
+// -------------------------------------------------------------- character
 
-export const GENDER = {
-  MALE: "male",
-  FEMALE: "female",
+/**
+ * Who the player deploys as. Picking a character picks their side: the yard
+ * is Nightcell against the Directorate, so the playable cast is the people
+ * from those two institutions who would be in a fight. Two a side, in the
+ * same order, because PRD §14.3 requires that neither side be presented as
+ * the richer or more heroic one. Director Vey and Silas Kade are on the
+ * website's cast page but are not operators in the yard.
+ *
+ * `figure` is the model that stands on the gate; `portrait` is the painted
+ * key art in `public/assets/portraits`, the same image the website's cast
+ * page shows (docs/art/characters/manifest.json records how each was made).
+ */
+export const CHARACTER = {
+  ROOK: "rook",
+  VALE: "vale",
+  LEILA: "leila",
+  DARYAN: "daryan",
 } as const;
 
-export type GenderId = (typeof GENDER)[keyof typeof GENDER];
+export type CharacterId = (typeof CHARACTER)[keyof typeof CHARACTER];
 
-export interface GenderInfo {
-  readonly id: GenderId;
+export interface CharacterInfo {
+  readonly id: CharacterId;
   readonly name: string;
-  /**
-   * Whether there is a figure to deploy as. The shipped operator set has one
-   * body per faction; a second reads as a choice only once its art exists,
-   * and a radio that silently gives the same body is worse than one that
-   * says so.
-   */
-  readonly available: boolean;
-  readonly note?: string;
+  /** One line under the name on the gate card. */
+  readonly role: string;
+  readonly side: SideId;
+  readonly figure: ModelName;
+  readonly portrait: string;
 }
 
-export const GENDERS: readonly GenderInfo[] = [
-  { id: GENDER.MALE, name: "Male", available: true },
-  { id: GENDER.FEMALE, name: "Female", available: false, note: "Art pending" },
+export const CHARACTERS: readonly CharacterInfo[] = [
+  {
+    id: CHARACTER.ROOK,
+    name: "Rook",
+    role: "Deep-cover operative",
+    side: SIDE.NIGHTCELL,
+    figure: "m3_operator_nightcell",
+    portrait: "rook.webp",
+  },
+  {
+    id: CHARACTER.VALE,
+    name: "Jonas Vale",
+    role: "Rook's handler",
+    side: SIDE.NIGHTCELL,
+    figure: "m3_operator_nightcell",
+    portrait: "vale.webp",
+  },
+  {
+    id: CHARACTER.LEILA,
+    name: "Leila Farzan",
+    role: "Counterintelligence officer",
+    side: SIDE.DIRECTORATE,
+    figure: "m3_operator_directorate",
+    portrait: "leila.webp",
+  },
+  {
+    id: CHARACTER.DARYAN,
+    name: "Col. Arman Daryan",
+    role: "Leila's commanding officer",
+    side: SIDE.DIRECTORATE,
+    figure: "m3_operator_directorate",
+    portrait: "daryan.webp",
+  },
 ];
+
+export function characterInfo(id: CharacterId): CharacterInfo {
+  return CHARACTERS.find((entry) => entry.id === id) ?? CHARACTERS[0]!;
+}
+
+/** The character a side opens on: its protagonist. */
+export function defaultCharacterFor(side: SideId): CharacterId {
+  return side === SIDE.DIRECTORATE ? CHARACTER.LEILA : CHARACTER.ROOK;
+}
 
 // ------------------------------------------------------------------ armour
 
@@ -151,15 +203,16 @@ export function colorInfo(id: string): ColorInfo {
 // ----------------------------------------------------------------- loadout
 
 export interface Loadout {
+  readonly character: CharacterId;
+  /** Always the character's side; kept on the loadout because rosters key on it. */
   readonly side: SideId;
-  readonly gender: GenderId;
   readonly armor: ArmorClassId;
   readonly color: string;
 }
 
 export const DEFAULT_LOADOUT: Loadout = {
+  character: CHARACTER.ROOK,
   side: SIDE.NIGHTCELL,
-  gender: GENDER.MALE,
   armor: ARMOR_CLASS.STANDARD,
   color: "signal",
 };
@@ -169,8 +222,8 @@ const LOADOUT_KEY = "nc7.loadout";
 function isSide(value: unknown): value is SideId {
   return SIDES.some((entry) => entry.id === value);
 }
-function isGender(value: unknown): value is GenderId {
-  return GENDERS.some((entry) => entry.id === value && entry.available);
+function isCharacter(value: unknown): value is CharacterId {
+  return CHARACTERS.some((entry) => entry.id === value);
 }
 function isArmorClass(value: unknown): value is ArmorClassId {
   return ARMOR_CLASSES.some((entry) => entry.id === value);
@@ -180,10 +233,13 @@ function isColor(value: unknown): value is string {
 }
 
 /**
- * The loadout to deploy with: `?side=` in the URL first (a link can open a
- * specific faction, for a capture or a bug report), the remembered choice
- * second, the default otherwise. Each field is validated on its own, so a
- * stale or hand-edited entry falls back one field at a time.
+ * The loadout to deploy with. The character comes from, in order: `?character=`
+ * in the URL (the website's "Play as" links), `?side=` (that side's
+ * protagonist; a link can open a specific faction for a capture or a bug
+ * report), the remembered character, a remembered side from before characters
+ * existed, and the default. The side always follows the character. Every other
+ * field is validated on its own, so a stale or hand-edited entry falls back
+ * one field at a time.
  */
 export function preferredLoadout(search: string, storage?: Storage): Loadout {
   let stored: Partial<Record<keyof Loadout, unknown>> = {};
@@ -196,17 +252,29 @@ export function preferredLoadout(search: string, storage?: Storage): Loadout {
   } catch {
     // Blocked storage or a corrupt entry: neither is worth failing a boot over.
   }
-  const requestedSide = new URLSearchParams(search).get("side");
+  const query = new URLSearchParams(search);
+  const requestedCharacter = query.get("character");
+  const requestedSide = query.get("side");
+  const character = isCharacter(requestedCharacter)
+    ? requestedCharacter
+    : isSide(requestedSide)
+      ? defaultCharacterFor(requestedSide)
+      : isCharacter(stored.character)
+        ? stored.character
+        : isSide(stored.side)
+          ? defaultCharacterFor(stored.side)
+          : DEFAULT_LOADOUT.character;
   return {
-    side: isSide(requestedSide)
-      ? requestedSide
-      : isSide(stored.side)
-        ? stored.side
-        : DEFAULT_LOADOUT.side,
-    gender: isGender(stored.gender) ? stored.gender : DEFAULT_LOADOUT.gender,
+    character,
+    side: characterInfo(character).side,
     armor: isArmorClass(stored.armor) ? stored.armor : DEFAULT_LOADOUT.armor,
     color: isColor(stored.color) ? stored.color : DEFAULT_LOADOUT.color,
   };
+}
+
+/** A loadout as that character: the side comes with them. */
+export function withCharacter(loadout: Loadout, character: CharacterId): Loadout {
+  return { ...loadout, character, side: characterInfo(character).side };
 }
 
 export function rememberLoadout(loadout: Loadout, storage?: Storage): void {
