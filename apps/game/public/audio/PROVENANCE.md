@@ -110,16 +110,33 @@ service worker does not precache it.
 
 ### Second album: _When the Ravens Lied_
 
-Twelve tracks by **Þrøngva** in `music/Þrøngva/When the Ravens Lied/`, same
-sound as the first album. The source is a lyric sheet,
-`docs/music/when-the-ravens-lied/album.md`, carrying the concept, every lyric
-and a style direction per section. `tools/music/generate-album.mjs` renders it
-with the ElevenLabs Music API, which accepts the sheet as a composition plan.
-It keeps an uncompressed WAV master in `build/music-wav/`, which is not
-committed, and ships a 320 kbps, 48 kHz MP3 tagged with title, album, track
-number and lyrics. The same script's `--suno` flag writes paste-ready Suno
-sheets to `docs/music/when-the-ravens-lied/suno/`, the path the first album
-took.
+Twelve tracks by **Þrøngva** in `music/Þrøngva/When the Ravens Lied/`, in the
+first album's style: drop-D Viking metal crossed with hip-hop. Unlike the first
+album, every note is **synthesised by code**, the same way as the effects
+above: `tools/music/synth_album.py` (numpy and ffmpeg, nothing sampled, no
+generative audio model). Its provenance is a commit, the script and a seed per
+track, and the seed is written into each file's comment tag.
+
+The source is the lyric sheet `docs/music/when-the-ravens-lied/album.md`,
+which holds the concept, every lyric, and a tempo and style direction for each
+section. The script arranges each section from that direction. It plays a
+drop-D riff with the kick doubling it, boom-bap or 808 bounce drums on the
+hip-hop tracks, choir, strings, tagelharpa, a throat-singing drone, horns, and
+the effects the sheet names. The voice is formant synthesis driven by the
+lyrics, one note per syllable on that syllable's vowel. It follows the words'
+rhythm but is not intelligible speech, so the lyrics also ride in each MP3's
+`lyrics-eng` tag.
+
+Output is a 48 kHz WAV master in `build/music-wav/`, which is not committed,
+and a 320 kbps, 48 kHz MP3 at about -10 LUFS. To rebuild:
+
+```sh
+python3 tools/music/synth_album.py docs/music/when-the-ravens-lied/album.md --jobs 3
+```
+
+The `--suno` flag writes paste-ready Suno sheets to
+`docs/music/when-the-ravens-lied/suno/`, the path the first album took, for a
+sung version later.
 
 | #   | Title                      |
 | --- | -------------------------- |

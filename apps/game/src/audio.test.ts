@@ -82,6 +82,18 @@ describe("the shipped soundtrack", () => {
     expect(SOUNDTRACK.every((f) => f.toLowerCase().endsWith(".mp3"))).toBe(true);
   });
 
+  it("finds the second album, in track order, with titles from the lyric sheet", () => {
+    const album = SOUNDTRACK.filter((f) => f.startsWith("Þrøngva/When the Ravens Lied/"));
+    expect(album).toHaveLength(12);
+    expect(toTrack(album[0])).toMatchObject({
+      artist: "Þrøngva",
+      album: "When the Ravens Lied",
+      title: "Huginn Brings the Word",
+    });
+    expect(toTrack(album[10]).title).toBe("Not Our Ragnarök");
+    expect(toTrack(album[11]).title).toBe("True Dawn");
+  });
+
   it("no longer ships the old tracks", () => {
     expect(SOUNDTRACK.filter((f) => f.startsWith("throngva/"))).toEqual([]);
   });
