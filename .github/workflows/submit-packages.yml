@@ -59,6 +59,11 @@ jobs:
         with:
           name: package-manifests-${{ steps.version.outputs.version }}
           path: dist/packaging
+          # upload-artifact skips dotfiles unless told otherwise, and the AUR
+          # needs `aur/.SRCINFO`: without this the Submit job's `cp` fails on a
+          # file that was generated but never uploaded. Hidden behind the AUR
+          # key failure until v0.2.0.
+          include-hidden-files: true
 
   submit:
     name: Submit
