@@ -157,6 +157,11 @@ export default function HomePage() {
               </a>
             </article>
           </div>
+          <p style={{ marginTop: "1.75rem" }}>
+            <a className="button button--ghost" href="/characters">
+              Meet the full cast
+            </a>
+          </p>
         </div>
       </section>
 

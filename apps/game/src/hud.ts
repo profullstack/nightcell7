@@ -20,7 +20,9 @@ import {
   armorClassInfo,
   type ArmoryItemId,
   type Loadout,
+  type SideId,
 } from "./loadout";
+import type { Briefing, CoachState } from "./onboarding";
 
 /**
  * HUD and start gate.
@@ -44,6 +46,14 @@ export interface HudOptions {
   /** Credits on hand, and the purchase sink. Returns whether the sale went through. */
   credits?: number;
   onBuy?: (item: ArmoryItemId) => boolean;
+  /**
+   * First-run briefing for the chosen side, shown at the top of the gate until
+   * dismissed. Absent once the player has been onboarded.
+   */
+  briefing?: (side: SideId) => Briefing;
+  onBriefingDismiss?: () => void;
+  /** Skip the in-yard coach. Offered on the gate while the coach is running. */
+  onSkipCoach?: () => void;
   readonly renderer: string;
   readonly mapName: string;
   readonly mapChecksum: string;
@@ -64,6 +74,8 @@ export interface Hud {
   setLocked(locked: boolean): void;
   /** Credits on hand; re-enables and disables the armory's buttons. */
   setCredits(credits: number): void;
+  /** The coach's current step, or null to hide it. */
+  setCoach(state: CoachState | null): void;
   dispose(): void;
 }
 
@@ -196,6 +208,20 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   const notices = el("div", "notices");
   hud.append(notices);
 
+  // First-run coach: one control at a time, above the reticle. A live region,
+  // so a screen reader announces each new step (accessibility is P0).
+  const coach = el("div", "coach");
+  coach.hidden = true;
+  coach.setAttribute("role", "status");
+  coach.setAttribute("aria-live", "polite");
+  const coachCount = el("p", "coach__count");
+  const coachLine = el("p", "coach__line");
+  const coachKeys = el("kbd", "coach__keys");
+  const coachAction = el("span", "coach__action");
+  coachLine.append(coachKeys, coachAction);
+  coach.append(coachCount, coachLine, el("p", "coach__skip", "Esc, then Skip training"));
+  hud.append(coach);
+
   // Blood and hit-direction arcs are created per hit and remove themselves.
   const spatter = el("div", "spatter");
   hud.append(spatter);
@@ -238,6 +264,32 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
       "Secure the industrial district. Move between cover, watch the elevated lanes, and keep your squad in the fight.",
     ),
   );
+
+  // First-run briefing. Who you are and what this place is, before the options.
+  const briefing = el("section", "briefing");
+  briefing.setAttribute("aria-labelledby", "nc7-briefing-title");
+  const renderBriefing = (side: SideId) => {
+    if (!options.briefing) {
+      briefing.hidden = true;
+      return;
+    }
+    const content = options.briefing(side);
+    const title = el("h2", "briefing__title", content.title);
+    title.id = "nc7-briefing-title";
+    const dismiss = el("button", "briefing__dismiss", "Got it");
+    dismiss.type = "button";
+    dismiss.addEventListener("click", () => {
+      briefing.hidden = true;
+      options.onBriefingDismiss?.();
+    });
+    briefing.replaceChildren(
+      title,
+      ...content.lines.map((line) => el("p", "briefing__line", line)),
+      dismiss,
+    );
+  };
+  renderBriefing((options.loadout ?? DEFAULT_LOADOUT).side);
+  gate.append(briefing);
 
   // Mode picker.
   //
@@ -314,6 +366,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   let loadout: Loadout = options.loadout ?? DEFAULT_LOADOUT;
   const changeLoadout = (next: Partial<Loadout>) => {
     loadout = { ...loadout, ...next };
+    if (next.side && !briefing.hidden) renderBriefing(next.side);
     options.onLoadoutChange?.(loadout);
   };
   const operator = el("div", "operator");
@@ -445,6 +498,18 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   button.type = "button";
   button.addEventListener("click", () => options.onStart());
   gate.append(button);
+
+  // Offered only while the coach is running. The cursor is locked during play,
+  // so a skip control in the yard could not be clicked; Esc brings the player
+  // here, and here it can.
+  const skipTraining = el("button", "gate__skip", "Skip training");
+  skipTraining.type = "button";
+  skipTraining.hidden = true;
+  skipTraining.addEventListener("click", () => {
+    skipTraining.hidden = true;
+    options.onSkipCoach?.();
+  });
+  gate.append(skipTraining);
 
   const keys = el("ul", "keys");
   for (const [combo, meaning] of KEYS) {
@@ -710,6 +775,18 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     setCredits(next: number): void {
       credits = Math.max(0, Math.floor(next));
       refreshArmory();
+    },
+
+    setCoach(state: CoachState | null): void {
+      const step = state?.step ?? null;
+      coach.hidden = step === null;
+      skipTraining.hidden = step === null;
+      if (!step || !state) return;
+      // Written only on change: this is called every frame.
+      const count = `TRAINING ${state.index + 1} / ${state.total}`;
+      if (coachCount.textContent !== count) coachCount.textContent = count;
+      if (coachKeys.textContent !== step.keys) coachKeys.textContent = step.keys;
+      if (coachAction.textContent !== step.action) coachAction.textContent = step.action;
     },
 
     dispose(): void {

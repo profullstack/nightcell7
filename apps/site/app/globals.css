@@ -452,6 +452,12 @@ a {
   color: var(--signal-cyan);
 }
 
+/* Everyone who is not a protagonist: the neutral gold of the site's
+   containment brackets, so no supporting card borrows either side's colour. */
+.side--cast .side__route {
+  color: var(--dust-gold);
+}
+
 .side h3 {
   font-size: clamp(1.6rem, 3.5vw, 2.4rem);
 }
