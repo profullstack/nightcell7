@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import SOUNDTRACK from "virtual:soundtrack";
-import { titleFromStem, toTrack } from "./audio";
+import { shuffledOrder, titleFromStem, toTrack } from "./audio";
 
 /**
  * The soundtrack is discovered by globbing `public/audio/music/<artist>/[<album>/]`
@@ -108,5 +108,31 @@ describe("the shipped soundtrack", () => {
 
   it("no longer ships the old tracks", () => {
     expect(SOUNDTRACK.filter((f) => f.startsWith("throngva/"))).toEqual([]);
+  });
+});
+
+describe("shuffled play order", () => {
+  it("plays every track once before any repeats", () => {
+    for (let run = 0; run < 50; run++) {
+      const order = shuffledOrder(32);
+      expect([...order].sort((a, b) => a - b)).toEqual(Array.from({ length: 32 }, (_, i) => i));
+    }
+  });
+
+  it("never starts a reshuffle with the track that just finished", () => {
+    for (let last = 0; last < 32; last++) {
+      for (let run = 0; run < 20; run++)
+        expect(shuffledOrder(32, Math.random, last)[0]).not.toBe(last);
+    }
+  });
+
+  it("mixes both albums rather than playing them in list order", () => {
+    const tracks = SOUNDTRACK.map(toTrack);
+    const firstHalfAlbums = new Set(
+      shuffledOrder(tracks.length, () => 0.5)
+        .slice(0, 12)
+        .map((i) => tracks[i]?.album),
+    );
+    expect(firstHalfAlbums.size).toBe(2);
   });
 });
