@@ -51,18 +51,23 @@ interface Track {
   readonly file: string;
   readonly title: string;
   readonly artist: string;
+  /** The album folder, when the track sits in one. */
+  readonly album?: string;
 }
 
 /**
- * Artist display names, keyed by folder.
+ * Artist display names, keyed by folder, for a folder that is not already
+ * spelt the way the artist writes it.
  *
- * The folder is ASCII so it is safe in a URL and a shell; the display name is
- * how the artist actually writes it. Anything unlisted falls back to the folder
- * name in title case, so a new artist appears sensibly without an entry.
+ * Þrøngva's folder is the artist's own spelling, so it needs no entry: every
+ * segment of a track URL is percent-encoded (see `trackUrl`). Anything unlisted
+ * falls back to the folder name with its first letter capitalised, so a new
+ * artist appears sensibly without an entry.
  */
-const ARTIST_NAMES: Record<string, string> = {
-  throngva: "Þrøngva",
-};
+const ARTIST_NAMES: Record<string, string> = {};
+
+/** An album's track number, `001. ` or `20. `: an ordering, not part of the title. */
+const TRACK_NUMBER = /^\d+\.\s*/;
 
 /** Words a title leaves lowercase unless they lead. */
 const MINOR_WORDS = new Set(["a", "an", "and", "at", "for", "in", "of", "on", "or", "the", "to"]);
@@ -90,13 +95,20 @@ export function titleFromStem(stem: string): string {
   return part ? `${title} (Part ${part[1]})` : title;
 }
 
-/** `<artist>/<song>.mp3`, as the glob emits it, to a playable track. */
+/**
+ * `<artist>/<song>.mp3` or `<artist>/<album>/<song>.mp3`, as the glob emits
+ * it, to a playable track.
+ */
 export function toTrack(relative: string): Track {
-  const [folder = "", file = ""] = relative.split("/");
+  const segments = relative.split("/");
+  const folder = segments[0] ?? "";
+  const file = segments.at(-1) ?? "";
+  const album = segments.length > 2 ? segments.slice(1, -1).join("/") : undefined;
   return {
     file: `music/${relative}`,
-    title: titleFromStem(file.replace(/\.mp3$/i, "")),
+    title: titleFromStem(file.replace(/\.mp3$/i, "").replace(TRACK_NUMBER, "")),
     artist: ARTIST_NAMES[folder] ?? capitalise(folder),
+    ...(album ? { album } : {}),
   };
 }
 

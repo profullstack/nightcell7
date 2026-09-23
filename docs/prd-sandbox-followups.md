@@ -199,11 +199,12 @@ camera, the frag detonates off-screen, and there are no title cards.
   headless page of `apps/site` or a static HTML card, captured the same way).
 - 1920x1080 at 30 fps, H.264 High, crf 20 to 23, `faststart`, limited range,
   AAC. Under 15 MB at 1080p, or ship 720p in the repo and 1080p on the site.
-- Music: **settled.** The concern here was that no licence text was checked in
-  beside `apps/game/public/audio/music/throngva/`. There is one, a directory
-  up: `apps/game/public/audio/PROVENANCE.md` records the tracks as original
-  work by Þrøngva written for this game by the project owner, not licensed
-  from a third party. Nothing to clear, so promotional use is fine.
+- Music: **settled.** `apps/game/public/audio/PROVENANCE.md` records the
+  soundtrack as Þrøngva's album _After the Winter of Want_, our own custom
+  music, not licensed from a third party. Nothing to clear, so promotional use
+  is fine. The earlier `music/throngva/` files were removed on 2026-09-23 as
+  not ours; the trailer's Ironwood Oath was byte-identical to album track 003
+  and is now read from the album.
 
 ### 5.3 How to get kills on camera
 

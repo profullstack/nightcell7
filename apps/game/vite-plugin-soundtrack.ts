@@ -1,4 +1,5 @@
 import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 
@@ -12,8 +13,8 @@ import type { Plugin } from "vite";
  * The alternative was a hard-coded array in `src/audio.ts`, which made every
  * new track a code change, or `manifest.json`, which is only rewritten by
  * `pnpm assets:build` — a Blender-dependent step no one should have to run to
- * add a song. Dropping an `.mp3` into `public/audio/music/<artist>/` is now the
- * whole procedure.
+ * add a song. Dropping an `.mp3` into `public/audio/music/<artist>/`, or an
+ * album folder beneath it, is now the whole procedure.
  *
  * Only paths are emitted. Turning them into titles and artist names is
  * `audio.ts`'s job, so those rules stay unit-testable without a build.
@@ -27,17 +28,21 @@ export function soundtrack(): Plugin {
   const RESOLVED = `\0${VIRTUAL}`;
   const root = fileURLToPath(new URL("./public/audio/music", import.meta.url));
 
-  /** `<artist>/<song>.mp3`, sorted, so a build is reproducible. */
+  /**
+   * `<artist>/<song>.mp3` or `<artist>/<album>/<song>.mp3`, sorted, so a build
+   * is reproducible. An album folder is walked like any other: the artist is
+   * always the first segment and the song the last.
+   */
   const scan = (): string[] => {
     if (!existsSync(root)) return [];
-    return readdirSync(root, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .flatMap((artist) =>
-        readdirSync(fileURLToPath(new URL(`./public/audio/music/${artist.name}/`, import.meta.url)))
-          .filter((file) => file.toLowerCase().endsWith(".mp3"))
-          .map((file) => `${artist.name}/${file}`),
-      )
-      .sort();
+    const walk = (dir: string, prefix: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) return walk(join(dir, entry.name), relative);
+        // Loose files at the top level have no artist folder, so they are skipped.
+        return prefix && entry.name.toLowerCase().endsWith(".mp3") ? [relative] : [];
+      });
+    return walk(root, "").sort();
   };
 
   return {

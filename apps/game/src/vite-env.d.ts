@@ -2,8 +2,8 @@
 
 /**
  * The soundtrack glob, produced by the `soundtrack()` plugin in
- * `vite.config.ts`. Entries are `<artist>/<song>.mp3`, relative to
- * `public/audio/music/`.
+ * `vite.config.ts`. Entries are `<artist>/<song>.mp3` or
+ * `<artist>/<album>/<song>.mp3`, relative to `public/audio/music/`.
  */
 declare module "virtual:soundtrack" {
   const files: string[];

@@ -63,33 +63,60 @@ nothing produced by a generative audio model.
 
 ## Music
 
-Original work by **Þrøngva**, written for this game by the project owner. Not
-licensed from a third party, so there is no external licence to comply with and
-no attribution obligation — the credit below is for the record.
+The album **_After the Winter of Want_** by **Þrøngva**: our own custom music,
+made for this game and committed by the project owner on 2026-09-23 (commit
+`1356cc1`). Not licensed from a third party, so there is no external licence
+to comply with and no attribution obligation; the credit is for the record.
 
-Laid out as `music/<artist>/<song>.mp3`. The licence and attribution belong to
-the artist rather than to each file, and a folder per artist is where a reader
-looks for that. It also removed a real bug: the download-budget guard used to
-exclude music by a `^music_` filename pattern, which silently under-counted the
-moment a track arrived under its own name and put 22 MB of songs inside a 6 MB
-guard. A directory cannot be misspelt into the wrong bucket.
+Laid out as `music/<artist>/<album>/<song>.mp3`, exactly as delivered, with the
+album's own `playlist.m3u` beside it. The licence and attribution belong to the
+artist, and a folder per artist is where a reader looks for that. It also keeps
+music out of the download-budget guard by directory rather than by a filename
+pattern, which once silently under-counted.
 
-| File                                             | Title                         |
-| ------------------------------------------------ | ----------------------------- |
-| `music/throngva/frost-on-the-oar.mp3`            | Frost on the Oar              |
-| `music/throngva/runes-on-ice.mp3`                | Runes on Ice                  |
-| `music/throngva/ironwood-oath.mp3`               | Ironwood Oath                 |
-| `music/throngva/storm-crown-oath.mp3`            | Storm Crown Oath              |
-| `music/throngva/the-wolf-called-want.mp3`        | The Wolf Called Want          |
-| `music/throngva/the-wolf-called-want-part-2.mp3` | The Wolf Called Want (Part 2) |
-| `music/throngva/More Than Enough.mp3`            | More Than Enough              |
+| #   | Title                             |
+| --- | --------------------------------- |
+| 001 | Frost on the Oar                  |
+| 002 | Runes On Ice                      |
+| 003 | Ironwood Oath                     |
+| 004 | Storm Crown Oath                  |
+| 005 | Wake the Sun                      |
+| 006 | Hammer the Dawn                   |
+| 007 | Fire in Every Hall                |
+| 008 | Raise the Floor                   |
+| 009 | Cut the Clock                     |
+| 010 | Good as New                       |
+| 011 | Dawn Without Masters              |
+| 012 | Let the Morning In                |
+| 013 | More Than Enough                  |
+| 014 | The Wolf Called Want              |
+| 015 | The Wolf Called Want (Part 2)     |
+| 016 | When the Last Coin Falls          |
+| 017 | Storm Crown Oath (second version) |
+| 018 | When the Last Coin Falls (Part 2) |
+| 019 | Valhalla Bounce                   |
+| 20  | Valhalla on Loop                  |
 
-The table is a record, not a registry: the playlist itself is discovered by
-globbing this directory (`apps/game/vite-plugin-soundtrack.ts`), so adding a
-track is dropping the file in. Titles are derived from the filename, which is
-why `More Than Enough.mp3` keeps its spacing and capitalisation as authored
-while the kebab-case names are expanded — both routes are covered by
-`apps/game/src/audio.test.ts`.
+The table is a record, not a registry: the playlist is discovered by walking
+this directory (`apps/game/vite-plugin-soundtrack.ts`), album folders included,
+so adding a track is dropping the file in. The title is the filename as
+authored with the album's track number (`001. `) removed; both rules are
+covered by `apps/game/src/audio.test.ts`, which also checks that all 20 tracks
+are found.
 
 Streamed by an `<audio>` element on demand and deliberately outside the 15 MB
-shell budget (PRD §30): the game is playable before a note arrives.
+shell budget (PRD §30): the game is playable before a note arrives. The PWA
+service worker does not precache it.
+
+### Removed: the earlier `music/throngva/` set
+
+Seven earlier files in `music/throngva/` were deleted on 2026-09-23 at the
+project owner's instruction, because they were not our music. Four of them
+(`frost-on-the-oar`, `runes-on-ice`, `ironwood-oath`, `storm-crown-oath`) were
+byte-identical to album tracks 001 to 004, so those songs remain, from the
+album. The other three (`More Than Enough`, `the-wolf-called-want`,
+`the-wolf-called-want-part-2`) differed from the album's versions and are gone.
+
+The published trailer's soundtrack is Ironwood Oath. Its source file was one of
+the byte-identical four, so the film already carries album track 003 and was
+not re-rendered; `tools/art/trailer.mjs` now reads it from the album.

@@ -73,13 +73,26 @@
     "ui_hover.mp3"
   ],
   "music": [
-    "throngva/More Than Enough.mp3",
-    "throngva/frost-on-the-oar.mp3",
-    "throngva/ironwood-oath.mp3",
-    "throngva/runes-on-ice.mp3",
-    "throngva/storm-crown-oath.mp3",
-    "throngva/the-wolf-called-want-part-2.mp3",
-    "throngva/the-wolf-called-want.mp3"
+    "Þrøngva/After the Winter of Want/001. Frost on the Oar.mp3",
+    "Þrøngva/After the Winter of Want/002. Runes On Ice.mp3",
+    "Þrøngva/After the Winter of Want/003. Ironwood Oath.mp3",
+    "Þrøngva/After the Winter of Want/004. Storm Crown Oath.mp3",
+    "Þrøngva/After the Winter of Want/005. Wake the Sun.mp3",
+    "Þrøngva/After the Winter of Want/006. Hammer the Dawn.mp3",
+    "Þrøngva/After the Winter of Want/007. Fire in Every Hall.mp3",
+    "Þrøngva/After the Winter of Want/008. Raise the Floor.mp3",
+    "Þrøngva/After the Winter of Want/009. Cut the Clock.mp3",
+    "Þrøngva/After the Winter of Want/010. Good as New.mp3",
+    "Þrøngva/After the Winter of Want/011. Dawn Without Masters.mp3",
+    "Þrøngva/After the Winter of Want/012. Let the Morning In.mp3",
+    "Þrøngva/After the Winter of Want/013. More Than Enough.mp3",
+    "Þrøngva/After the Winter of Want/014. The Wolf Called Want.mp3",
+    "Þrøngva/After the Winter of Want/015. The Wolf Called Want (Part 2).mp3",
+    "Þrøngva/After the Winter of Want/016. When the Last Coin Falls.mp3",
+    "Þrøngva/After the Winter of Want/017. Storm Crown Oath.mp3",
+    "Þrøngva/After the Winter of Want/018. When the Last Coin Falls (Part 2).mp3",
+    "Þrøngva/After the Winter of Want/019. Valhalla Bounce.mp3",
+    "Þrøngva/After the Winter of Want/20. Valhalla on Loop.mp3"
   ],
   "bytes": {
     "models": 6330116,
