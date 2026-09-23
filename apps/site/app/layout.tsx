@@ -133,6 +133,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <a href="/characters/leila">Leila</a>
                 </li>
                 <li>
+                  <a href="/characters">Full cast</a>
+                </li>
+                <li>
                   <a href="/play">Play in browser</a>
                 </li>
               </ul>

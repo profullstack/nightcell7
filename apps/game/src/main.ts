@@ -25,6 +25,7 @@ import { WeaponEffects } from "./vfx";
 import { Opponents } from "./opponents";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
+import { Coach, briefingFor, hasOnboarded, markOnboarded } from "./onboarding";
 import "./style.css";
 
 /**
@@ -198,7 +199,23 @@ async function boot(): Promise<void> {
 
   const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
 
+  // First run: a briefing on the gate, then a coach in the yard until the
+  // player has used every control once or skips it. Remembered, so a returning
+  // player sees neither.
+  const firstRun = !hasOnboarded(safeStorage());
+  let coach: Coach | null = firstRun ? new Coach() : null;
+  const finishCoaching = () => {
+    coach = null;
+    markOnboarded(safeStorage());
+    hud.setCoach(null);
+  };
+
   const hud = createHud(ui, {
+    ...(firstRun ? { briefing: briefingFor } : {}),
+    onSkipCoach: () => {
+      coach?.skip();
+      finishCoaching();
+    },
     renderer: kind,
     mapName: ARDAVAN_YARD.displayName,
     mapChecksum: checksum,
@@ -434,6 +451,28 @@ async function boot(): Promise<void> {
     if (packs > 0) earn(packs * CREDITS_PER_PACK, "health pack");
 
     hud.update(status, engine.getFps(), local);
+
+    // The coach only watches while the player is actually in the yard.
+    if (coach && status.locked) {
+      const step = coach.observe({
+        speed: status.speed,
+        grounded: status.grounded,
+        crouching: status.crouching,
+        sprinting: status.sprinting,
+        firing: status.firing,
+        yaw: camera.rotation.y,
+        reloading: local.reloading,
+        slot: local.slot,
+        grenades: local.grenades,
+        alive: local.alive,
+      });
+      hud.setCoach(step);
+      if (step.finished) {
+        finishCoaching();
+        hud.notify("Training complete · the yard is yours");
+      }
+    }
+
     scene.render();
   });
 

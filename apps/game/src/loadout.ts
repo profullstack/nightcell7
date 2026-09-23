@@ -35,13 +35,13 @@ export const SIDES: readonly SideInfo[] = [
   {
     id: SIDE.NIGHTCELL,
     name: "Nightcell",
-    blurb: "Irregulars holding the south of the yard. Cyan band.",
+    blurb: "Irregulars holding the south of the yard.",
     team: TEAM_IDS.NIGHTCELL,
   },
   {
     id: SIDE.DIRECTORATE,
     name: "Directorate",
-    blurb: "Regulars holding the north. Orange band.",
+    blurb: "Regulars holding the north.",
     team: TEAM_IDS.DIRECTORATE,
   },
 ];

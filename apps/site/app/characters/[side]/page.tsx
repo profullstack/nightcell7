@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SIDE, missionsForSide, type SideId } from "@nightcell7/game-core";
+import {
+  CIRCLES,
+  SIDE,
+  castMember,
+  faction,
+  missionsForSide,
+  type SideId,
+} from "@nightcell7/game-core";
 import { PageShell } from "../../_components/page-shell";
 import { CapturePlate } from "../../gallery";
 
@@ -111,6 +118,11 @@ export default async function CharacterPage({ params }: { params: Promise<{ side
   if (!dossier) notFound();
 
   const missions = missionsForSide(dossier.side);
+  // From the shared cast data, so this page and the cast page cannot disagree.
+  // Both sides have a circle of the same shape (a test enforces it).
+  const circle = CIRCLES[dossier.side];
+  const commander = castMember(circle.answersTo);
+  const crossings = circle.crosses.map(castMember);
 
   return (
     <PageShell label={`${dossier.route} — dossier`} title={dossier.name} lede={dossier.role}>
@@ -123,6 +135,29 @@ export default async function CharacterPage({ params }: { params: Promise<{ side
 
       <h3>What they find out</h3>
       <p>{dossier.discovers}</p>
+
+      <h3>Who they answer to</h3>
+      <p>
+        <a href={`/characters#${commander.id}`}>
+          <strong>{commander.name}</strong>
+        </a>{" "}
+        &mdash; {commander.role}, {faction(commander.faction).name}
+      </p>
+
+      <h3>Who they cross paths with</h3>
+      <ul>
+        {crossings.map((member) => (
+          <li key={member.id}>
+            <a href={`/characters#${member.id}`}>
+              <strong>{member.name}</strong>
+            </a>{" "}
+            &mdash; {member.role}, {faction(member.faction).name}
+          </li>
+        ))}
+      </ul>
+      <p>
+        <a href="/characters">The full cast and the four factions</a>
+      </p>
 
       <h3>How they operate</h3>
       <ul>

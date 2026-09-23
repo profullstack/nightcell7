@@ -155,6 +155,26 @@ It stays inside the locked rules:
 If a sixth is ever proposed, it has to clear the same bar: a new verb, not a
 new stat line.
 
+## Cast and first-run onboarding, 2026-09-23
+
+**Cast.** The supporting cast (Jonas Vale, Director Mara Vey, Colonel Arman
+Daryan, Silas Kade), the four factions and MIRAGE now live as data in
+`packages/game-core/src/cast.ts`, taken from the story bible (PRD §7.5 to
+§7.7). The site's `/characters` page and both dossiers render it, and so does
+the game's first-run briefing, so no surface can describe a person differently.
+It is public copy under the home-page timeline's rule: who these people are and
+what the player sees of them early, never what the campaigns reveal. Tests in
+`cast.test.ts` refuse the reveals (who authorised the cleanup, what Nightcell 7
+designates), any Arabic-script text while Farsi awaits native review, and a
+Daryan written as a villain. Both protagonists get a circle of the same size
+(§14.3).
+
+**Onboarding.** A first-time player gets a briefing on the deploy gate (their
+side's institution and whose story it is, from the same cast data) and then a
+coach in the yard that teaches one control at a time in §10.1's order and
+advances only when the player does the thing. Skippable from the gate (Esc);
+remembered in `nc7.onboarded`. Logic is pure in `apps/game/src/onboarding.ts`.
+
 ## Budgets held in code
 
 Changing any of these is a product decision, not a tuning tweak.

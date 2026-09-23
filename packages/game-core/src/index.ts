@@ -12,5 +12,6 @@ export * from "./grenades";
 export * from "./damage";
 export * from "./difficulty";
 export * from "./campaign";
+export * from "./cast";
 export * from "./progress";
 export * from "./match-rules";
