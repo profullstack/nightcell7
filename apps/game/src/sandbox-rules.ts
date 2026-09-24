@@ -89,21 +89,42 @@ export const SANDBOX_PICKUPS: Partial<PickupRules> = {
 /**
  * What each bot carries, by roster index within its team.
  *
- * Varied so that killing one is worth something: a Directorate fighter with
- * a Breacher drops a weapon the player did not spawn with. Every entry is
- * multiplayer-legal — the simulation strips anything that is not.
+ * Varied so that killing one is worth something: the simulation drops the
+ * weapon a fighter was holding, with its magazine and reserve, so the roster
+ * is the only thing deciding what a kill can hand you. Every entry is
+ * multiplayer-legal — the simulation strips anything that is not, which is why
+ * the M7 Lance is absent: it is campaign-only (PRD §5.4).
+ *
+ * Between them these four cover every weapon a match allows, so a player who
+ * works through the Directorate can end up carrying any of them.
+ *
+ * **Exactly one launcher.** The rotation is indexed, not rolled, so the cap is
+ * structural rather than a probability that can go wrong: with four enemies,
+ * index 2 is the only Hammerfall on the field. Four fighters with launchers is
+ * a fireworks display, not a firefight, and a random draw eventually produces
+ * one.
  */
 const ENEMY_LOADOUTS: readonly (readonly WeaponId[])[] = [
   [WEAPON.C9_KESTREL, WEAPON.P11],
   [WEAPON.B4_BREACHER, WEAPON.P11],
-  [WEAPON.C9_KESTREL, WEAPON.P11],
-  [WEAPON.C9_KESTREL],
+  [WEAPON.M9_HAMMERFALL, WEAPON.P11],
+  [WEAPON.C9_KESTREL, WEAPON.B4_BREACHER],
 ];
-const FRIENDLY_LOADOUT: readonly WeaponId[] = [WEAPON.C9_KESTREL, WEAPON.P11];
+
+/**
+ * Friendlies carry no launcher.
+ *
+ * Not a balance call — a squadmate firing rockets around the player in a
+ * yard this size is mostly a way to be killed by your own side.
+ */
+const FRIENDLY_LOADOUTS: readonly (readonly WeaponId[])[] = [
+  [WEAPON.C9_KESTREL, WEAPON.P11],
+  [WEAPON.B4_BREACHER, WEAPON.P11],
+];
 
 export function botLoadout(enemy: boolean, index: number): readonly WeaponId[] {
-  if (!enemy) return FRIENDLY_LOADOUT;
-  return ENEMY_LOADOUTS[index % ENEMY_LOADOUTS.length] ?? FRIENDLY_LOADOUT;
+  const table = enemy ? ENEMY_LOADOUTS : FRIENDLY_LOADOUTS;
+  return table[index % table.length] ?? FRIENDLY_LOADOUTS[0]!;
 }
 
 /**
