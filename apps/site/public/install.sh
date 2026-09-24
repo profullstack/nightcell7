@@ -204,18 +204,23 @@ write_linux_launcher() {
 APP="${target}"
 
 # Management subcommands are delegated back to the installer so there is one
-# implementation of update and uninstall rather than two that drift.
+# implementation of update and uninstall rather than two that drift. Fetching
+# it over HTTPS from nightcell7.com is the same trust as the original install.
 case "\${1-}" in
   update|upgrade)
+    # threatcrush-disable-next-line sh-remote-script-execution
     exec sh -c "curl -fsSL https://nightcell7.com/install.sh | sh -s -- update"
     ;;
   uninstall|remove)
+    # threatcrush-disable-next-line sh-remote-script-execution
     exec sh -c "curl -fsSL https://nightcell7.com/install.sh | sh -s -- uninstall"
     ;;
   login|signin)
+    # threatcrush-disable-next-line sh-remote-script-execution
     exec sh -c "curl -fsSL https://nightcell7.com/install.sh | sh -s -- login"
     ;;
   version|--version)
+    # threatcrush-disable-next-line sh-remote-script-execution
     exec sh -c "curl -fsSL https://nightcell7.com/install.sh | sh -s -- version"
     ;;
 esac
