@@ -188,8 +188,13 @@ Callouts, orders and chatter on each side's radio net, played by
   compressed, soft-clipped, with channel hiss under the voice, a key-up click
   before it and a squelch tail after. Callsigns have no tail and addressed
   orders no key-up, so "Rook," and "push the hardpoint" play as one
-  transmission. Output is 24 kHz mono MP3 at 48 kbps, about 2.3 MB for both
-  sides, loaded after the first deploy rather than in the boot budget.
+  transmission. Output is 24 kHz mono MP3 at 48 kbps: 232 clips (116 a side),
+  about 4.6 MB for both sides, and only the player's side (about 2.3 MB) is
+  loaded, after the first deploy rather than in the boot budget.
+- **Takes:** every area callout has four takes, every combat reaction four to
+  six, every order two, and there are 28 chatter lines a side. `comms.ts` draws
+  takes from a shuffle bag, so each plays once before any repeats and none plays
+  twice running.
 - **Checked by transcription:** `node tools/audio/comms/check.mjs --transcribe`
   runs every processed clip back through speech-to-text and compares it with the
   script. Two lines that did not survive the radio treatment ("They're at our

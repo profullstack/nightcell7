@@ -27,11 +27,39 @@ const words = (s) =>
     .split(/\s+/)
     .filter(Boolean);
 
+/** British and American spellings are the same word to a listener. */
+const norm = (w) => w.replace(/ise$/, "ize").replace(/ised$/, "ized").replace(/tre$/, "ter");
+
+function editDistance(a, b) {
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    let prev = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const next = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = next;
+    }
+  }
+  return row[b.length];
+}
+
+/**
+ * Share of the script's words the transcriber heard. A word counts when it
+ * matches after spelling normalisation, when it appears inside the run-together
+ * transcript ("hardpoint" heard as "hard point"), or when it is one letter off
+ * in a word of four or more ("they're" heard as "there").
+ */
 function similarity(a, b) {
-  const x = words(a);
-  const y = new Set(words(b));
+  const x = words(a).map(norm);
+  const heard = words(b).map(norm);
+  const joined = heard.join("");
   if (!x.length) return 1;
-  return x.filter((w) => y.has(w)).length / x.length;
+  const ok = (w) =>
+    heard.includes(w) ||
+    joined.includes(w) ||
+    (w.length >= 4 && heard.some((h) => editDistance(w, h) <= 1));
+  return x.filter(ok).length / x.length;
 }
 
 let failures = 0;
