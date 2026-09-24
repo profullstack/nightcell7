@@ -2,11 +2,17 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
+// The pack directory is the developer's own command-line argument.
 const pack = resolve(process.argv[2] ?? "build/tactical-sample");
+// threatcrush-disable-next-line js-path-traversal
 const manifest = JSON.parse(readFileSync(`${pack}/manifest.json`, "utf8"));
 const results = [];
 for (const entry of manifest.models) {
+  // A model name is a bare file stem, so a tampered manifest cannot reach outside models/.
+  assert.match(entry.name, /^[\w.-]+$/, `Unsafe model name ${entry.name}`);
+  assert.ok(!entry.name.includes(".."), `Unsafe model name ${entry.name}`);
   const file = `${entry.name}.glb`,
+    // threatcrush-disable-next-line js-path-traversal
     bytes = readFileSync(`${pack}/models/${file}`);
   assert.equal(bytes.toString("utf8", 0, 4), "glTF");
   assert.equal(bytes.readUInt32LE(4), 2);
