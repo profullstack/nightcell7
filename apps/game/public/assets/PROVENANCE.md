@@ -205,7 +205,7 @@ every weapon to one faction.
 
 ## `portraits/*.webp`
 
-Deploy-gate thumbnails of the painted cast portraits: the same images as the
-site's `media/characters/`, derived at 320 px tall from the raw masters by
-`tools/art/portraits/generate.mjs`. AI-generated (OpenAI `gpt-image-2`,
-2026-09-23); full record in `docs/art/characters/README.md`.
+Deploy-gate thumbnails of the cast portraits: the same images as the site's
+`media/characters/`, derived at 320 px tall from the refined masters by
+`tools/art/characters/refine.mjs`. Blender 3D characters refined with OpenAI
+`gpt-image-2`; full record in `docs/art/characters/README.md`.

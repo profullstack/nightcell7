@@ -23,8 +23,10 @@ export default function CreditsPage() {
 
       <h3>Artwork</h3>
       <p>
-        Every image on this site is an in-engine capture of our own geometry, produced by a
-        reproducible tool in the repository. No third-party art assets are in the build.
+        The yard, trailer and gameplay images are in-engine captures of our own geometry, produced
+        by a reproducible tool in the repository. The cast portraits are 3D characters built in
+        Blender with <a href="http://www.makehumancommunity.org/">MakeHuman</a>&rsquo;s CC0 assets
+        and MPFB, then refined with an image model; how each was made is recorded in the repository.
       </p>
 
       <h3>Still to come</h3>

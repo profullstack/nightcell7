@@ -116,12 +116,15 @@ third-party source.
 
 ## `characters/*.webp`: cast portraits
 
-- **Source:** AI-generated painted portraits (OpenAI `gpt-image-2`, 2026-09-23),
-  one per named character. Not photographs, not traced, not from another game.
+- **Source:** 3D characters built and rendered in Blender
+  (`tools/art/characters/build.py`, MPFB with CC0 MakeHuman assets), then
+  refined with the OpenAI image edit endpoint (`gpt-image-2`) by
+  `tools/art/characters/refine.mjs`. One per named character. Not photographs,
+  not traced, not from another game.
 - **Record:** `docs/art/characters/README.md` (licence, review, AI disclosure)
   and `docs/art/characters/manifest.json` (exact prompt, model, date, sha256 of
-  each raw master).
-- **Generator:** `node tools/art/portraits/generate.mjs`; the raw PNG masters
-  are `docs/art/characters/raw/`. These files are 600 x 900 WebP copies of them.
+  the Blender render and the master).
+- **Files:** Blender renders in `docs/art/characters/blender/`, refined masters
+  in `docs/art/characters/raw/`. These are 600 x 900 WebP copies of the masters.
 - **Status:** published. Cultural-consultant review of the Iranian characters is
   pending with the rest of the theatre.

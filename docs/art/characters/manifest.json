@@ -1,46 +1,64 @@
 {
   "portraits": {
-    "leila": {
-      "name": "Leila Farzan",
+    "rook": {
       "model": "gpt-image-2",
-      "generated": "2026-09-23T22:42:19.845Z",
-      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA woman in her early thirties, an Iranian counterintelligence officer and signals analyst, sharp intelligent eyes, focused and sceptical expression, dark hair mostly covered by a plain charcoal headscarf. Plain dark olive field uniform jacket with no markings, a compact radio headset over one ear. The rim light is a muted signal cyan.",
-      "sha256": "626ce170e4ca0f4ecd013e99fdf3365578986665fda5e0631596d9cfdf4bef5f"
-    },
-    "kade": {
-      "name": "Silas Kade",
-      "model": "gpt-image-2",
-      "generated": "2026-09-23T22:42:26.818Z",
-      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA man in his late forties, a private military contractor's tactical director, close-cropped fair hair, clean-shaven, cold appraising stare, expensive dark softshell jacket over a slim unmarked plate carrier, the calm of a logistics manager. The rim light is a muted sodium orange.",
-      "sha256": "09461a6e78f791cbd0a2d0b26d621c623d9127859fb247563697e5a9132a0381"
-    },
-    "daryan": {
-      "name": "Colonel Arman Daryan",
-      "model": "gpt-image-2",
-      "generated": "2026-09-23T22:46:51.905Z",
-      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA Persian man of Iranian heritage in his early fifties, olive skin, a senior Iranian intelligence officer and career staff officer, long narrow face, prominent nose, clean-shaven, short black hair greying at the sides, thin rectangular steel-rimmed glasses, an analyst's tired precise eyes, collar of a plain dark olive service shirt under a dark overcoat with no insignia, a professional being handed a hard decision, not a villain. He must not resemble any real public figure. The rim light is a muted signal cyan.",
-      "sha256": "d1d41f8d35f4ac220743b8e103f32b60cfe65743c221dfda03ee9e62e95073bc"
+      "refined": "2026-09-23T23:48:31.509Z",
+      "prompt": "Re-render this Blender character render as a high-end 3D CGI character render: AAA video game cinematic quality, path-traced lighting, subsurface skin with visible pores and fine lines, individual hair strands, detailed fabric weave and stitching, believable gear. It must stay a 3D rendered game character, not a painting and not a photograph. Keep the same person, pose, camera angle, framing, clothing, gear and lighting direction as the input, including the coloured rim light and the dark night background with out-of-focus lights. Calm, dignified, not heroic posing, not propaganda. No text, letters, numbers, logos, flags, national or rank insignia, religious symbols or watermarks anywhere.\n\nRook: a man in his late thirties, American deep-cover operative, lean and weathered, short dark cropped hair, dark stubble, tired watchful eyes. Dark field jacket over a charcoal plate carrier with magazine pouches, a radio headset. Muted red rim light.",
+      "blender": {
+        "file": "blender/rook.png",
+        "sha256": "b26cf46f8d892a290f0f2e64f7578a006c2444b540ab20d016d7e5277c82ffb4"
+      },
+      "sha256": "5a42c6309f8169bf565ff84f6803e49ef1df25d0090bf58cbe44cbddaa4bc236"
     },
     "vey": {
-      "name": "Director Mara Vey",
       "model": "gpt-image-2",
-      "generated": "2026-09-23T22:42:33.073Z",
-      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA woman in her early fifties, the director of a covert program, silver hair in a severe short cut, composed and unreadable, immaculate dark civilian suit and a thin headset microphone, lit partly by the glow of screens off camera. The rim light is a muted signal red.",
-      "sha256": "a970013b07d1cc87aa4987e0f7e05b98e663b68a04dd9e2b3c4752187f429a50"
-    },
-    "rook": {
-      "name": "Rook",
-      "model": "gpt-image-2",
-      "generated": "2026-09-23T22:42:38.734Z",
-      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA man in his late thirties, an American deep-cover operative, lean and weathered, short dark hair, several days of stubble, tired watchful eyes. Plain dark field jacket over a charcoal plate carrier with no markings, a headset around his neck. The rim light is a muted signal red.",
-      "sha256": "4718467495ca4ec65f6e46f94b7dff843efecfbc68bfde8122f0d0d79edfc78b"
+      "refined": "2026-09-24T00:11:48.363Z",
+      "prompt": "Re-render this Blender character render as a high-end 3D CGI character render: AAA video game cinematic quality, path-traced lighting, subsurface skin with visible pores and fine lines, individual hair strands, detailed fabric weave and stitching, believable gear. It must stay a 3D rendered game character, not a painting and not a photograph. Keep the same person, pose, camera angle, framing, clothing, gear and lighting direction as the input, including the coloured rim light and the dark night background with out-of-focus lights. Calm, dignified, not heroic posing, not propaganda. No text, letters, numbers, logos, flags, national or rank insignia, religious symbols or watermarks anywhere.\n\nDirector Mara Vey: a woman in her early fifties, director of a covert program, silver hair in a sharp jaw-length bob swept back from her face so both eyes are visible, composed and unreadable, immaculate black suit, a thin headset microphone. Muted red rim light.",
+      "blender": {
+        "file": "blender/vey.png",
+        "sha256": "8a6c0b627adc5168f0dfa0159d3aeaf5b923abb6bdafbfa8aa81329736cbb78d"
+      },
+      "sha256": "1ebe3ae7933fe07e2875ec3a113245462ce6b8c0ee6411f92db6cb32e2b0fd8f"
     },
     "vale": {
-      "name": "Jonas Vale",
       "model": "gpt-image-2",
-      "generated": "2026-09-23T22:42:40.380Z",
-      "prompt": "Painted key-art character portrait for a grounded near-future espionage thriller video game. Head and shoulders to mid-chest, three-quarter view, subject centred, eye level, calm and composed expression, looking just off camera. Cinematic night lighting: a soft cool key light from one side, a thin coloured rim light from behind, deep charcoal background with faint out-of-focus industrial lights. Semi-realistic digital painting with visible confident brushwork, restrained desaturated palette, fine film grain. Dignified and human, not heroic posing, not propaganda. Absolutely no text, letters, numbers, logos, flags, national insignia, rank insignia, religious symbols or watermarks anywhere in the image. No weapons pointed at the viewer.\n\nA man in his mid fifties, an intelligence handler, grey at the temples, lined face, reading glasses pushed up on his head, worn civilian raincoat over a dark sweater, carrying himself like someone who has kept secrets for thirty years, quietly worried. The rim light is a muted amber.",
-      "sha256": "9b2f44d72bd4f383059b3872401d97e2b7673a9662875c88b923049f9ae44fbe"
+      "refined": "2026-09-24T00:11:52.436Z",
+      "prompt": "Re-render this Blender character render as a high-end 3D CGI character render: AAA video game cinematic quality, path-traced lighting, subsurface skin with visible pores and fine lines, individual hair strands, detailed fabric weave and stitching, believable gear. It must stay a 3D rendered game character, not a painting and not a photograph. Keep the same person, pose, camera angle, framing, clothing, gear and lighting direction as the input, including the coloured rim light and the dark night background with out-of-focus lights. Calm, dignified, not heroic posing, not propaganda. No text, letters, numbers, logos, flags, national or rank insignia, religious symbols or watermarks anywhere.\n\nJonas Vale: clearly a man in his mid fifties with a masculine lined face and a heavy brow, an intelligence handler, short grey hair neatly combed back (grey, not blond), no stray wisps, quietly worried eyes, charcoal suit and dark tie, a man who has kept secrets for thirty years. The input's face is only a rough guide: rebuild it as a realistic older man. Muted amber rim light.",
+      "blender": {
+        "file": "blender/vale.png",
+        "sha256": "27865172b40dc7714de00d22d847be9ead8ae5e1a529828b5ab66317fa8e0bb9"
+      },
+      "sha256": "993ce7a0bf5aaa54e7115eaa10bc2850664433aeb50c6d2eb53f7d231d302549"
+    },
+    "daryan": {
+      "model": "gpt-image-2",
+      "refined": "2026-09-24T00:11:51.727Z",
+      "prompt": "Re-render this Blender character render as a high-end 3D CGI character render: AAA video game cinematic quality, path-traced lighting, subsurface skin with visible pores and fine lines, individual hair strands, detailed fabric weave and stitching, believable gear. It must stay a 3D rendered game character, not a painting and not a photograph. Keep the same person, pose, camera angle, framing, clothing, gear and lighting direction as the input, including the coloured rim light and the dark night background with out-of-focus lights. Calm, dignified, not heroic posing, not propaganda. No text, letters, numbers, logos, flags, national or rank insignia, religious symbols or watermarks anywhere.\n\nColonel Arman Daryan: a Persian man of Iranian heritage in his early fifties, olive skin, long narrow face, prominent nose, clean-shaven, short black hair greying at the sides, neatly cut (not slicked), thin steel-rimmed rectangular glasses sitting level and symmetric on his nose, a career staff officer's tired precise eyes, dark olive suit with no insignia; a professional being handed a hard decision, not a villain. He must not resemble any real public figure. The input's face is only a rough guide: rebuild it as a realistic man. Muted cyan rim light.",
+      "blender": {
+        "file": "blender/daryan.png",
+        "sha256": "f0b522c523700b51eb96b15814675bb015d23a909c5441507fa5068e25e7e1c5"
+      },
+      "sha256": "6cfeac0a0486763a24a49a2c9e9457417cec38e30a23af3d232c6984e83b99c9"
+    },
+    "kade": {
+      "model": "gpt-image-2",
+      "refined": "2026-09-24T00:11:57.212Z",
+      "prompt": "Re-render this Blender character render as a high-end 3D CGI character render: AAA video game cinematic quality, path-traced lighting, subsurface skin with visible pores and fine lines, individual hair strands, detailed fabric weave and stitching, believable gear. It must stay a 3D rendered game character, not a painting and not a photograph. Keep the same person, pose, camera angle, framing, clothing, gear and lighting direction as the input, including the coloured rim light and the dark night background with out-of-focus lights. Calm, dignified, not heroic posing, not propaganda. No text, letters, numbers, logos, flags, national or rank insignia, religious symbols or watermarks anywhere.\n\nSilas Kade: clearly a man in his late forties with a square masculine jaw and a strong brow, private military contractor's tactical director, close-cropped fair hair, clean-shaven, cold appraising stare, black softshell jacket over a slim black plate carrier, the calm of a logistics manager. The input's face is only a rough guide: rebuild it as a realistic hard-faced man. Muted sodium-orange rim light.",
+      "blender": {
+        "file": "blender/kade.png",
+        "sha256": "42eddf0852d07df91bb0903839742e6e3e94d3b1d60ba806845cce4b2be054fa"
+      },
+      "sha256": "449e9813e86c1b0699a68f8675cea7e7c6ad164bee65751c49d059026da9642b"
+    },
+    "leila": {
+      "model": "gpt-image-2",
+      "refined": "2026-09-24T00:10:12.174Z",
+      "prompt": "Re-render this Blender character render as a high-end 3D CGI character render: AAA video game cinematic quality, path-traced lighting, subsurface skin with visible pores and fine lines, individual hair strands, detailed fabric weave and stitching, believable gear. It must stay a 3D rendered game character, not a painting and not a photograph. Keep the same person, pose, camera angle, framing, clothing, gear and lighting direction as the input, including the coloured rim light and the dark night background with out-of-focus lights. Calm, dignified, not heroic posing, not propaganda. No text, letters, numbers, logos, flags, national or rank insignia, religious symbols or watermarks anywhere.\n\nLeila Farzan: a woman in her early thirties, Iranian counterintelligence officer and signals analyst, olive skin, dark brown eyes, sharp intelligent sceptical expression. Her hair is covered by a plain charcoal headscarf that frames her face and falls over her shoulders (soft cloth, not a hood or balaclava). Dark olive field jacket over an olive plate carrier, a radio headset over the scarf. Muted cyan rim light.",
+      "blender": {
+        "file": "blender/leila.png",
+        "sha256": "09642b205aab305f3d1d3c54e85faed295f632b0b135f265068c6f82966cfe97"
+      },
+      "sha256": "1a8555895637ad2bf905feb326fe2cef1f9aabb821d893af345200cff2ade14c"
     }
   }
 }
