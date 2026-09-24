@@ -332,7 +332,7 @@ async function boot(): Promise<void> {
   // what has to flip to false — the mosquito, the approach and the scratch all
   // still play, and only the health change goes away.
   const insectsEnabled = LIGHTING[timeOfDay].insects;
-  const nightInsects = insectsEnabled ? new NightInsects(world.assets, { camera }) : null;
+  const nightInsects = insectsEnabled ? new NightInsects(scene, world.assets, { camera }) : null;
   let biteState = createInsectBiteState(Math.random);
   let matchMs = 0;
 
