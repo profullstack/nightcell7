@@ -284,10 +284,20 @@ export class NightInsects {
       this.mosquitoAngle = Math.random() * Math.PI * 2;
     }
 
-    // Orbit the camera, closing from about two metres to just off the ear.
+    // Hold it inside the forward view cone while it closes.
+    //
+    // It used to orbit the head on a free angle, which meant it was as likely
+    // to be behind the player as in front at the moment it bit — a playtester
+    // saw "something that flies around occasionally with a buzz" and never
+    // connected it to anything. Now it weaves across the front, so the thing
+    // that bites you is the thing you were just looking at.
     const distance = 2.2 - 1.9 * this.approach;
     const bob = Math.sin(this.elapsed * 11) * 0.03 * this.approach;
-    const angle = this.mosquitoAngle + this.elapsed * 0.9;
+    const facing = (this.camera as unknown as { rotation?: { y: number } }).rotation?.y ?? 0;
+    // Babylon yaw 0 looks down +Z, so forward is (sin, cos) — and the weave is
+    // capped well inside a 90 degree field of view.
+    const weave = Math.sin(this.elapsed * 0.7 + this.mosquitoAngle) * 0.6;
+    const angle = Math.PI / 2 - (facing + weave);
     const origin = this.camera.globalPosition;
 
     mosquito.position.set(
@@ -313,6 +323,11 @@ export class NightInsects {
    */
   get mosquitoNearness(): number {
     return this.approach;
+  }
+
+  /** Where the mosquito is, for the HUD's directional hit arc. */
+  get mosquitoPosition(): Vector3 | null {
+    return this.mosquito && this.mosquito.isEnabled() ? this.mosquito.position : null;
   }
 
   dispose(): void {
