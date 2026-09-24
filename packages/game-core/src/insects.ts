@@ -1,4 +1,4 @@
-import { applyDamage, type Vitals } from "./damage";
+import { applyDamage, MAX_HEALTH, type Vitals } from "./damage";
 
 /**
  * Night insect nuisance: the mosquito bite and the scratch that follows.
@@ -30,24 +30,30 @@ import { applyDamage, type Vitals } from "./damage";
  */
 
 export const BITE = {
-  /** Health per bite, before armour. Small on purpose. */
-  DAMAGE: 2,
-  /** A bite lands somewhere in this window after the last one. */
-  MIN_INTERVAL_MS: 45_000,
-  MAX_INTERVAL_MS: 110_000,
   /**
-   * Health a bite will never take you below.
+   * Health per bite.
    *
-   * Without this the nuisance compounds: at the short end of the interval a
-   * twenty-minute match is two dozen bites, which came to three quarters of a
-   * health bar in testing — a mosquito quietly deciding firefights. The floor
-   * makes the worst case bounded and knowable. Below it the insect still
-   * comes, still bites and still makes you scratch; it just stops costing
-   * anything, which is the right trade for ambience.
+   * Two was imperceptible: a fighter carrying 150 stamina lost about 1% and a
+   * playtester could not tell whether he had ever been bitten. Ambience you
+   * cannot feel is not ambience, it is dead code.
    */
-  FLOOR: 70,
-  /** How long the player swats and scratches. */
-  SCRATCH_MS: 1_100,
+  DAMAGE: 7,
+  /** A bite lands somewhere in this window after the last one. */
+  MIN_INTERVAL_MS: 35_000,
+  MAX_INTERVAL_MS: 75_000,
+  /**
+   * A bite never takes you below this fraction of your maximum health.
+   *
+   * A fraction, not the flat 70 it replaced: stamina varies by armour class,
+   * so a flat floor meant a 150-health fighter could lose 80 points to insects
+   * while a 100-health one lost 30. At 0.8 the whole match costs at most a
+   * fifth of the bar whoever you are — individually noticeable, collectively
+   * incapable of deciding a firefight. Below the floor the mosquito still
+   * comes, still bites and still makes you swat; it just stops costing health.
+   */
+  FLOOR_FRACTION: 0.8,
+  /** How long the player swats and scratches — the pause has to be felt. */
+  SCRATCH_MS: 1_800,
   /**
    * Nothing bites in the opening minute.
    *
@@ -55,9 +61,9 @@ export const BITE = {
    * player's hands off the rifle, and a bite in the first ten seconds reads as
    * a bug rather than atmosphere. Shortened from a minute once playtesting
    * showed nobody ever stayed locked long enough to meet a mosquito at all:
-   * `FLOOR` already caps what a whole match can cost, so frequency is cheap.
+   * The floor already caps what a whole match can cost, so frequency is cheap.
    */
-  GRACE_MS: 25_000,
+  GRACE_MS: 20_000,
 } as const;
 
 export interface InsectBiteState {
@@ -94,7 +100,7 @@ export interface InsectBiteOptions {
 
 export interface InsectBiteStep {
   readonly state: InsectBiteState;
-  /** Health actually removed. Zero at or below `BITE.FLOOR`. */
+  /** Health actually removed. Zero at or below the floor. */
   readonly damageDealt: number;
   /** True only on the tick a bite lands — drive the sting effect off this. */
   readonly bit: boolean;
@@ -131,7 +137,8 @@ export function stepInsectBite(
 
   // Never past the floor, and never a negative "heal" for a player already
   // below it from gunfire.
-  const headroom = Math.max(0, options.vitals.health - BITE.FLOOR);
+  const floor = (options.maxHealth ?? MAX_HEALTH) * BITE.FLOOR_FRACTION;
+  const headroom = Math.max(0, options.vitals.health - floor);
   const amount = Math.min(BITE.DAMAGE, headroom);
   const vitals =
     options.damage && amount > 0
