@@ -62,8 +62,8 @@ export function sideTeam(side: SideId): number {
  * the richer or more heroic one. Director Vey and Silas Kade are on the
  * website's cast page but are not operators in the yard.
  *
- * `figure` is the model that stands on the gate; `portrait` is the painted
- * key art in `public/assets/portraits`, the same image the website's cast
+ * `figure` is the model that stands on the gate; `portrait` is the cast
+ * portrait in `public/assets/portraits`, the same image the website's cast
  * page shows (docs/art/characters/manifest.json records how each was made).
  */
 export const CHARACTER = {

@@ -488,7 +488,7 @@ a {
 
 /* ------------------------------------------------------------ cast portraits */
 
-/* A card led by a painted portrait. The painting bleeds to the card's edges
+/* A card led by a portrait. The image bleeds to the card's edges
    and fades into the card colour, so the copy below reads as the same object. */
 .side--portrait {
   padding-top: 0;
@@ -533,7 +533,7 @@ a {
   filter: saturate(1);
 }
 
-/* The sigil sits over the painting on a portrait card; drop it below it. */
+/* The sigil sits over the portrait on a portrait card; drop it below it. */
 .side--portrait .side__sigil {
   top: auto;
   bottom: 1rem;
