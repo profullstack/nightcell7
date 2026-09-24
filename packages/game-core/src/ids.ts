@@ -42,6 +42,10 @@ export const WEAPON = {
   B4_BREACHER: "b4-breacher",
   M7_LANCE: "m7-lance",
   M9_HAMMERFALL: "m9-hammerfall",
+  /** Arc pulse: a short-range electrical discharge that chains between targets. */
+  V3_TESLA: "v3-tesla",
+  /** Flamethrower: continuous fuel burn, and fire that outlasts the stream. */
+  K5_CINDER: "k5-cinder",
 } as const;
 export type WeaponId = (typeof WEAPON)[keyof typeof WEAPON];
 

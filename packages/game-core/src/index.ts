@@ -8,6 +8,7 @@
  */
 export * from "./ids";
 export * from "./weapons";
+export * from "./status";
 export * from "./grenades";
 export * from "./damage";
 export * from "./insects";
