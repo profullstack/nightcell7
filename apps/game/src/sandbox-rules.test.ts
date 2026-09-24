@@ -76,6 +76,28 @@ describe("bot loadouts", () => {
     expect(enemies.some((loadout) => loadout.includes(WEAPON.B4_BREACHER))).toBe(true);
   });
 
+  it("puts every match-legal weapon on the Directorate, so a kill can hand you any of them", () => {
+    const carried = new Set([0, 1, 2, 3].flatMap((i) => botLoadout(true, i)));
+    const legal = Object.values(WEAPON).filter(isMultiplayerLegal);
+    for (const id of legal) {
+      expect(carried.has(id), `no Directorate fighter carries ${getWeapon(id).displayName}`).toBe(
+        true,
+      );
+    }
+  });
+
+  it("fields exactly one launcher, and never on the player's own side", () => {
+    // Structural, not probabilistic: the rotation is indexed, so this cannot
+    // drift into four launchers on an unlucky roll.
+    const enemies = [0, 1, 2, 3].map((i) => botLoadout(true, i));
+    const launchers = enemies.filter((l) => l.includes(WEAPON.M9_HAMMERFALL)).length;
+    expect(launchers).toBe(1);
+
+    for (const i of [0, 1, 2, 3]) {
+      expect(botLoadout(false, i)).not.toContain(WEAPON.M9_HAMMERFALL);
+    }
+  });
+
   it("have a mesh for every weapon a fighter can carry or drop", () => {
     for (const id of Object.values(WEAPON)) {
       expect(WEAPON_WORLD_MODEL[id]).toMatch(/^m3_/);
