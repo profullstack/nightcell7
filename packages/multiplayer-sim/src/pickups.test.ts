@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { BUTTON, type InputFrame } from "@nightcell7/multiplayer-protocol";
-import { REGEN_CEILING, REGEN_DELAY_MS, WEAPON, getWeapon } from "@nightcell7/game-core";
+import {
+  REGEN_CEILING,
+  REGEN_DELAY_MS,
+  WEAPON,
+  getWeapon,
+  type WeaponId,
+} from "@nightcell7/game-core";
 import {
   DEFAULT_PICKUP_RULES,
   MatchSimulation,
@@ -397,6 +403,8 @@ describe("weapon drops", () => {
       slot: 1,
       added: false,
       ammoAdded: 30,
+      // Nothing displaced: this is the ammo-only path for a weapon already held.
+      replaced: null,
     });
     expect(taker.weapons).toHaveLength(2);
     expect(taker.ammo[1]!.reserve).toBe(p11.reserveAmmo + 30);
@@ -579,5 +587,65 @@ describe("god mode", () => {
     expect([...sim.pickups.values()].filter((x) => x.kind === PICKUP_KIND.GOD_MODE)).toHaveLength(
       0,
     );
+  });
+});
+
+describe("trading up", () => {
+  const drop = (weaponId: WeaponId) =>
+    ({
+      id: "d",
+      kind: PICKUP_KIND.WEAPON,
+      position: { x: 0, y: 0, z: 0 },
+      heal: 0,
+      weaponId,
+      magazine: 4,
+      reserve: 8,
+      expiresAtMs: null,
+      spawnIndex: null,
+    }) as const;
+
+  const full = () => ({
+    health: 100,
+    maxHealth: 100,
+    weapons: [WEAPON.C9_KESTREL, WEAPON.P11, WEAPON.B4_BREACHER] as WeaponId[],
+    ammo: [
+      { magazine: 30, reserve: 90 },
+      { magazine: 12, reserve: 36 },
+      { magazine: 8, reserve: 24 },
+    ],
+  });
+
+  it("takes a launcher when full, displacing the weakest thing carried", () => {
+    // The bug a playtester hit: at maxWeapons this returned null, so a
+    // launcher on the ground did nothing — no swap, no message, and the
+    // pickup was not even consumed.
+    const taker = full();
+    const outcome = applyPickup(taker, drop(WEAPON.M9_HAMMERFALL), DEFAULT_PICKUP_RULES);
+
+    expect(outcome?.kind).toBe("weapon");
+    expect(outcome).toMatchObject({ added: true, replaced: WEAPON.P11 });
+    // The pistol went, not the rifle.
+    expect(taker.weapons).toContain(WEAPON.M9_HAMMERFALL);
+    expect(taker.weapons).not.toContain(WEAPON.P11);
+    expect(taker.weapons).toContain(WEAPON.C9_KESTREL);
+    expect(taker.weapons).toHaveLength(3);
+    // And it arrives with the rounds it was dropped with.
+    const slot = taker.weapons.indexOf(WEAPON.M9_HAMMERFALL);
+    expect(taker.ammo[slot]).toEqual({ magazine: 4, reserve: 8 });
+  });
+
+  it("never trades down: walking over a pistol cannot cost you a rifle", () => {
+    const taker = full();
+    const before = [...taker.weapons];
+    expect(applyPickup(taker, drop(WEAPON.P11), DEFAULT_PICKUP_RULES)).not.toBeNull();
+    // P11 is already carried, so that is the ammo-only path; the set is intact.
+    expect(taker.weapons).toEqual(before);
+
+    // A Tesla outranks nothing it is carrying except the pistol, and the
+    // pistol is the weakest — so that one does trade.
+    const other = full();
+    applyPickup(other, drop(WEAPON.V3_TESLA), DEFAULT_PICKUP_RULES);
+    expect(other.weapons).toContain(WEAPON.V3_TESLA);
+    expect(other.weapons).not.toContain(WEAPON.P11);
   });
 });

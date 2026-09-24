@@ -46,6 +46,16 @@ export interface WeaponSpec {
   /** Hard cap on range; the server will not trace beyond this. */
   readonly maxRangeM: number;
   readonly suppressed: boolean;
+  /**
+   * How good this is relative to the rest, 1 (sidearm) to 5 (launcher).
+   *
+   * Used to decide whether a weapon found on the ground is worth swapping to,
+   * and which of the ones you are carrying to give up when you are full. A
+   * declared rank rather than something computed from damage: the Tesla does
+   * almost none and is still worth more than the pistol, and no formula over
+   * damage-per-second is going to say so.
+   */
+  readonly tier: number;
   /** Multiplayer availability. Campaign-only weapons never enter a match. */
   readonly multiplayer: boolean;
   /**
@@ -77,6 +87,7 @@ export interface WeaponSpec {
 export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
   [WEAPON.V3_TESLA]: {
     id: WEAPON.V3_TESLA,
+    tier: 2,
     displayName: "V3 Tesla",
     // Slow, because the value is the discharge and not the rate. A fast arc
     // would be a stun-lock, which is the one outcome worth designing out.
@@ -111,6 +122,7 @@ export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
 
   [WEAPON.K5_CINDER]: {
     id: WEAPON.K5_CINDER,
+    tier: 3,
     displayName: "K5 Cinder",
     // No new "sustained" mode: 600 rpm through the existing fire path is ten
     // units of fuel a second, which is continuous fire by any measure and a
@@ -145,6 +157,7 @@ export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
   },
   [WEAPON.P11]: {
     id: WEAPON.P11,
+    tier: 1,
     displayName: "P11",
     rpm: 400,
     magazineSize: 15,
@@ -164,6 +177,7 @@ export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
   },
   [WEAPON.C9_KESTREL]: {
     id: WEAPON.C9_KESTREL,
+    tier: 3,
     displayName: "C9 Kestrel",
     rpm: 720,
     magazineSize: 30,
@@ -183,6 +197,7 @@ export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
   },
   [WEAPON.B4_BREACHER]: {
     id: WEAPON.B4_BREACHER,
+    tier: 3,
     displayName: "B4 Breaching Shotgun",
     rpm: 90,
     magazineSize: 6,
@@ -202,6 +217,7 @@ export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
   },
   [WEAPON.M7_LANCE]: {
     id: WEAPON.M7_LANCE,
+    tier: 4,
     displayName: "M7 Lance",
     rpm: 55,
     magazineSize: 5,
@@ -223,6 +239,7 @@ export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
   },
   [WEAPON.M9_HAMMERFALL]: {
     id: WEAPON.M9_HAMMERFALL,
+    tier: 5,
     displayName: "M9 Hammerfall",
     // One tube, one rocket, a long reload. The cadence is the balance: it is
     // the hardest-hitting thing in the yard and you get it back roughly once
@@ -289,6 +306,26 @@ export function damageFalloff(spec: WeaponSpec, distanceM: number): number {
 
 /** Multiplayer loadouts are mechanically identical across factions (PRD §18.1). */
 export const MULTIPLAYER_LOADOUT: readonly WeaponId[] = [WEAPON.C9_KESTREL, WEAPON.P11];
+
+/**
+ * Whether `candidate` is worth swapping to over `current`.
+ *
+ * Strictly better only. Equal tiers do not swap: a Breacher found on the
+ * ground should not pull a Kestrel out of your hands mid-fight just because it
+ * is the newer thing.
+ */
+export function isUpgradeOver(candidate: WeaponId, current: WeaponId): boolean {
+  return getWeapon(candidate).tier > getWeapon(current).tier;
+}
+
+/** The carried weapon worth giving up first: lowest tier, ties to the later slot. */
+export function weakestSlot(carried: readonly WeaponId[]): number {
+  let worst = 0;
+  for (let i = 1; i < carried.length; i += 1) {
+    if (getWeapon(carried[i]!).tier <= getWeapon(carried[worst]!).tier) worst = i;
+  }
+  return worst;
+}
 
 export function isMultiplayerLegal(id: WeaponId): boolean {
   return getWeapon(id).multiplayer;

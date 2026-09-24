@@ -13,6 +13,7 @@ import {
   getWeapon,
   isMultiplayerLegal,
   isProjectileWeapon,
+  isUpgradeOver,
   regenerate,
   tickStatuses,
   type ActiveStatus,
@@ -556,6 +557,7 @@ export class MatchSimulation {
     this.stepGrenades();
     this.stepRockets();
 
+    this.fallBackFromDryWeapons();
     // Burns bill before regeneration, so a fighter on fire cannot heal
     // through it on the same tick that it hurts them.
     this.tickStatusEffects(TICK_MS);
@@ -1379,6 +1381,17 @@ export class MatchSimulation {
         const outcome = applyPickup(player, pickup, rules);
         if (!outcome) continue;
 
+        if (outcome.kind === "weapon" && outcome.added) {
+          // Put a better weapon in your hands rather than in your pocket.
+          // Finding a launcher and having to remember a slot key for it is
+          // the kind of friction that makes a reward feel like paperwork.
+          const inHand = player.weapons[player.weaponSlot];
+          if (!inHand || isUpgradeOver(outcome.weaponId, inHand)) {
+            player.weaponSlot = outcome.slot;
+            player.reloadingUntilMs = 0;
+          }
+        }
+
         if (outcome.kind === "god_mode") {
           // Extend, never stack, and never past the full duration: two taken
           // back to back must not chain into a minute of invulnerability.
@@ -1494,6 +1507,41 @@ export class MatchSimulation {
       player.health = result.vitals.health;
       player.armor = result.vitals.armor;
       if (player.health <= 0 && before > 0) this.killPlayer(player, null, null, false);
+    }
+  }
+
+  /**
+   * Come off a weapon that has nothing left, onto the best one that has.
+   *
+   * The other half of switching to a pickup automatically: a launcher you
+   * were handed is worth holding until the tube is empty, and then it is
+   * worth nothing at all. Leaving the player standing there dry-firing it is
+   * the same friction in the other direction.
+   *
+   * Reload is checked first, so this never pulls a weapon out of someone's
+   * hands while they are in the middle of feeding it.
+   */
+  private fallBackFromDryWeapons(): void {
+    for (const player of this.players.values()) {
+      if (!player.alive) continue;
+      if (this.elapsedMs < player.reloadingUntilMs) continue;
+
+      const held = player.ammo[player.weaponSlot];
+      if (!held || held.magazine + held.reserve > 0) continue;
+
+      let best = -1;
+      let bestTier = -1;
+      player.weapons.forEach((id, slot) => {
+        const ammo = player.ammo[slot];
+        if (!ammo || ammo.magazine + ammo.reserve <= 0) return;
+        const tier = getWeapon(id).tier;
+        if (tier > bestTier) {
+          bestTier = tier;
+          best = slot;
+        }
+      });
+
+      if (best >= 0 && best !== player.weaponSlot) player.weaponSlot = best;
     }
   }
 
