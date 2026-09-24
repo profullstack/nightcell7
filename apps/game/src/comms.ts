@@ -86,6 +86,16 @@ interface CatalogueLine {
 }
 const LINES = CATALOGUE.lines as Record<SideId, Record<string, CatalogueLine>>;
 
+/**
+ * Every recorded take of a line: the line itself (orders) and its lettered
+ * takes (`contact_hardpoint_a`, `_b`...) or numbered ones (`order_gantry_v2`).
+ */
+export function takesOf(side: SideId, base: LineId): LineId[] {
+  const pattern = new RegExp(`^${base}(?:_[a-z]|_v\\d+)?$`);
+  const found = Object.keys(LINES[side]).filter((id) => pattern.test(id));
+  return found.length ? found : [base];
+}
+
 /** Every clip a side needs, for the loader. */
 export function linesFor(side: SideId): LineId[] {
   return Object.keys(LINES[side]);
@@ -183,6 +193,10 @@ const CHATTER_REPLIES: Readonly<Record<LineId, LineId>> = {
   chatter_02: "chatter_03",
   chatter_07: "chatter_08",
   chatter_11: "chatter_12",
+  chatter_15: "chatter_16",
+  chatter_19: "chatter_20",
+  chatter_23: "chatter_24",
+  chatter_27: "chatter_28",
 };
 /** Seconds between a chatter call and its answer. */
 const REPLY_AFTER_S = 2.8;
@@ -207,7 +221,8 @@ export class CommsDirector {
   private lastOrder: LineId | null = null;
   private pendingReply: LineId | null = null;
   private quietOverride: number | null = null;
-  private variant = 0;
+  private readonly bags = new Map<LineId, LineId[]>();
+  private readonly lastTake = new Map<LineId, LineId>();
 
   constructor(
     private readonly side: SideId,
@@ -298,11 +313,11 @@ export class CommsDirector {
             f.alive &&
             distance(f.position, event.position) < TIMING.grenadeRange,
         );
-        return near ? this.callout("grenade", ["a", "b"]) : null;
+        return near ? this.callout("grenade") : null;
       }
       case "kill": {
-        if (event.victimIsLocal) return this.callout("operator_down", ["a", "b"]);
-        if (event.victimTeam === this.ownTeam) return this.callout("man_down", ["a", "b"]);
+        if (event.victimIsLocal) return this.callout("operator_down");
+        if (event.victimTeam === this.ownTeam) return this.callout("man_down");
         if (event.killerIsLocal) {
           this.localKillTimes.push(now);
           const recent = this.localKillTimes.filter((t) => now - t <= TIMING.streak.withinS);
@@ -311,12 +326,12 @@ export class CommsDirector {
             this.localKillTimes.length = 0;
             return this.order("order_good_work");
           }
-          return this.random() < 0.6 ? this.callout("nice_shot", ["a", "b", "c"]) : null;
+          return this.random() < 0.6 ? this.callout("nice_shot") : null;
         }
         if (now - this.lastEnemyDown < TIMING.enemyDownCooldown || this.random() > 0.55)
           return null;
         this.lastEnemyDown = now;
-        return this.callout("enemy_down", ["a", "b", "c"]);
+        return this.callout("enemy_down");
       }
       case "local_respawn":
         return this.order("order_back_in");
@@ -350,7 +365,7 @@ export class CommsDirector {
     if (!found) return null;
     this.zoneCalled.set(found, now);
     this.lastContact = now;
-    return this.callout(`contact_${found}`, ["a", "b"]);
+    return this.callout(`contact_${found}`);
   }
 
   /**
@@ -376,17 +391,40 @@ export class CommsDirector {
     return fresh[Math.floor(this.random() * fresh.length)] ?? "order_push_hardpoint";
   }
 
-  private order(id: LineId): Transmission {
-    this.lastOrder = id;
+  private order(base: LineId): Transmission {
+    this.lastOrder = base;
+    const id = this.take(base);
     // Broadcasts ("All elements...") are not addressed; everything else is.
     const addressed = /^[a-z]/.test(lineText(this.side, id) ?? "");
     return { kind: "order", lines: addressed ? [this.callsign, id] : [id] };
   }
 
-  /** Alternate the squad voices so the same man is not always the one talking. */
-  private callout(base: string, suffixes: readonly string[]): Transmission {
-    const suffix = suffixes[this.variant++ % suffixes.length];
-    return { kind: "callout", lines: [`${base}_${suffix}`] };
+  private callout(base: string): Transmission {
+    return { kind: "callout", lines: [this.take(base)] };
+  }
+
+  /**
+   * One take of a line, from a shuffle bag: every take plays once before any
+   * repeats, and the last take of one pass is never the first of the next.
+   * Takes alternate squad voices in the catalogue, so this also spreads the
+   * talking across the squad.
+   */
+  private take(base: LineId): LineId {
+    let bag = this.bags.get(base);
+    if (!bag || bag.length === 0) {
+      const all = takesOf(this.side, base);
+      bag = [...all];
+      for (let i = bag.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(this.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j]!, bag[i]!];
+      }
+      const last = this.lastTake.get(base);
+      if (bag.length > 1 && bag[0] === last) [bag[0], bag[1]] = [bag[1]!, bag[0]!];
+      this.bags.set(base, bag);
+    }
+    const id = bag.shift() ?? base;
+    this.lastTake.set(base, id);
+    return id;
   }
 
   private chatter(): Transmission {

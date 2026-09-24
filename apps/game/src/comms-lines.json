@@ -49,8 +49,14 @@
   },
   "lines": {
     "nightcell": {
-      "callsign_rook": { "speaker": "command", "text": "Rook," },
-      "callsign_vale": { "speaker": "command", "text": "Vale," },
+      "callsign_rook": {
+        "speaker": "command",
+        "text": "Rook,"
+      },
+      "callsign_vale": {
+        "speaker": "command",
+        "text": "Vale,"
+      },
       "order_move_out": {
         "speaker": "command",
         "text": "All Nightcell elements, you are clear to move. Take the yard."
@@ -87,32 +93,74 @@
         "speaker": "command",
         "text": "one hostile left in the yard. Finish it."
       },
-      "order_good_work": { "speaker": "command", "text": "good work. Keep that pressure on." },
+      "order_good_work": {
+        "speaker": "command",
+        "text": "good work. Keep that pressure on."
+      },
       "order_back_in": {
         "speaker": "command",
         "text": "you're back in. Rejoin the squad and keep moving."
       },
-      "contact_west_catwalk_a": { "speaker": "squad1", "text": "Contact, west catwalk!" },
-      "contact_west_catwalk_b": { "speaker": "squad2", "text": "Hostile up on the catwalk!" },
-      "contact_pipe_rack_a": { "speaker": "squad1", "text": "Contact, pipe rack!" },
-      "contact_pipe_rack_b": { "speaker": "squad2", "text": "Movement by the pipe rack!" },
-      "contact_gantry_a": { "speaker": "squad1", "text": "Contact on the gantry!" },
-      "contact_gantry_b": { "speaker": "squad2", "text": "Shooter up on the east gantry!" },
-      "contact_tank_row_a": { "speaker": "squad1", "text": "Contact, tank row!" },
-      "contact_tank_row_b": { "speaker": "squad2", "text": "Hostiles moving through the tanks!" },
-      "contact_hardpoint_a": { "speaker": "squad1", "text": "Contact, on the hardpoint!" },
-      "contact_hardpoint_b": { "speaker": "squad2", "text": "They're on the hardpoint!" },
-      "contact_north_containers_a": { "speaker": "squad1", "text": "Contact, north containers!" },
+      "contact_west_catwalk_a": {
+        "speaker": "squad1",
+        "text": "Contact, west catwalk!"
+      },
+      "contact_west_catwalk_b": {
+        "speaker": "squad2",
+        "text": "Hostile up on the catwalk!"
+      },
+      "contact_pipe_rack_a": {
+        "speaker": "squad1",
+        "text": "Contact, pipe rack!"
+      },
+      "contact_pipe_rack_b": {
+        "speaker": "squad2",
+        "text": "Movement by the pipe rack!"
+      },
+      "contact_gantry_a": {
+        "speaker": "squad1",
+        "text": "Contact on the gantry!"
+      },
+      "contact_gantry_b": {
+        "speaker": "squad2",
+        "text": "Shooter up on the east gantry!"
+      },
+      "contact_tank_row_a": {
+        "speaker": "squad1",
+        "text": "Contact, tank row!"
+      },
+      "contact_tank_row_b": {
+        "speaker": "squad2",
+        "text": "Hostiles moving through the tanks!"
+      },
+      "contact_hardpoint_a": {
+        "speaker": "squad1",
+        "text": "Contact, on the hardpoint!"
+      },
+      "contact_hardpoint_b": {
+        "speaker": "squad2",
+        "text": "They're on the hardpoint!"
+      },
+      "contact_north_containers_a": {
+        "speaker": "squad1",
+        "text": "Contact, north containers!"
+      },
       "contact_north_containers_b": {
         "speaker": "squad2",
         "text": "Movement in the north containers!"
       },
-      "contact_south_containers_a": { "speaker": "squad1", "text": "Contact, south containers!" },
+      "contact_south_containers_a": {
+        "speaker": "squad1",
+        "text": "Contact, south containers!"
+      },
       "contact_south_containers_b": {
         "speaker": "squad2",
         "text": "They're in the south containers, close!"
       },
-      "contact_north_gate_a": { "speaker": "squad1", "text": "Contact, north gate!" },
+      "contact_north_gate_a": {
+        "speaker": "squad1",
+        "text": "Contact, north gate!"
+      },
       "contact_north_gate_b": {
         "speaker": "squad2",
         "text": "More of them coming out the north gate!"
@@ -125,41 +173,110 @@
         "speaker": "squad2",
         "text": "Hostiles at our own gate, behind us!"
       },
-      "contact_open_a": { "speaker": "squad1", "text": "Contact, open ground!" },
-      "contact_open_b": { "speaker": "squad2", "text": "Hostile in the open!" },
-      "enemy_down_a": { "speaker": "squad1", "text": "Hostile down." },
-      "enemy_down_b": { "speaker": "squad2", "text": "Got one." },
-      "enemy_down_c": { "speaker": "squad1", "text": "Target down." },
-      "man_down_a": { "speaker": "squad2", "text": "Man down! Man down!" },
-      "man_down_b": { "speaker": "squad1", "text": "We lost one!" },
-      "operator_down_a": { "speaker": "squad1", "text": "Operator down!" },
-      "operator_down_b": { "speaker": "squad2", "text": "They got our point man!" },
-      "nice_shot_a": { "speaker": "squad2", "text": "Nice shot." },
-      "nice_shot_b": { "speaker": "squad1", "text": "Good kill." },
-      "nice_shot_c": { "speaker": "squad2", "text": "That's how it's done." },
-      "grenade_a": { "speaker": "squad1", "text": "Grenade! Move!" },
-      "grenade_b": { "speaker": "squad2", "text": "Frag out, frag out, get clear!" },
+      "contact_open_a": {
+        "speaker": "squad1",
+        "text": "Contact, open ground!"
+      },
+      "contact_open_b": {
+        "speaker": "squad2",
+        "text": "Hostile in the open!"
+      },
+      "enemy_down_a": {
+        "speaker": "squad1",
+        "text": "Hostile down."
+      },
+      "enemy_down_b": {
+        "speaker": "squad2",
+        "text": "Got one."
+      },
+      "enemy_down_c": {
+        "speaker": "squad1",
+        "text": "Target down."
+      },
+      "man_down_a": {
+        "speaker": "squad2",
+        "text": "Man down! Man down!"
+      },
+      "man_down_b": {
+        "speaker": "squad1",
+        "text": "We lost one!"
+      },
+      "operator_down_a": {
+        "speaker": "squad1",
+        "text": "Operator down!"
+      },
+      "operator_down_b": {
+        "speaker": "squad2",
+        "text": "They got our point man!"
+      },
+      "nice_shot_a": {
+        "speaker": "squad2",
+        "text": "Nice shot."
+      },
+      "nice_shot_b": {
+        "speaker": "squad1",
+        "text": "Good kill."
+      },
+      "nice_shot_c": {
+        "speaker": "squad2",
+        "text": "That's how it's done."
+      },
+      "grenade_a": {
+        "speaker": "squad1",
+        "text": "Grenade! Move!"
+      },
+      "grenade_b": {
+        "speaker": "squad2",
+        "text": "Frag out, frag out, get clear!"
+      },
       "chatter_01": {
         "speaker": "command",
         "text": "All elements, Overwatch. Check your sectors."
       },
-      "chatter_02": { "speaker": "squad1", "text": "Overwatch, Two. In position, holding." },
-      "chatter_03": { "speaker": "command", "text": "Copy Two. Keep it tight." },
-      "chatter_04": { "speaker": "squad2", "text": "Three, ammo check. I'm on my last two mags." },
+      "chatter_02": {
+        "speaker": "squad1",
+        "text": "Overwatch, Two. In position, holding."
+      },
+      "chatter_03": {
+        "speaker": "command",
+        "text": "Copy Two. Keep it tight."
+      },
+      "chatter_04": {
+        "speaker": "squad2",
+        "text": "Three, ammo check. I'm on my last two mags."
+      },
       "chatter_05": {
         "speaker": "command",
         "text": "Overwatch, all elements. Drone feed is down, you're on your own eyes."
       },
-      "chatter_06": { "speaker": "squad1", "text": "Nothing moving on the gantry. Watching it." },
-      "chatter_07": { "speaker": "squad2", "text": "Say again, Overwatch, you're breaking up." },
-      "chatter_08": { "speaker": "command", "text": "I say again. Stay off the open ground." },
-      "chatter_09": { "speaker": "squad1", "text": "Floodlights on the east side just went out." },
+      "chatter_06": {
+        "speaker": "squad1",
+        "text": "Nothing moving on the gantry. Watching it."
+      },
+      "chatter_07": {
+        "speaker": "squad2",
+        "text": "Say again, Overwatch, you're breaking up."
+      },
+      "chatter_08": {
+        "speaker": "command",
+        "text": "I say again. Stay off the open ground."
+      },
+      "chatter_09": {
+        "speaker": "squad1",
+        "text": "Floodlights on the east side just went out."
+      },
       "chatter_10": {
         "speaker": "command",
         "text": "Be advised, their comms are active. Assume they can hear you."
       },
-      "chatter_11": { "speaker": "squad2", "text": "Moving. Cover me across." },
-      "chatter_12": { "speaker": "squad1", "text": "I have you covered. Move now." },
+      "chatter_11": {
+        "speaker": "squad2",
+        "text": "Moving. Cover me across."
+      },
+      "chatter_12": {
+        "speaker": "squad1",
+        "text": "I have you covered. Move now."
+      },
       "chatter_13": {
         "speaker": "command",
         "text": "Overwatch copies all. Time is not on our side, keep moving."
@@ -167,11 +284,245 @@
       "chatter_14": {
         "speaker": "squad2",
         "text": "Two, you hear that? Something up on the catwalk."
+      },
+      "order_move_out_v2": {
+        "speaker": "command",
+        "text": "Overwatch to all Nightcell elements. Green light, green light. Move into the yard."
+      },
+      "order_push_hardpoint_v2": {
+        "speaker": "command",
+        "text": "I need you on the hardpoint. Take the centre and hold it."
+      },
+      "order_push_west_v2": {
+        "speaker": "command",
+        "text": "west lane looks light. Go up the pipe rack, fast."
+      },
+      "order_push_east_v2": {
+        "speaker": "command",
+        "text": "hit them from the east. Move through the tanks."
+      },
+      "order_hold_hardpoint_v2": {
+        "speaker": "command",
+        "text": "you're winning the centre. Dig in on the hardpoint."
+      },
+      "order_fall_back_v2": {
+        "speaker": "command",
+        "text": "pull back. Get into the containers and reset."
+      },
+      "order_catwalk_v2": {
+        "speaker": "command",
+        "text": "climb the west catwalk and cover the yard from above."
+      },
+      "order_gantry_v2": {
+        "speaker": "command",
+        "text": "get up on the gantry. Watch the east lane for me."
+      },
+      "order_last_one_v2": {
+        "speaker": "command",
+        "text": "last hostile is somewhere in the yard. Close it out."
+      },
+      "order_good_work_v2": {
+        "speaker": "command",
+        "text": "that's the way. Keep them on their back foot."
+      },
+      "order_back_in_v2": {
+        "speaker": "command",
+        "text": "you're up again. Get back to your team."
+      },
+      "contact_west_catwalk_c": {
+        "speaker": "squad1",
+        "text": "Eyes up, west catwalk!"
+      },
+      "contact_west_catwalk_d": {
+        "speaker": "squad2",
+        "text": "Someone's on the catwalk, west side!"
+      },
+      "contact_pipe_rack_c": {
+        "speaker": "squad1",
+        "text": "Pipe rack, pipe rack!"
+      },
+      "contact_pipe_rack_d": {
+        "speaker": "squad2",
+        "text": "Movement under the pipes, west lane!"
+      },
+      "contact_gantry_c": {
+        "speaker": "squad1",
+        "text": "Up high, east gantry!"
+      },
+      "contact_gantry_d": {
+        "speaker": "squad2",
+        "text": "They're up on the gantry, watch it!"
+      },
+      "contact_tank_row_c": {
+        "speaker": "squad1",
+        "text": "Tank row, moving between the tanks!"
+      },
+      "contact_tank_row_d": {
+        "speaker": "squad2",
+        "text": "East lane, by the storage tanks!"
+      },
+      "contact_hardpoint_c": {
+        "speaker": "squad1",
+        "text": "Hardpoint, centre, they're on it!"
+      },
+      "contact_hardpoint_d": {
+        "speaker": "squad2",
+        "text": "Contact centre, on the hardpoint!"
+      },
+      "contact_north_containers_c": {
+        "speaker": "squad1",
+        "text": "North containers, north containers!"
+      },
+      "contact_north_containers_d": {
+        "speaker": "squad2",
+        "text": "In the containers, north side!"
+      },
+      "contact_south_containers_c": {
+        "speaker": "squad1",
+        "text": "South containers, watch it!"
+      },
+      "contact_south_containers_d": {
+        "speaker": "squad2",
+        "text": "Contact, south side of the containers!"
+      },
+      "contact_north_gate_c": {
+        "speaker": "squad1",
+        "text": "They're pouring out of the north gate!"
+      },
+      "contact_north_gate_d": {
+        "speaker": "squad2",
+        "text": "North gate, more of them!"
+      },
+      "contact_yard_gate_c": {
+        "speaker": "squad1",
+        "text": "Behind us, yard gate!"
+      },
+      "contact_yard_gate_d": {
+        "speaker": "squad2",
+        "text": "Hostiles at our own gate, watch our backs!"
+      },
+      "contact_open_c": {
+        "speaker": "squad1",
+        "text": "Hostile crossing the open ground!"
+      },
+      "contact_open_d": {
+        "speaker": "squad2",
+        "text": "Out in the open, take the shot!"
+      },
+      "enemy_down_d": {
+        "speaker": "squad2",
+        "text": "Hostile neutralised."
+      },
+      "enemy_down_e": {
+        "speaker": "squad1",
+        "text": "Dropped one."
+      },
+      "enemy_down_f": {
+        "speaker": "squad2",
+        "text": "That one's done."
+      },
+      "man_down_c": {
+        "speaker": "squad1",
+        "text": "Friendly down!"
+      },
+      "man_down_d": {
+        "speaker": "squad2",
+        "text": "We've got someone down, cover them!"
+      },
+      "operator_down_c": {
+        "speaker": "squad2",
+        "text": "Point man is down!"
+      },
+      "operator_down_d": {
+        "speaker": "squad1",
+        "text": "Lost our lead, keep fighting!"
+      },
+      "nice_shot_d": {
+        "speaker": "squad1",
+        "text": "Good hit."
+      },
+      "nice_shot_e": {
+        "speaker": "squad2",
+        "text": "Clean shot."
+      },
+      "nice_shot_f": {
+        "speaker": "squad1",
+        "text": "Nice work, keep it up."
+      },
+      "grenade_c": {
+        "speaker": "squad2",
+        "text": "Frag, frag, frag!"
+      },
+      "grenade_d": {
+        "speaker": "squad1",
+        "text": "Grenade, get down!"
+      },
+      "chatter_15": {
+        "speaker": "command",
+        "text": "Overwatch, all elements. Radio check."
+      },
+      "chatter_16": {
+        "speaker": "squad1",
+        "text": "Two, loud and clear."
+      },
+      "chatter_17": {
+        "speaker": "squad2",
+        "text": "Watch the shadows by the hangar, lot of places to hide."
+      },
+      "chatter_18": {
+        "speaker": "command",
+        "text": "Overwatch. Keep your spacing, don't bunch up."
+      },
+      "chatter_19": {
+        "speaker": "squad1",
+        "text": "Overwatch, Two. Hearing vehicles to the north."
+      },
+      "chatter_20": {
+        "speaker": "command",
+        "text": "Copy. Could be reinforcements. Stay sharp."
+      },
+      "chatter_21": {
+        "speaker": "squad2",
+        "text": "My night vision keeps flaring on those floodlights."
+      },
+      "chatter_22": {
+        "speaker": "command",
+        "text": "All elements. We lose the window in ten minutes. Move with purpose."
+      },
+      "chatter_23": {
+        "speaker": "squad2",
+        "text": "Three, going quiet. Moving to a new position."
+      },
+      "chatter_24": {
+        "speaker": "squad1",
+        "text": "Copy Three. I've got your back."
+      },
+      "chatter_25": {
+        "speaker": "command",
+        "text": "Overwatch. Nobody fires on anything they can't identify."
+      },
+      "chatter_26": {
+        "speaker": "squad1",
+        "text": "Lot of fuel in these tanks. Careful where you shoot."
+      },
+      "chatter_27": {
+        "speaker": "command",
+        "text": "Two, Overwatch. Status?"
+      },
+      "chatter_28": {
+        "speaker": "squad1",
+        "text": "Two. Holding. Nothing moving on my side."
       }
     },
     "directorate": {
-      "callsign_leila": { "speaker": "command", "text": "Farzan," },
-      "callsign_daryan": { "speaker": "command", "text": "Colonel," },
+      "callsign_leila": {
+        "speaker": "command",
+        "text": "Farzan,"
+      },
+      "callsign_daryan": {
+        "speaker": "command",
+        "text": "Colonel,"
+      },
       "order_move_out": {
         "speaker": "command",
         "text": "All units, this is Command. You are cleared to advance. Secure the yard."
@@ -208,27 +559,66 @@
         "speaker": "command",
         "text": "one intruder left in the yard. Find him and end this."
       },
-      "order_good_work": { "speaker": "command", "text": "well done. Keep pressing." },
+      "order_good_work": {
+        "speaker": "command",
+        "text": "well done. Keep pressing."
+      },
       "order_back_in": {
         "speaker": "command",
         "text": "you're back on the line. Rejoin your team and advance."
       },
-      "contact_west_catwalk_a": { "speaker": "squad1", "text": "Contact, west catwalk!" },
-      "contact_west_catwalk_b": { "speaker": "squad2", "text": "Enemy up on the catwalk!" },
-      "contact_pipe_rack_a": { "speaker": "squad1", "text": "Contact, pipe rack!" },
-      "contact_pipe_rack_b": { "speaker": "squad2", "text": "Movement at the pipe rack!" },
-      "contact_gantry_a": { "speaker": "squad1", "text": "Contact on the gantry!" },
-      "contact_gantry_b": { "speaker": "squad2", "text": "Shooter on the east gantry!" },
-      "contact_tank_row_a": { "speaker": "squad1", "text": "Contact, tank row!" },
-      "contact_tank_row_b": { "speaker": "squad2", "text": "Enemy moving between the tanks!" },
-      "contact_hardpoint_a": { "speaker": "squad1", "text": "Contact, on the hardpoint!" },
-      "contact_hardpoint_b": { "speaker": "squad2", "text": "They have the hardpoint!" },
-      "contact_north_containers_a": { "speaker": "squad1", "text": "Contact, north containers!" },
+      "contact_west_catwalk_a": {
+        "speaker": "squad1",
+        "text": "Contact, west catwalk!"
+      },
+      "contact_west_catwalk_b": {
+        "speaker": "squad2",
+        "text": "Enemy up on the catwalk!"
+      },
+      "contact_pipe_rack_a": {
+        "speaker": "squad1",
+        "text": "Contact, pipe rack!"
+      },
+      "contact_pipe_rack_b": {
+        "speaker": "squad2",
+        "text": "Movement at the pipe rack!"
+      },
+      "contact_gantry_a": {
+        "speaker": "squad1",
+        "text": "Contact on the gantry!"
+      },
+      "contact_gantry_b": {
+        "speaker": "squad2",
+        "text": "Shooter on the east gantry!"
+      },
+      "contact_tank_row_a": {
+        "speaker": "squad1",
+        "text": "Contact, tank row!"
+      },
+      "contact_tank_row_b": {
+        "speaker": "squad2",
+        "text": "Enemy moving between the tanks!"
+      },
+      "contact_hardpoint_a": {
+        "speaker": "squad1",
+        "text": "Contact, on the hardpoint!"
+      },
+      "contact_hardpoint_b": {
+        "speaker": "squad2",
+        "text": "They have the hardpoint!"
+      },
+      "contact_north_containers_a": {
+        "speaker": "squad1",
+        "text": "Contact, north containers!"
+      },
       "contact_north_containers_b": {
         "speaker": "squad2",
         "text": "They're in the north containers, close!"
       },
-      "contact_south_containers_a": { "speaker": "squad1", "text": "Contact, south containers!" },
+      "contact_south_containers_a": {
+        "speaker": "squad1",
+        "text": "Contact, south containers!"
+      },
       "contact_south_containers_b": {
         "speaker": "squad2",
         "text": "Movement in the south containers!"
@@ -237,26 +627,86 @@
         "speaker": "squad1",
         "text": "Contact at the north gate, behind us!"
       },
-      "contact_north_gate_b": { "speaker": "squad2", "text": "They're at our gate!" },
-      "contact_yard_gate_a": { "speaker": "squad1", "text": "Contact, yard gate!" },
-      "contact_yard_gate_b": { "speaker": "squad2", "text": "More coming through the yard gate!" },
-      "contact_open_a": { "speaker": "squad1", "text": "Contact, open ground!" },
-      "contact_open_b": { "speaker": "squad2", "text": "Enemy in the open!" },
-      "enemy_down_a": { "speaker": "squad1", "text": "Enemy down." },
-      "enemy_down_b": { "speaker": "squad2", "text": "He's down." },
-      "enemy_down_c": { "speaker": "squad1", "text": "One less." },
-      "man_down_a": { "speaker": "squad2", "text": "Man down! We have a man down!" },
-      "man_down_b": { "speaker": "squad1", "text": "We lost one!" },
-      "operator_down_a": { "speaker": "squad1", "text": "They got our lead!" },
-      "operator_down_b": { "speaker": "squad2", "text": "Lead is down!" },
-      "nice_shot_a": { "speaker": "squad2", "text": "Good shot." },
-      "nice_shot_b": { "speaker": "squad1", "text": "Clean kill." },
-      "nice_shot_c": { "speaker": "squad2", "text": "Well done." },
-      "grenade_a": { "speaker": "squad1", "text": "Grenade! Move!" },
-      "grenade_b": { "speaker": "squad2", "text": "Grenade, get clear!" },
-      "chatter_01": { "speaker": "command", "text": "All units, Command. Report your positions." },
-      "chatter_02": { "speaker": "squad1", "text": "Command, Section One. In position, holding." },
-      "chatter_03": { "speaker": "command", "text": "Understood, One. Stay alert." },
+      "contact_north_gate_b": {
+        "speaker": "squad2",
+        "text": "They're at our gate!"
+      },
+      "contact_yard_gate_a": {
+        "speaker": "squad1",
+        "text": "Contact, yard gate!"
+      },
+      "contact_yard_gate_b": {
+        "speaker": "squad2",
+        "text": "More coming through the yard gate!"
+      },
+      "contact_open_a": {
+        "speaker": "squad1",
+        "text": "Contact, open ground!"
+      },
+      "contact_open_b": {
+        "speaker": "squad2",
+        "text": "Enemy in the open!"
+      },
+      "enemy_down_a": {
+        "speaker": "squad1",
+        "text": "Enemy down."
+      },
+      "enemy_down_b": {
+        "speaker": "squad2",
+        "text": "He's down."
+      },
+      "enemy_down_c": {
+        "speaker": "squad1",
+        "text": "One less."
+      },
+      "man_down_a": {
+        "speaker": "squad2",
+        "text": "Man down! We have a man down!"
+      },
+      "man_down_b": {
+        "speaker": "squad1",
+        "text": "We lost one!"
+      },
+      "operator_down_a": {
+        "speaker": "squad1",
+        "text": "They got our lead!"
+      },
+      "operator_down_b": {
+        "speaker": "squad2",
+        "text": "Lead is down!"
+      },
+      "nice_shot_a": {
+        "speaker": "squad2",
+        "text": "Good shot."
+      },
+      "nice_shot_b": {
+        "speaker": "squad1",
+        "text": "Clean kill."
+      },
+      "nice_shot_c": {
+        "speaker": "squad2",
+        "text": "Well done."
+      },
+      "grenade_a": {
+        "speaker": "squad1",
+        "text": "Grenade! Move!"
+      },
+      "grenade_b": {
+        "speaker": "squad2",
+        "text": "Grenade, get clear!"
+      },
+      "chatter_01": {
+        "speaker": "command",
+        "text": "All units, Command. Report your positions."
+      },
+      "chatter_02": {
+        "speaker": "squad1",
+        "text": "Command, Section One. In position, holding."
+      },
+      "chatter_03": {
+        "speaker": "command",
+        "text": "Understood, One. Stay alert."
+      },
       "chatter_04": {
         "speaker": "squad2",
         "text": "Section Two, low on ammunition. Requesting resupply."
@@ -265,24 +715,270 @@
         "speaker": "command",
         "text": "All units, be advised. The perimeter cameras are down on the east side."
       },
-      "chatter_06": { "speaker": "squad1", "text": "Nothing on the gantry. Still watching." },
+      "chatter_06": {
+        "speaker": "squad1",
+        "text": "Nothing on the gantry. Still watching."
+      },
       "chatter_07": {
         "speaker": "squad2",
         "text": "Command, repeat your last, you are breaking up."
       },
-      "chatter_08": { "speaker": "command", "text": "I repeat. Stay off the open ground." },
-      "chatter_09": { "speaker": "squad1", "text": "Lights just went out by the tanks." },
+      "chatter_08": {
+        "speaker": "command",
+        "text": "I repeat. Stay off the open ground."
+      },
+      "chatter_09": {
+        "speaker": "squad1",
+        "text": "Lights just went out by the tanks."
+      },
       "chatter_10": {
         "speaker": "command",
         "text": "All units. Something is wrong with these orders. Confirm everything twice."
       },
-      "chatter_11": { "speaker": "squad2", "text": "Moving up. Cover me." },
-      "chatter_12": { "speaker": "squad1", "text": "Covering. Go now." },
+      "chatter_11": {
+        "speaker": "squad2",
+        "text": "Moving up. Cover me."
+      },
+      "chatter_12": {
+        "speaker": "squad1",
+        "text": "Covering. Go now."
+      },
       "chatter_13": {
         "speaker": "command",
         "text": "Command copies. Hold discipline, nobody fires without a target."
       },
-      "chatter_14": { "speaker": "squad2", "text": "Did you hear that? Up on the catwalk." }
+      "chatter_14": {
+        "speaker": "squad2",
+        "text": "Did you hear that? Up on the catwalk."
+      },
+      "order_move_out_v2": {
+        "speaker": "command",
+        "text": "Command to all units. Begin the advance. Take the yard."
+      },
+      "order_push_hardpoint_v2": {
+        "speaker": "command",
+        "text": "move on the centre. The hardpoint must be ours."
+      },
+      "order_push_west_v2": {
+        "speaker": "command",
+        "text": "they are light on the west. Advance up the pipe rack."
+      },
+      "order_push_east_v2": {
+        "speaker": "command",
+        "text": "strike from the east. Advance between the tanks."
+      },
+      "order_hold_hardpoint_v2": {
+        "speaker": "command",
+        "text": "keep the hardpoint. Do not give it up."
+      },
+      "order_fall_back_v2": {
+        "speaker": "command",
+        "text": "withdraw to the containers. Regroup and wait for my order."
+      },
+      "order_catwalk_v2": {
+        "speaker": "command",
+        "text": "climb to the west catwalk. Watch the yard from there."
+      },
+      "order_gantry_v2": {
+        "speaker": "command",
+        "text": "go up the east gantry. Cover the eastern lane."
+      },
+      "order_last_one_v2": {
+        "speaker": "command",
+        "text": "a single intruder remains. Close the net."
+      },
+      "order_good_work_v2": {
+        "speaker": "command",
+        "text": "excellent. Do not let them breathe."
+      },
+      "order_back_in_v2": {
+        "speaker": "command",
+        "text": "you are back in the fight. Return to your team."
+      },
+      "contact_west_catwalk_c": {
+        "speaker": "squad1",
+        "text": "Eyes up, west catwalk!"
+      },
+      "contact_west_catwalk_d": {
+        "speaker": "squad2",
+        "text": "Someone's on the catwalk, west side!"
+      },
+      "contact_pipe_rack_c": {
+        "speaker": "squad1",
+        "text": "Pipe rack, pipe rack!"
+      },
+      "contact_pipe_rack_d": {
+        "speaker": "squad2",
+        "text": "Movement under the pipes, west lane!"
+      },
+      "contact_gantry_c": {
+        "speaker": "squad1",
+        "text": "Up high, east gantry!"
+      },
+      "contact_gantry_d": {
+        "speaker": "squad2",
+        "text": "They're up on the gantry, watch it!"
+      },
+      "contact_tank_row_c": {
+        "speaker": "squad1",
+        "text": "Tank row, moving between the tanks!"
+      },
+      "contact_tank_row_d": {
+        "speaker": "squad2",
+        "text": "East lane, by the storage tanks!"
+      },
+      "contact_hardpoint_c": {
+        "speaker": "squad1",
+        "text": "Hardpoint, centre, they're on it!"
+      },
+      "contact_hardpoint_d": {
+        "speaker": "squad2",
+        "text": "Contact centre, on the hardpoint!"
+      },
+      "contact_north_containers_c": {
+        "speaker": "squad1",
+        "text": "North containers, north containers!"
+      },
+      "contact_north_containers_d": {
+        "speaker": "squad2",
+        "text": "In the containers, north side!"
+      },
+      "contact_south_containers_c": {
+        "speaker": "squad1",
+        "text": "South containers, watch it!"
+      },
+      "contact_south_containers_d": {
+        "speaker": "squad2",
+        "text": "Contact, south side of the containers!"
+      },
+      "contact_north_gate_c": {
+        "speaker": "squad1",
+        "text": "Behind us, north gate!"
+      },
+      "contact_north_gate_d": {
+        "speaker": "squad2",
+        "text": "Enemy at our own gate, watch our backs!"
+      },
+      "contact_yard_gate_c": {
+        "speaker": "squad1",
+        "text": "Yard gate, more of them coming!"
+      },
+      "contact_yard_gate_d": {
+        "speaker": "squad2",
+        "text": "They're coming through the yard gate!"
+      },
+      "contact_open_c": {
+        "speaker": "squad1",
+        "text": "Enemy crossing the open ground!"
+      },
+      "contact_open_d": {
+        "speaker": "squad2",
+        "text": "Out in the open, take the shot!"
+      },
+      "enemy_down_d": {
+        "speaker": "squad2",
+        "text": "Enemy neutralised."
+      },
+      "enemy_down_e": {
+        "speaker": "squad1",
+        "text": "Dropped one."
+      },
+      "enemy_down_f": {
+        "speaker": "squad2",
+        "text": "That one is finished."
+      },
+      "man_down_c": {
+        "speaker": "squad1",
+        "text": "Friendly down!"
+      },
+      "man_down_d": {
+        "speaker": "squad2",
+        "text": "One of ours is down, cover!"
+      },
+      "operator_down_c": {
+        "speaker": "squad2",
+        "text": "Our lead is hit!"
+      },
+      "operator_down_d": {
+        "speaker": "squad1",
+        "text": "Lead down, hold the line!"
+      },
+      "nice_shot_d": {
+        "speaker": "squad1",
+        "text": "Good hit."
+      },
+      "nice_shot_e": {
+        "speaker": "squad2",
+        "text": "Precise."
+      },
+      "nice_shot_f": {
+        "speaker": "squad1",
+        "text": "Well shot, keep going."
+      },
+      "grenade_c": {
+        "speaker": "squad2",
+        "text": "Grenade, take cover!"
+      },
+      "grenade_d": {
+        "speaker": "squad1",
+        "text": "Grenade, move, move!"
+      },
+      "chatter_15": {
+        "speaker": "command",
+        "text": "Command, all units. Radio check."
+      },
+      "chatter_16": {
+        "speaker": "squad1",
+        "text": "Section One, receiving you clearly."
+      },
+      "chatter_17": {
+        "speaker": "squad2",
+        "text": "Too many shadows by the hangar. Anyone could be in there."
+      },
+      "chatter_18": {
+        "speaker": "command",
+        "text": "Command. Keep your spacing. Do not cluster."
+      },
+      "chatter_19": {
+        "speaker": "squad1",
+        "text": "Command, Section One. Engine noise to the south."
+      },
+      "chatter_20": {
+        "speaker": "command",
+        "text": "Understood. Treat it as hostile until confirmed."
+      },
+      "chatter_21": {
+        "speaker": "squad2",
+        "text": "These floodlights are blinding me through the scope."
+      },
+      "chatter_22": {
+        "speaker": "command",
+        "text": "All units. Those signatures still make no sense. Stay careful."
+      },
+      "chatter_23": {
+        "speaker": "squad2",
+        "text": "Section Two, relocating. Moving quietly."
+      },
+      "chatter_24": {
+        "speaker": "squad1",
+        "text": "Understood, Two. I am watching your route."
+      },
+      "chatter_25": {
+        "speaker": "command",
+        "text": "Command. Identify every target before you fire."
+      },
+      "chatter_26": {
+        "speaker": "squad1",
+        "text": "These tanks are full of fuel. Watch your fire."
+      },
+      "chatter_27": {
+        "speaker": "command",
+        "text": "Section One, Command. Report."
+      },
+      "chatter_28": {
+        "speaker": "squad1",
+        "text": "Section One. Holding position. No movement."
+      }
     }
   }
 }

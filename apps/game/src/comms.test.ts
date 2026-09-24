@@ -8,6 +8,7 @@ import {
   ZONE,
   captionFor,
   linesFor,
+  takesOf,
   zoneOf,
   type CommsFighter,
   type CommsSnapshot,
@@ -90,6 +91,33 @@ describe("the catalogue", () => {
     }
   });
 
+  it("records enough takes that the net does not repeat itself", () => {
+    for (const side of sides) {
+      for (const zone of Object.values(ZONE)) {
+        expect(takesOf(side, `contact_${zone}`).length, `${side} ${zone}`).toBeGreaterThanOrEqual(
+          4,
+        );
+      }
+      for (const base of ["enemy_down", "nice_shot"]) {
+        expect(takesOf(side, base).length, `${side} ${base}`).toBeGreaterThanOrEqual(6);
+      }
+      for (const base of ["man_down", "operator_down", "grenade"]) {
+        expect(takesOf(side, base).length, `${side} ${base}`).toBeGreaterThanOrEqual(4);
+      }
+      for (const base of [
+        "order_push_hardpoint",
+        "order_fall_back",
+        "order_move_out",
+        "order_back_in",
+      ]) {
+        expect(takesOf(side, base).length, `${side} ${base}`).toBeGreaterThanOrEqual(2);
+      }
+      expect(
+        linesFor(side).filter((id) => id.startsWith("chatter_")).length,
+      ).toBeGreaterThanOrEqual(28);
+    }
+  });
+
   it("has a callsign for every character on their own side", () => {
     for (const character of CHARACTERS) {
       expect(linesFor(character.side)).toContain(`callsign_${character.id}`);
@@ -118,14 +146,18 @@ describe("the catalogue", () => {
 describe("the squad radio", () => {
   it("opens with command sending the squad in", () => {
     const director = new CommsDirector(SIDE.NIGHTCELL, CHARACTER.ROOK, seeded());
-    expect(director.observe(0, snap([]), [])).toEqual({ kind: "order", lines: ["order_move_out"] });
+    const opening = director.observe(0, snap([]), []);
+    expect(opening?.kind).toBe("order");
+    expect(opening?.lines).toHaveLength(1);
+    expect(opening?.lines[0]).toMatch(/^order_move_out(_v\d+)?$/);
   });
 
   it("calls a new contact by area, and does not repeat the area straight away", () => {
     const director = deployed();
     const squad = fighter(NC, at(-20, 10), true, true);
     const first = director.observe(5, snap([squad, fighter(DIR, at(-28, 0, 7))]), []);
-    expect(first).toEqual({ kind: "callout", lines: ["contact_west_catwalk_a"] });
+    expect(first?.kind).toBe("callout");
+    expect(first?.lines[0]).toMatch(/^contact_west_catwalk_[a-z]$/);
 
     // A second enemy appears on the same catwalk: same area, inside the cooldown.
     const again = director.observe(
@@ -166,12 +198,12 @@ describe("the squad radio", () => {
     const ahead = deployed();
     const late = TIMING.orderEvery[1] + 1;
     const me = fighter(NC, at(0, 50), true, true);
-    expect(ahead.observe(late, snap([me], { [NC]: 12, [DIR]: 3 }), [])?.lines[1]).toBe(
-      "order_hold_hardpoint",
+    expect(ahead.observe(late, snap([me], { [NC]: 12, [DIR]: 3 }), [])?.lines[1]).toMatch(
+      /^order_hold_hardpoint/,
     );
     const behind = deployed();
-    expect(behind.observe(late, snap([me], { [NC]: 2, [DIR]: 9 }), [])?.lines[1]).toBe(
-      "order_fall_back",
+    expect(behind.observe(late, snap([me], { [NC]: 2, [DIR]: 9 }), [])?.lines[1]).toMatch(
+      /^order_fall_back/,
     );
   });
 
@@ -183,7 +215,8 @@ describe("the squad radio", () => {
     ]);
     expect(down?.lines[0]).toMatch(/^operator_down_/);
     const back = director.observe(10, s, [{ type: "local_respawn" }]);
-    expect(back?.lines).toEqual(["callsign_rook", "order_back_in"]);
+    expect(back?.lines[0]).toBe("callsign_rook");
+    expect(back?.lines[1]).toMatch(/^order_back_in(_v\d+)?$/);
   });
 
   it("shouts about an enemy grenade near the squad, not one of ours", () => {
@@ -203,8 +236,25 @@ describe("the squad radio", () => {
     const director = deployed();
     const me = fighter(NC, at(0, 50), true, true);
     const field = [me, fighter(DIR, at(0, -50)), fighter(DIR, at(5, -50), false)];
-    expect(director.observe(5, snap(field), [])?.lines[1]).toBe("order_last_one");
-    expect(director.observe(9, snap(field), [])?.lines[1] ?? "").not.toBe("order_last_one");
+    expect(director.observe(5, snap(field), [])?.lines[1]).toMatch(/^order_last_one/);
+    expect(director.observe(9, snap(field), [])?.lines[1] ?? "").not.toMatch(/^order_last_one/);
+  });
+
+  it("never plays the same take twice running, and uses every take", () => {
+    const director = deployed();
+    const me = fighter(NC, at(0, 50), true, true);
+    const said: string[] = [];
+    let t = 5;
+    // Enemy kills, spaced past every cooldown, with random() fixed by the seed.
+    for (let i = 0; i < 40; i += 1, t += TIMING.enemyDownCooldown + 1) {
+      const next = director.observe(t, snap([me]), [
+        { type: "kill", victimTeam: DIR, victimIsLocal: false, killerIsLocal: false },
+      ]);
+      if (next?.lines[0]?.startsWith("enemy_down")) said.push(next.lines[0]);
+    }
+    expect(said.length).toBeGreaterThan(8);
+    for (let i = 1; i < said.length; i += 1) expect(said[i]).not.toBe(said[i - 1]);
+    expect(new Set(said).size).toBe(takesOf(SIDE.NIGHTCELL, "enemy_down").length);
   });
 
   it("follows a chatter call with its answer", () => {
