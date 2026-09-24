@@ -1,4 +1,10 @@
-import { MAX_HEALTH, getWeapon, type WeaponId } from "@nightcell7/game-core";
+import {
+  MAX_HEALTH,
+  getWeapon,
+  isUpgradeOver,
+  weakestSlot,
+  type WeaponId,
+} from "@nightcell7/game-core";
 import type { CollisionMap } from "./map";
 import { playerHeight } from "./movement";
 import type { Vec3 } from "./vec";
@@ -110,7 +116,15 @@ export interface PickupTaker {
 export type PickupOutcome =
   | { kind: "god_mode"; durationMs: number }
   | { kind: "health"; healed: number; staminaGained: number; stamina: number }
-  | { kind: "weapon"; weaponId: WeaponId; slot: number; added: boolean; ammoAdded: number };
+  | {
+      kind: "weapon";
+      weaponId: WeaponId;
+      slot: number;
+      added: boolean;
+      ammoAdded: number;
+      /** What it displaced when the taker was already full, else null. */
+      replaced: WeaponId | null;
+    };
 
 /**
  * Is this fighter standing on the pickup?
@@ -182,15 +196,39 @@ export function applyPickup(
     const added = Math.min(room, carried);
     if (added <= 0) return null;
     ammo.reserve += added;
-    return { kind: "weapon", weaponId, slot, added: false, ammoAdded: added };
+    return { kind: "weapon", weaponId, slot, added: false, ammoAdded: added, replaced: null };
   }
 
-  if (taker.weapons.length >= rules.maxWeapons) return null;
+  if (taker.weapons.length >= rules.maxWeapons) {
+    // Full, so this is a trade rather than a refusal.
+    //
+    // It used to return null here, which meant a launcher lying on the ground
+    // did nothing at all once you were carrying three things: no swap, no
+    // message, not even the pickup being consumed. A playtester reported
+    // never managing to pick one up, and this was why.
+    const worst = weakestSlot(taker.weapons);
+    const displaced = taker.weapons[worst]!;
+    // Only trade up. Walking over a pistol must not cost you a rifle.
+    if (!isUpgradeOver(weaponId, displaced)) return null;
+
+    taker.weapons[worst] = weaponId;
+    taker.ammo[worst] = { magazine: pickup.magazine, reserve: pickup.reserve };
+    return {
+      kind: "weapon",
+      weaponId,
+      slot: worst,
+      added: true,
+      ammoAdded: pickup.magazine + pickup.reserve,
+      replaced: displaced,
+    };
+  }
+
   taker.weapons.push(weaponId);
   taker.ammo.push({ magazine: pickup.magazine, reserve: pickup.reserve });
   return {
     kind: "weapon",
     weaponId,
+    replaced: null,
     slot: taker.weapons.length - 1,
     added: true,
     ammoAdded: carried,
