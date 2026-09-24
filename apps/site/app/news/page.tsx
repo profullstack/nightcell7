@@ -20,7 +20,7 @@ const ENTRIES: Entry[] = [
   {
     date: "2026-07-26",
     title: "Ardavan Yard is standing up",
-    body: "The 6v6 map now exists as collision geometry the server simulates, with three lanes, two vertical routes and protected spawns at both ends. The screenshots across the site are in-engine captures of it. It is a greybox — no materials, no props — but the shape of the map is real and the server enforces exactly what you see.",
+    body: "The 6v6 map now exists as collision geometry the server simulates, with three lanes, two vertical routes and protected spawns at both ends. It started as bare geometry, but the shape of the map is final and the server enforces exactly what you see.",
   },
   {
     date: "2026-07-26",

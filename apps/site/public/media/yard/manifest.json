@@ -11,7 +11,7 @@
   "shots": [
     {
       "name": "yard-approach",
-      "caption": "The C7 carbine at the Nightcell muster point, looking north through the IRON RAIN cargo yard in cool industrial daylight.",
+      "caption": "Looking north from the Nightcell end of the yard, toward the hardpoint.",
       "showWeapon": true,
       "position": [0, 1.7, 44],
       "yaw": 3.141592653589793,
@@ -37,7 +37,7 @@
     },
     {
       "name": "central-hardpoint",
-      "caption": "The C7 carbine beside the central hard point, with pale concrete cargo modules and the refinery structures beyond.",
+      "caption": "The hardpoint in the middle of the yard. Whoever holds it holds the centre lane.",
       "showWeapon": true,
       "position": [-17, 1.7, 15],
       "yaw": 2.764601535159018,
@@ -46,7 +46,7 @@
     },
     {
       "name": "gantry-overlook",
-      "caption": "From the east gantry, looking back across the container yard under the white floodlight masts.",
+      "caption": "From the east gantry, looking back across the containers under the floodlights.",
       "position": [30, 8.1, -14],
       "yaw": 4.1469023027385274,
       "pitch": 0.2,
@@ -55,7 +55,7 @@
     },
     {
       "name": "north-gate",
-      "caption": "The Directorate end of the yard, looking toward the operations buildings beyond the north wall.",
+      "caption": "The Directorate end of the yard, by the north gate.",
       "position": [0, 1.7, -22],
       "yaw": 3.141592653589793,
       "pitch": 0.06,
@@ -72,7 +72,7 @@
     },
     {
       "name": "container-alley",
-      "caption": "Between the northern container stacks. The concrete panels and reinforced corners provide cover in the centre lane, and both sides can reach it in the opening seconds.",
+      "caption": "Between the north containers, where both sides meet in the first seconds of a match.",
       "position": [0, 1.7, -8],
       "yaw": 3.141592653589793,
       "pitch": 0,

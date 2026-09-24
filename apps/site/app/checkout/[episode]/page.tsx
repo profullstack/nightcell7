@@ -33,9 +33,8 @@ export default async function CheckoutPage({ params }: { params: Promise<{ episo
       </ul>
 
       <DraftNotice>
-        <strong>Purchasing is not open yet.</strong> The payment integration is built and tested,
-        but production credentials are not configured, so no order can currently be completed. We
-        would rather tell you that here than take you to a payment page that fails.
+        <strong>Purchasing is not open yet.</strong> Checkout opens with the episode; until then no
+        order can be completed, and you will not be charged.
       </DraftNotice>
 
       <p>

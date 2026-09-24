@@ -56,10 +56,8 @@ export function TrailerFilm({ label }: { label: string }) {
           {TRAILER.height}
         </span>
         <span>
-          Rendered offline from the current build, one frame at a time on a virtual clock, so a
-          GPU-less box produces a steady {manifest.fps} fps. The bots are seeded: every render is
-          the same fight. Music is &ldquo;{manifest.musicTitle}&rdquo; by {manifest.musicArtist},
-          written for this game.
+          Music is &ldquo;{manifest.musicTitle}&rdquo; by {manifest.musicArtist}, written for this
+          game.
         </span>
       </figcaption>
     </figure>
@@ -76,8 +74,7 @@ export function TrailerFilm({ label }: { label: string }) {
 export function TrailerNotice() {
   return (
     <p className="gallery__note">
-      Alpha footage of Ardavan Yard, the 6v6 multiplayer map &mdash; not campaign material, and not
-      a cut trailer with title cards. It is the sandbox as it plays today.
+      Alpha footage of Ardavan Yard, the 6v6 multiplayer map. Campaign footage comes later.
     </p>
   );
 }

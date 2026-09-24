@@ -97,7 +97,7 @@ export const SUPPORTING_CAST: readonly CastMember[] = [
     faction: FACTION.DIRECTORATE,
     seenIn: SIDE.LEILA,
     summary:
-      "Leila's superior in the Directorate. He orders Rook's capture on evidence that looks conclusive, and as the night goes on his orders begin to contradict each other. Daryan is a professional being handed a lie, not a villain, and the player is never told what to make of him too early.",
+      "Leila's superior in the Directorate. He orders Rook's capture on evidence that looks conclusive, and as the night goes on his orders begin to contradict each other. Daryan is a professional being handed a lie, not a villain, and he gets harder to read as the night goes on.",
   },
   {
     id: "kade",

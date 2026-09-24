@@ -88,9 +88,6 @@ export default async function StatusPage() {
       <h3>Known limitations</h3>
       <ul>
         <li>Single region, single shard.</li>
-        <li>
-          Payments, email and content downloads are not yet configured with production credentials.
-        </li>
         <li>The whole stack runs as one deployment, so any restart briefly affects everything.</li>
       </ul>
     </PageShell>

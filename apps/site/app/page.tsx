@@ -82,8 +82,7 @@ export default function HomePage() {
           <p className="section__label">Alpha footage</p>
           <h2>Twenty-six seconds in Ardavan Yard.</h2>
           <p className="lede">
-            No cutscene, no cinematic camera, no edit. This is the multiplayer sandbox rendered
-            straight out of the current build.
+            No cutscenes and no edit: a firefight in the multiplayer yard, straight from the game.
           </p>
           <TrailerFilm label="Gameplay trailer" />
           <TrailerNotice />
@@ -95,9 +94,7 @@ export default function HomePage() {
           <p className="section__label">In play</p>
           <h2>Operators, weapons, and a status bar that means something.</h2>
           <p className="lede">
-            The same four frames the repository ships as its gameplay record. Nothing is posed:
-            these come out of the playable build with the squad, the fire and the HUD where they
-            fall.
+            Four moments from a match, from the deploy gate to holding the spawn exit under fire.
           </p>
           <GameplayFrames />
         </div>
@@ -189,8 +186,8 @@ export default function HomePage() {
           <p className="section__label">Ardavan Yard</p>
           <h2>Where the alpha is played.</h2>
           <p className="lede">
-            The 6v6 multiplayer map: three lanes, two vertical routes, and no one-way geometry.
-            Every frame below is captured in engine from the current build.
+            The 6v6 multiplayer map: three lanes, two raised routes, and a way down from every one
+            of them.
           </p>
           <CaptureGallery />
         </div>
@@ -198,12 +195,9 @@ export default function HomePage() {
 
       <section className="section">
         <div className="shell">
-          <p className="section__label">The art pass</p>
-          <h2>Every model in the build, on one sheet.</h2>
-          <p className="lede">
-            {SHEET_SUMMARY} No placeholder cubes, no marketplace kitbash standing in for work that
-            has not been done: what is on the sheet is what loads when you press play.
-          </p>
+          <p className="section__label">The arsenal</p>
+          <h2>Every weapon, vehicle and structure, on one sheet.</h2>
+          <p className="lede">{SHEET_SUMMARY}</p>
           <AssetSheet />
         </div>
       </section>
