@@ -93,6 +93,27 @@ describe("insect bite", () => {
     expect(step.vitals.health).toBe(MAX_HEALTH);
   });
 
+  it("floors proportionally, so a tougher fighter is not punished harder", () => {
+    // The floor was a flat 70, which cost a 150-stamina fighter 80 points and a
+    // 100-stamina one only 30. As a fraction both lose at most a fifth.
+    for (const maxHealth of [100, 150, 200]) {
+      let state = createInsectBiteState(fixed(0));
+      let current = { health: maxHealth, armor: 0 };
+      for (let now = 0; now <= 30 * 60_000; now += 500) {
+        const step = stepInsectBite(state, now, fixed(0), {
+          enabled: true,
+          damage: true,
+          vitals: current,
+          maxHealth,
+        });
+        state = step.state;
+        current = step.vitals;
+      }
+      expect(state.bites).toBeGreaterThan(0);
+      expect(current.health).toBeGreaterThanOrEqual(maxHealth * BITE.FLOOR_FRACTION - 0.001);
+    }
+  });
+
   it("cannot whittle a player down over a long match", () => {
     // Worst case: the shortest possible interval, for twenty minutes.
     let state = createInsectBiteState(fixed(0));

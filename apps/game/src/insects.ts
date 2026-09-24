@@ -38,7 +38,7 @@ import { placeAll } from "./assets";
  * whole effect, and twelve draw calls in a yard that already draws well over a
  * hundred props is a price worth paying for it.
  */
-const FIREFLY_COUNT = 26;
+const FIREFLY_COUNT = 18;
 
 /**
  * Distance scaling for the lantern, in size per metre of range.
@@ -82,8 +82,12 @@ const FIELD = { x: 30, zNear: -42, zFar: 48, yLow: 0.5, yHigh: 4.2 } as const;
  * screen space is the standard answer for a distant point light, and it costs
  * one draw call for the whole swarm rather than one per insect.
  */
-const GLOW_PIXELS_RESTING = 5;
-const GLOW_PIXELS_FLASH = 18;
+// Tuned down after a playtest read the first version as *explosions*: 18 px at
+// high alpha over a 26% duty cycle is a sustained bright blob, which is what an
+// explosion looks like. A firefly is a small point that blinks briefly, so the
+// flash is now short and the glow stays a few pixels.
+const GLOW_PIXELS_RESTING = 2.5;
+const GLOW_PIXELS_FLASH = 10;
 
 /** A soft radial dot, built at runtime so the swarm ships no texture file. */
 function glowTextureUrl(): string {
@@ -237,7 +241,7 @@ export class NightInsects {
           Vector3.Distance(fly.root.position, this.camera.globalPosition),
         );
         const t0 = (fly.phase % fly.period) / fly.period;
-        const lit = t0 < 0.26 ? Math.sin((t0 / 0.26) * Math.PI) ** 0.55 : 0;
+        const lit = t0 < 0.15 ? Math.sin((t0 / 0.15) * Math.PI) ** 0.8 : 0;
         const px = GLOW_PIXELS_RESTING + lit * (GLOW_PIXELS_FLASH - GLOW_PIXELS_RESTING);
         // World size that subtends `px` pixels at this range.
         const fov = (this.camera as unknown as { fov: number }).fov ?? 1.0;
@@ -245,7 +249,7 @@ export class NightInsects {
         fly.glow.position.copyFrom(fly.root.position);
         fly.glow.width = size;
         fly.glow.height = size;
-        fly.glow.color = new Color4(0.85, 1.0, 0.32, 0.25 + lit * 0.75);
+        fly.glow.color = new Color4(0.78, 1.0, 0.42, 0.1 + lit * 0.5);
       }
 
       if (!fly.lantern) continue;
@@ -253,7 +257,7 @@ export class NightInsects {
       // Photinus flashes in short pulses with long gaps, not a sine wave. A
       // sharp attack and a slower decay is what reads as a firefly.
       const t = (fly.phase % fly.period) / fly.period;
-      const pulse = t < 0.26 ? Math.sin((t / 0.26) * Math.PI) ** 0.55 : 0;
+      const pulse = t < 0.15 ? Math.sin((t / 0.15) * Math.PI) ** 0.8 : 0;
       setLantern(fly.lantern, pulse);
     }
 
@@ -355,7 +359,7 @@ function lanternMaterial(root: TransformNode): PBRMaterial | StandardMaterial | 
  * yard, which is what a player reported.
  */
 function setLantern(material: PBRMaterial | StandardMaterial, pulse: number): void {
-  const level = 0.5 + pulse * 6.5;
+  const level = 0.18 + pulse * 1.8;
   const colour = new Color3(0.86 * level, 1.0 * level, 0.26 * level);
   if (material instanceof PBRMaterial) material.emissiveColor = colour;
   else material.emissiveColor = colour;

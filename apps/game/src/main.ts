@@ -396,18 +396,27 @@ async function boot(): Promise<void> {
         enabled: !status.dead,
         damage: true,
         vitals: { health: opponents.localStatus().health, armor: 0 },
+        maxHealth: opponents.localStatus().maxHealth,
       });
       biteState = step.state;
       if (step.bit) {
-        // `damageDealt`, not `BITE.DAMAGE`: the rules clamp at `BITE.FLOOR`,
-        // so a player already low takes the nuisance without the health cost.
+        // `damageDealt`, not `BITE.DAMAGE`: the rules clamp at the floor, so
+        // a player already low takes the nuisance without the health cost.
         opponents.bite(step.damageDealt);
         // `stagger` is the existing flinch: it slows the player briefly and
         // kicks the view, and it already honours the reduced-motion setting.
         // That is exactly the pause-to-scratch beat, so this reuses it rather
         // than adding a second, subtly different way to interrupt control.
         player.stagger(BITE.DAMAGE);
-        hud.notify("Mosquito bite");
+        // Say what happened and what it cost. The first cut just said
+        // "Mosquito bite" and took 2 health off 150, which a playtester could
+        // not feel at all and was not sure had ever happened.
+        hud.notify(
+          step.damageDealt > 0
+            ? `Mosquito bite — swatting (-${Math.round(step.damageDealt)})`
+            : "Mosquito bite — swatting",
+        );
+        audio.hurt();
       }
       nightInsects?.update(deltaMs, matchMs, biteState);
       // The whine is the whole point of a mosquito. Drive it off the same
