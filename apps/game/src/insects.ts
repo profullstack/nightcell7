@@ -30,7 +30,23 @@ import { placeAll } from "./assets";
  * whole effect, and twelve draw calls in a yard that already draws well over a
  * hundred props is a price worth paying for it.
  */
-const FIREFLY_COUNT = 12;
+const FIREFLY_COUNT = 26;
+
+/**
+ * Distance scaling for the lantern, in size per metre of range.
+ *
+ * A firefly is 25 mm. At a 90-degree field of view a 1920-wide frame resolves
+ * about 0.0008 rad per pixel, so past roughly 30 m the animal is under one
+ * pixel: not dim, *gone*, and the GlowLayer cannot bloom what was never
+ * rasterised. The first cut scattered 12 of them across the whole 68 x 98 m
+ * yard at true scale and the result was nothing a player would ever notice.
+ *
+ * So the lantern holds an angular size instead, the same trick the mosquito
+ * uses as it closes. 0.1 puts the crossover near 10 m: nearer than that it is
+ * exactly its real 25 mm, further out it keeps about three pixels of glow.
+ */
+const LANTERN_SCALE_PER_METRE = 0.1;
+const LANTERN_SCALE_MAX = 10;
 
 /**
  * Wingbeat, in flaps per second.
@@ -46,7 +62,7 @@ const FIREFLY_COUNT = 12;
 const WINGBEAT_HZ = 9;
 
 /** Yard bounds to scatter within, in metres. Matches Ardavan Yard's footprint. */
-const FIELD = { x: 34, zNear: -46, zFar: 52, yLow: 0.6, yHigh: 6.5 } as const;
+const FIELD = { x: 30, zNear: -42, zFar: 48, yLow: 0.5, yHigh: 4.2 } as const;
 
 interface Firefly {
   readonly root: TransformNode;
@@ -102,7 +118,7 @@ export class NightInsects {
           wings: membrane(root),
           home: placed.position.clone(),
           radius: 0.8 + rand() * 2.4,
-          period: 3.2 + rand() * 3.0,
+          period: 2.4 + rand() * 2.4,
           phase: rand() * 6.2,
           wander: rand() * 6.2,
         });
@@ -145,6 +161,12 @@ export class NightInsects {
       );
       fly.root.rotation.y = Math.atan2(Math.cos(fly.wander * 0.9), -Math.sin(fly.wander * 1.3));
 
+      // Hold a readable angular size at range; see LANTERN_SCALE_PER_METRE.
+      const range = Vector3.Distance(fly.root.position, this.camera.globalPosition);
+      fly.root.scaling.setAll(
+        Math.min(LANTERN_SCALE_MAX, Math.max(1, range * LANTERN_SCALE_PER_METRE)),
+      );
+
       // Both wings are one mesh (the exporter joins by material), which is
       // no loss: an insect beats its pair in sync anyway.
       if (fly.wings) {
@@ -156,7 +178,7 @@ export class NightInsects {
       // Photinus flashes in short pulses with long gaps, not a sine wave. A
       // sharp attack and a slower decay is what reads as a firefly.
       const t = (fly.phase % fly.period) / fly.period;
-      const pulse = t < 0.14 ? Math.sin((t / 0.14) * Math.PI) ** 0.6 : 0;
+      const pulse = t < 0.26 ? Math.sin((t / 0.26) * Math.PI) ** 0.55 : 0;
       setLantern(fly.lantern, pulse);
     }
 
@@ -242,9 +264,19 @@ function lanternMaterial(root: TransformNode): PBRMaterial | StandardMaterial | 
   return null;
 }
 
-/** Yellow-green, scaled by the flash envelope. */
+/**
+ * Yellow-green, scaled by the flash envelope.
+ *
+ * The resting level is deliberately a real glow rather than the near-black
+ * ember a live firefly actually shows between flashes. Strict realism made the
+ * swarm imperceptible: with a 26 % duty cycle, three quarters of the animals
+ * are dark at any instant, and an unlit 25 mm abdomen tip at yard range is
+ * simply not on screen. A soft constant mote with a bright flash on top reads
+ * as a field of fireflies; the physically honest version read as an empty
+ * yard, which is what a player reported.
+ */
 function setLantern(material: PBRMaterial | StandardMaterial, pulse: number): void {
-  const level = 0.06 + pulse * 2.6;
+  const level = 0.5 + pulse * 6.5;
   const colour = new Color3(0.86 * level, 1.0 * level, 0.26 * level);
   if (material instanceof PBRMaterial) material.emissiveColor = colour;
   else material.emissiveColor = colour;
