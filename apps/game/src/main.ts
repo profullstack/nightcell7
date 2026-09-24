@@ -117,6 +117,18 @@ async function boot(): Promise<void> {
   const timeOfDay = preferredTimeOfDay(window.location.search, safeStorage());
   const world = await buildWorld(scene, engine, camera, ARDAVAN_YARD, timeOfDay);
 
+  // Ambience belongs to the yard, not to a match.
+  //
+  // This is built before the photo-mode return and updated from every render
+  // loop below, because a night yard with no insects in it is the wrong yard
+  // whichever scene is showing it — the firing range, the empty roam map and
+  // the marketing vantages included. Only the *bite* needs a match: that
+  // stays behind the pointer lock further down.
+  const insectsEnabled = LIGHTING[timeOfDay].insects;
+  const nightInsects = insectsEnabled ? new NightInsects(scene, world.assets, { camera }) : null;
+  let matchMs = 0;
+  let biteState = createInsectBiteState(Math.random);
+
   // Photo mode: park the camera at a named vantage, leave the UI layer empty,
   // and skip the controller entirely. Used to regenerate marketing captures
   // and lighting baselines reproducibly (see tools/art/capture.mjs).
@@ -135,7 +147,12 @@ async function boot(): Promise<void> {
     world.pipeline.fxaaEnabled = false;
     engine.setHardwareScalingLevel(1);
 
-    engine.runRenderLoop(() => scene.render());
+    engine.runRenderLoop(() => {
+      // A still of a night yard should have fireflies in it. The bite clock
+      // never advances here, so no mosquito closes in on an empty camera.
+      nightInsects?.update(engine.getDeltaTime(), 0, biteState);
+      scene.render();
+    });
     window.addEventListener("resize", () => engine.resize());
     engine.resize();
 
@@ -331,11 +348,6 @@ async function boot(): Promise<void> {
   // to the server in multiplayer, so when the online path lands this flag is
   // what has to flip to false — the mosquito, the approach and the scratch all
   // still play, and only the health change goes away.
-  const insectsEnabled = LIGHTING[timeOfDay].insects;
-  const nightInsects = insectsEnabled ? new NightInsects(scene, world.assets, { camera }) : null;
-  let biteState = createInsectBiteState(Math.random);
-  let matchMs = 0;
-
   let lastDryFireAt = 0;
   let lastKills = 0;
   const earn = (amount: number, why: string) => {
@@ -432,10 +444,21 @@ async function boot(): Promise<void> {
         hud.notify(step.damageDealt > 0 ? `Bitten (-${Math.round(step.damageDealt)})` : "Bitten");
         audio.hurt();
       }
-      nightInsects?.update(deltaMs, matchMs, biteState);
+    }
+
+    // Ambience runs whether or not the player has taken the yard. Before this
+    // the whole block sat behind the pointer lock, so the yard visible behind
+    // the start gate had twelve fireflies frozen mid-drift and unlit — the one
+    // place a player looks at the map longest was the one place it was dead.
+    //
+    // The bite clock above stays behind the lock, so nothing bites a player
+    // who is still reading the gate, and no mosquito closes on them either:
+    // its approach is driven off `nextBiteAt`, which is not advancing.
+    if (nightInsects) {
+      nightInsects.update(deltaMs, matchMs, biteState);
       // The whine is the whole point of a mosquito. Drive it off the same
       // approach value the model uses, so sound and silhouette agree.
-      const near = nightInsects?.mosquitoNearness ?? 0;
+      const near = nightInsects.mosquitoNearness;
       if (near > 0.01) audio.whine(near);
       else audio.stopWhine();
     }
