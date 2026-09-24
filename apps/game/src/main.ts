@@ -408,9 +408,18 @@ async function boot(): Promise<void> {
         // That is exactly the pause-to-scratch beat, so this reuses it rather
         // than adding a second, subtly different way to interrupt control.
         player.stagger(BITE.DAMAGE);
-        // Say what happened and what it cost. The first cut just said
-        // "Mosquito bite" and took 2 health off 150, which a playtester could
-        // not feel at all and was not sure had ever happened.
+        // The same feedback a bullet gets. Raising the damage was not enough
+        // on its own: a bite only wrote a passive HUD line, while every other
+        // source of damage in the game also throws the directional hit arc, so
+        // a bite never read as being hit by anything. A playtester saw the
+        // mosquito, heard it, and still could not tell he had been bitten.
+        const at = nightInsects?.mosquitoPosition ?? null;
+        const bearing = at
+          ? ((Math.atan2(at.x - status.position.x, at.z - status.position.z) - camera.rotation.y) *
+              180) /
+            Math.PI
+          : null;
+        hud.showHit(step.damageDealt, bearing);
         hud.notify(
           step.damageDealt > 0
             ? `Mosquito bite — swatting (-${Math.round(step.damageDealt)})`
