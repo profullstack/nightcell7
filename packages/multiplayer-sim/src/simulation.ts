@@ -5,6 +5,7 @@ import {
   REGEN_DELAY_MS,
   TDM_RULES,
   applyDamage,
+  applyStatus,
   assignTeam,
   computeShotDamage,
   evaluateMatchOutcome,
@@ -13,6 +14,9 @@ import {
   isMultiplayerLegal,
   isProjectileWeapon,
   regenerate,
+  tickStatuses,
+  type ActiveStatus,
+  type StatusKind,
   type MatchRules,
   type WeaponId,
   type WeaponSpec,
@@ -53,7 +57,7 @@ import {
   type MovementState,
 } from "./movement";
 import { selectSpawn } from "./spawn";
-import { add, directionFromAngles, scale, type Vec3 } from "./vec";
+import { add, directionFromAngles, distance, scale, type Vec3 } from "./vec";
 
 /**
  * The authoritative match simulation.
@@ -112,6 +116,8 @@ export interface SimPlayer {
   spawnProtectedUntilMs: number;
   /** Match clock until which God Mode holds. Zero when it is not running. */
   godModeUntilMs: number;
+  /** Burns and arcs currently running on this fighter. */
+  statuses: ActiveStatus[];
   /** Match time of the last damage taken; gates passive regeneration. */
   lastDamagedAtMs: number;
 
@@ -197,6 +203,12 @@ export type SimEvent =
       added: boolean;
     }
   | { type: "pickup_removed"; pickupId: string }
+  /**
+   * A lingering effect started on a fighter — fire taking hold, or an arc
+   * jumping to them. The client drives its own effects off this; the damage
+   * itself is billed on the tick, not here.
+   */
+  | { type: "status"; playerId: string; kind: StatusKind }
   | {
       type: "grenade_thrown";
       grenadeId: string;
@@ -377,6 +389,7 @@ export class MatchSimulation {
       respawnAtMs: 0,
       spawnProtectedUntilMs: 0,
       godModeUntilMs: 0,
+      statuses: [],
       lastDamagedAtMs: -Infinity,
       kills: 0,
       deaths: 0,
@@ -543,6 +556,9 @@ export class MatchSimulation {
     this.stepGrenades();
     this.stepRockets();
 
+    // Burns bill before regeneration, so a fighter on fire cannot heal
+    // through it on the same tick that it hurts them.
+    this.tickStatusEffects(TICK_MS);
     this.regenerateAll();
     this.stepPickups();
 
@@ -1123,6 +1139,13 @@ export class MatchSimulation {
     victim.health = result.vitals.health;
     victim.armor = result.vitals.armor;
 
+    // What the weapon leaves behind. Asked of the spec, never of the id, so a
+    // third burning thing needs no branch here (see `projectileSpeedMps`).
+    if (spec.status) {
+      victim.statuses = applyStatus(victim.statuses, spec.status, this.elapsedMs);
+      if (spec.chain) this.chainStatus(victim, spec, player.team);
+    }
+
     victim.lastDamagedAtMs = this.elapsedMs;
     victim.recentDamage.set(player.id, {
       amount: (victim.recentDamage.get(player.id)?.amount ?? 0) + totalDamage,
@@ -1226,6 +1249,8 @@ export class MatchSimulation {
     // God Mode does not survive dying. Carrying it through a respawn would
     // turn one lucky pickup into a permanent advantage across a life.
     player.godModeUntilMs = 0;
+    // Fire does not follow you through a respawn.
+    player.statuses = [];
     player.reloadingUntilMs = 0;
     player.nextFireAtMs = 0;
     // Grenades come back with a life, never during one — a resupply mid-fight
@@ -1411,6 +1436,65 @@ export class MatchSimulation {
    */
   private isInvulnerable(player: SimPlayer): boolean {
     return this.elapsedMs < player.spawnProtectedUntilMs || this.elapsedMs < player.godModeUntilMs;
+  }
+
+  /**
+   * Jump the discharge to nearby fighters.
+   *
+   * Only the status carries, never the direct damage: an arc that dealt its
+   * full hit to three people at once would out-damage the rifle at close
+   * range, and the weapon is meant to take aim away rather than to kill.
+   * Teammates are skipped — chaining onto your own squad turns a support
+   * weapon into a grief tool.
+   */
+  private chainStatus(from: SimPlayer, spec: WeaponSpec, team: number): void {
+    const chain = spec.chain;
+    const status = spec.status;
+    if (!chain || !status) return;
+
+    const candidates = [...this.players.values()]
+      .filter((p) => p.alive && p.id !== from.id && p.team !== team && !this.isInvulnerable(p))
+      .map((p) => ({ p, d: distance(p.movement.position, from.movement.position) }))
+      .filter((e) => e.d <= chain.radiusM)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, chain.targets);
+
+    for (const { p } of candidates) {
+      p.statuses = applyStatus(p.statuses, status, this.elapsedMs);
+      this.events.push({ type: "status", playerId: p.id, kind: status.kind });
+    }
+  }
+
+  /**
+   * Bill every running effect for this tick.
+   *
+   * Burn damage is credited to nobody: it has no bearing, no headshot and no
+   * killer to reward, and routing it through the shot pipeline would put fire
+   * in the kill feed as though someone had shot them.
+   */
+  private tickStatusEffects(deltaMs: number): void {
+    for (const player of this.players.values()) {
+      if (player.statuses.length === 0) continue;
+      if (!player.alive) {
+        player.statuses = [];
+        continue;
+      }
+
+      const tick = tickStatuses(player.statuses, this.elapsedMs, deltaMs);
+      player.statuses = tick.active;
+      if (tick.damage <= 0) continue;
+      if (this.isInvulnerable(player)) continue;
+
+      const before = player.health;
+      const result = applyDamage(
+        { health: player.health, armor: player.armor },
+        this.scaleIncoming(player, tick.damage),
+        player.maxHealth,
+      );
+      player.health = result.vitals.health;
+      player.armor = result.vitals.armor;
+      if (player.health <= 0 && before > 0) this.killPlayer(player, null, null, false);
+    }
   }
 
   private dropWeapons(victim: SimPlayer, attacker: SimPlayer | null): void {

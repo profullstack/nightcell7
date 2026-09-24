@@ -109,8 +109,10 @@ export const SANDBOX_PICKUPS: Partial<PickupRules> = {
  * multiplayer-legal — the simulation strips anything that is not, which is why
  * the M7 Lance is absent: it is campaign-only (PRD §5.4).
  *
- * Between them these four cover every weapon a match allows, so a player who
- * works through the Directorate can end up carrying any of them.
+ * Between them these four cover every weapon a match allows — now six, with the
+ * Tesla and the Cinder — so a player who works through the Directorate can end
+ * up carrying any of them. A test enforces that coverage, and it is what
+ * caught the two new weapons being unobtainable the moment they were added.
  *
  * **Exactly one launcher.** The rotation is indexed, not rolled, so the cap is
  * structural rather than a probability that can go wrong: with four enemies,
@@ -120,9 +122,9 @@ export const SANDBOX_PICKUPS: Partial<PickupRules> = {
  */
 const ENEMY_LOADOUTS: readonly (readonly WeaponId[])[] = [
   [WEAPON.C9_KESTREL, WEAPON.P11],
-  [WEAPON.B4_BREACHER, WEAPON.P11],
+  [WEAPON.B4_BREACHER, WEAPON.V3_TESLA],
   [WEAPON.M9_HAMMERFALL, WEAPON.P11],
-  [WEAPON.C9_KESTREL, WEAPON.B4_BREACHER],
+  [WEAPON.K5_CINDER, WEAPON.C9_KESTREL],
 ];
 
 /**
@@ -156,6 +158,12 @@ export const WEAPON_WORLD_MODEL: Readonly<Record<WeaponId, ModelName>> = {
   // The launcher has its own silhouette, and it is the whole point of it:
   // a fighter carrying one has to read as a threat from across the yard.
   [WEAPON.M9_HAMMERFALL]: "m3_launcher",
+  // Borrowed silhouettes, the same trade the P11 and the B4 already make: the
+  // wrong shape beats no shape. The Tesla takes the SMG's compact body and the
+  // Cinder the launcher's bulk, which is at least the right weight class for a
+  // fuel tank. Bespoke meshes are a follow-up, not a blocker.
+  [WEAPON.V3_TESLA]: "m3_smg",
+  [WEAPON.K5_CINDER]: "m3_launcher",
 };
 
 export interface ViewmodelSpec {
@@ -177,4 +185,6 @@ export const WEAPON_VIEWMODEL: Readonly<Record<WeaponId, ViewmodelSpec>> = {
   // Fitted longer than the rifles, because the tube reading as oversized in
   // the hands is exactly the feedback a rocket launcher should give.
   [WEAPON.M9_HAMMERFALL]: { model: "m3_launcher", fitLengthM: 0.82 },
+  [WEAPON.V3_TESLA]: { model: "m3_smg", fitLengthM: 0.52 },
+  [WEAPON.K5_CINDER]: { model: "m3_launcher", fitLengthM: 0.74 },
 };

@@ -1,4 +1,5 @@
 import { WEAPON, type WeaponId } from "./ids";
+import { STATUS_KIND, type StatusEffect } from "./status";
 import type { BlastProfile } from "./grenades";
 
 /**
@@ -58,9 +59,90 @@ export interface WeaponSpec {
   readonly projectileGravity?: number;
   /** Detonation, reusing the grenade blast model. */
   readonly blast?: BlastProfile;
+  /**
+   * What the weapon leaves on whoever it hits. Absent on every plain bullet.
+   *
+   * Like `projectileSpeedMps`, this is a capability rather than a name: the
+   * simulation asks whether a spec has a status, never which weapon fired, so
+   * a third burning thing needs no new branch.
+   */
+  readonly status?: StatusEffect;
+  /**
+   * Arc only: how many further targets the discharge jumps to, and how far it
+   * will reach for each.
+   */
+  readonly chain?: { readonly targets: number; readonly radiusM: number };
 }
 
 export const WEAPON_SPECS: Readonly<Record<WeaponId, WeaponSpec>> = {
+  [WEAPON.V3_TESLA]: {
+    id: WEAPON.V3_TESLA,
+    displayName: "V3 Tesla",
+    // Slow, because the value is the discharge and not the rate. A fast arc
+    // would be a stun-lock, which is the one outcome worth designing out.
+    rpm: 48,
+    magazineSize: 6,
+    reserveAmmo: 24,
+    reloadMs: 2100,
+    emptyReloadMs: 2800,
+    // Low on purpose: this does not kill, it takes someone's aim away and
+    // lets a teammate finish them.
+    damage: 14,
+    headshotMultiplier: 1,
+    pellets: 1,
+    spreadRadians: 0,
+    falloffStartM: 6,
+    falloffEndM: 14,
+    minDamageFraction: 0.3,
+    // Very short. Electricity crossing a yard is a laser, not an arc.
+    maxRangeM: 14,
+    suppressed: false,
+    multiplayer: true,
+    status: {
+      kind: STATUS_KIND.ARC,
+      damagePerSecond: 0,
+      durationMs: 1400,
+      // Heavy damping, never a lock. Losing the stick outright for a second
+      // and a half is punishing out of all proportion to 14 damage.
+      disrupt: 0.7,
+    },
+    chain: { targets: 2, radiusM: 5 },
+  },
+
+  [WEAPON.K5_CINDER]: {
+    id: WEAPON.K5_CINDER,
+    displayName: "K5 Cinder",
+    // No new "sustained" mode: 600 rpm through the existing fire path is ten
+    // units of fuel a second, which is continuous fire by any measure and a
+    // full tank in nine seconds. A capability flag was drafted for this and
+    // removed once it turned out nothing had to read it.
+    rpm: 600,
+    magazineSize: 90,
+    reserveAmmo: 180,
+    reloadMs: 2600,
+    emptyReloadMs: 3400,
+    // Small per tick. The damage is in the burn that follows, which is what
+    // makes holding the stream on one target worse than sweeping it.
+    damage: 6,
+    headshotMultiplier: 1,
+    pellets: 1,
+    spreadRadians: 0.06,
+    falloffStartM: 5,
+    falloffEndM: 9,
+    minDamageFraction: 0.25,
+    // Shorter than the shotgun. If it reaches across a lane it is a rifle.
+    maxRangeM: 9,
+    suppressed: false,
+    multiplayer: true,
+    status: {
+      kind: STATUS_KIND.BURN,
+      // Four seconds at 9/s is 36 if it runs out, which is why the weapon
+      // denies ground rather than trading: you can walk out of it.
+      damagePerSecond: 9,
+      durationMs: 4000,
+      disrupt: 0,
+    },
+  },
   [WEAPON.P11]: {
     id: WEAPON.P11,
     displayName: "P11",
