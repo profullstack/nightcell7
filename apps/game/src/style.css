@@ -339,6 +339,39 @@ body {
   opacity: 0;
 }
 
+/* Squad radio caption: bottom left, clear of the crosshair and the status bar. */
+.radio-caption {
+  position: absolute;
+  left: 24px;
+  bottom: 120px;
+  max-width: min(34rem, 60vw);
+  margin: 0;
+  padding: 0.45rem 0.7rem;
+  display: grid;
+  gap: 0.15rem;
+  border-left: 2px solid var(--signal-cyan);
+  background: color-mix(in srgb, var(--ink-950) 62%, transparent);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--bone-100);
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.radio-caption[data-kind="chatter"] {
+  opacity: 0.72;
+}
+
+.radio-caption[data-kind="callout"] {
+  border-left-color: var(--signal-red);
+}
+
+.radio-caption__who {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
 /* ----------------------------------------------------------- damage / KIA */
 
 /* Red at the edges, clear in the centre where the target is. Opacity is

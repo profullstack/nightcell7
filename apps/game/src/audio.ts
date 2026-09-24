@@ -188,6 +188,11 @@ export class GameAudio {
   /** What plays after the current track: a shuffle bag over every album. */
   private musicQueue: number[] = [];
   private stepAccumulator = 0;
+  /** Squad radio clips, keyed `<side>/<line>`, loaded on first deploy. */
+  private readonly radioBuffers = new Map<string, AudioBuffer>();
+  private radioBusyUntil = 0;
+  private radioLoaded = false;
+  private musicVolume = 0.28;
   private lastVariation = new Map<string, number>();
   private ready = false;
 
@@ -404,6 +409,7 @@ export class GameAudio {
     this.musicQueue = shuffledOrder(MUSIC.length);
     this.musicIndex = this.musicQueue.shift() ?? 0;
     const element = new Audio();
+    this.musicVolume = volume;
     element.volume = volume;
     element.preload = "none";
 
@@ -431,6 +437,80 @@ export class GameAudio {
     this.music = element;
   }
 
+  /**
+   * Fetch and decode one side's squad radio. Called after the first deploy,
+   * not at boot: 60 short clips are not worth delaying the first frame for,
+   * and a transmission that has not loaded yet is simply not heard.
+   */
+  async loadRadio(side: string, lines: readonly string[]): Promise<void> {
+    await Promise.all(
+      lines.map(async (line) => {
+        const key = `${side}/${line}`;
+        if (this.radioBuffers.has(key)) return;
+        try {
+          const response = await fetch(`${BASE}comms/${side}/${line}.mp3`);
+          if (!response.ok) return;
+          this.radioBuffers.set(
+            key,
+            await this.context.decodeAudioData(await response.arrayBuffer()),
+          );
+        } catch {
+          // A missing line is a gap on the net, never a failure.
+        }
+      }),
+    );
+    this.radioLoaded = this.radioBuffers.size > 0;
+  }
+
+  /** True once the squad radio has loaded; before that there is nothing to key up. */
+  radioReady(): boolean {
+    return this.radioLoaded;
+  }
+
+  /** True while a transmission is still playing. */
+  radioBusy(): boolean {
+    return this.context.currentTime < this.radioBusyUntil;
+  }
+
+  /**
+   * Key up: play the clips back to back as one transmission (a callsign then
+   * its order), dipping the music under the voice. Chatter sits lower than
+   * callouts and orders, so the net can murmur without covering anything.
+   */
+  transmit(side: string, lines: readonly string[], kind: "callout" | "order" | "chatter"): void {
+    if (this.context.state !== "running") return;
+    const buffers = lines
+      .map((line) => this.radioBuffers.get(`${side}/${line}`))
+      .filter((b): b is AudioBuffer => Boolean(b));
+    if (buffers.length === 0) return;
+
+    const level = kind === "chatter" ? 0.42 : kind === "order" ? 0.8 : 0.9;
+    let at = Math.max(this.context.currentTime + 0.02, this.radioBusyUntil);
+    for (const buffer of buffers) {
+      const source = this.context.createBufferSource();
+      source.buffer = buffer;
+      const gain = this.context.createGain();
+      gain.gain.value = level;
+      source.connect(gain).connect(this.master);
+      source.start(at);
+      at += buffer.duration;
+    }
+    this.radioBusyUntil = at;
+
+    // Duck the soundtrack for the length of the transmission, then bring it back.
+    if (this.music && kind !== "chatter") {
+      const element = this.music;
+      element.volume = this.musicVolume * 0.45;
+      window.setTimeout(
+        () => {
+          if (this.context.currentTime >= this.radioBusyUntil - 0.05)
+            element.volume = this.musicVolume;
+        },
+        (at - this.context.currentTime + 0.1) * 1000,
+      );
+    }
+  }
+
   /** The track playing now, for a "now playing" line if one is ever wanted. */
   nowPlaying(): Track | undefined {
     return this.music ? MUSIC[this.musicIndex] : undefined;
@@ -442,7 +522,8 @@ export class GameAudio {
   }
 
   setMusicVolume(value: number): void {
-    if (this.music) this.music.volume = Math.max(0, Math.min(1, value));
+    this.musicVolume = Math.max(0, Math.min(1, value));
+    if (this.music) this.music.volume = this.musicVolume;
   }
 
   setVolume(value: number): void {

@@ -39,6 +39,7 @@ import {
   type ArmoryItem,
 } from "./loadout";
 import { placeAll, placeAnimated, type AssetSet } from "./assets";
+import type { CommsEvent, CommsSnapshot } from "./comms";
 import { difficultyInfo, DEFAULT_SANDBOX_DIFFICULTY, type SandboxDifficulty } from "./difficulty";
 import {
   SANDBOX_PICKUPS,
@@ -212,6 +213,7 @@ export class Opponents {
   private readonly explosions: Explosion[] = [];
   private readonly notices: string[] = [];
   private readonly hits: LocalHit[] = [];
+  private readonly commsEvents: CommsEvent[] = [];
   private localDied = false;
   private localRespawn: { position: Vec3; yaw: number } | null = null;
   private reloadStarted = false;
@@ -613,6 +615,22 @@ export class Opponents {
   }
 
   /** Every hit the local player took since the last call, with its source. */
+  /** What the squad radio reacts to since the last call; see comms.ts. */
+  drainCommsEvents(): CommsEvent[] {
+    return this.commsEvents.splice(0);
+  }
+
+  /** Everyone in the match and the score, for the squad radio. */
+  commsSnapshot(): CommsSnapshot {
+    const fighters = [...this.sim.players.values()].map((p) => ({
+      team: p.team,
+      alive: p.alive,
+      position: p.movement.position,
+      isLocal: p.id === LOCAL_ID,
+    }));
+    return { fighters, scores: this.sim.scores };
+  }
+
   drainHits(): LocalHit[] {
     return this.hits.splice(0, this.hits.length);
   }
@@ -896,6 +914,12 @@ export class Opponents {
           break;
 
         case "kill": {
+          this.commsEvents.push({
+            type: "kill",
+            victimTeam: this.sim.players.get(event.victimId)?.team ?? -1,
+            victimIsLocal: event.victimId === LOCAL_ID,
+            killerIsLocal: event.attackerId === LOCAL_ID,
+          });
           if (event.victimId === LOCAL_ID) {
             this.localDied = true;
             break;
@@ -910,6 +934,7 @@ export class Opponents {
 
         case "respawn":
           if (event.playerId === LOCAL_ID) {
+            this.commsEvents.push({ type: "local_respawn" });
             this.localRespawn = { position: { ...event.position }, yaw: event.yaw };
             // The simulation issues match armour; the armour class overrides it.
             const local = this.sim.players.get(LOCAL_ID);
@@ -953,6 +978,16 @@ export class Opponents {
           });
           break;
         }
+
+        case "grenade_thrown":
+          // Only the squad radio cares about the throw itself; the grenade's
+          // view is built from the simulation's live grenades.
+          this.commsEvents.push({
+            type: "grenade",
+            team: event.team,
+            position: { ...event.position },
+          });
+          break;
 
         case "grenade_exploded": {
           const view = this.grenadeViews.get(event.grenadeId);

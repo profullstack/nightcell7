@@ -1,0 +1,948 @@
+{
+  "lines": {
+    "nightcell/callsign_rook": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "Rook,",
+      "generated": "2026-09-24T00:35:22.137Z",
+      "sha256": "2d548b291589f409ef54616f3d58705d21c4604af91b8cf9512d4ce6702a09cc"
+    },
+    "nightcell/contact_west_catwalk_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact, west catwalk!",
+      "generated": "2026-09-24T00:35:22.410Z",
+      "sha256": "23b35f52c656be7a6ad93608b432663c6bfc1fb0b4243c5ee52c3d634e145ffd"
+    },
+    "directorate/contact_gantry_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact on the gantry!",
+      "generated": "2026-09-24T00:35:22.533Z",
+      "sha256": "fbb81310e76ae32fb419d8170e94fa6669a50b68dbf98c4dc5ba48e8483b539a"
+    },
+    "nightcell/order_push_hardpoint": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "push the hardpoint. It's the high ground in the middle, take it.",
+      "generated": "2026-09-24T00:35:22.635Z",
+      "sha256": "0dfc9c97f80ba1709d43250448a25a9a7bf26b8b78c82cdbdfc0098c1914eb97"
+    },
+    "nightcell/order_move_out": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "All Nightcell elements, you are clear to move. Take the yard.",
+      "generated": "2026-09-24T00:35:22.754Z",
+      "sha256": "1bc066f92bf5a3a17d9a086a019f17d2862c00cb79bf0975f6fb737e688c45fb"
+    },
+    "directorate/chatter_10": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "All units. Something is wrong with these orders. Confirm everything twice.",
+      "generated": "2026-09-24T00:35:22.882Z",
+      "sha256": "412293cfe7692cb70426bd296153bce8b313bbf77310298dd7f970c290005b2d"
+    },
+    "nightcell/order_push_west": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "they're thin on the west side. Push the pipe rack.",
+      "generated": "2026-09-24T00:36:26.487Z",
+      "sha256": "95db657c4fe05a15a09aa040f43ccd473ceb8ce84fd7761f881135cfba57fdac"
+    },
+    "nightcell/callsign_vale": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "Vale,",
+      "generated": "2026-09-24T00:36:26.596Z",
+      "sha256": "e80eaa222d042955278d20b50f43252d6e8a26476832146f6d988dfc37d23acb"
+    },
+    "nightcell/order_push_east": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "east side is open. Move up through tank row.",
+      "generated": "2026-09-24T00:36:26.681Z",
+      "sha256": "780c8710c8e11aa6fc0915b9c5fa1e7bbc578874e38ede95b5008e73d0eda578"
+    },
+    "nightcell/order_catwalk": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "get eyes up on the west catwalk. I want that height.",
+      "generated": "2026-09-24T00:36:26.798Z",
+      "sha256": "199ab4442f2bbfead75372611524d9f893ad2c30486ba2af53aa083576f02e02"
+    },
+    "nightcell/order_fall_back": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "you're taking too many losses. Fall back to the containers and regroup.",
+      "generated": "2026-09-24T00:36:26.916Z",
+      "sha256": "35aac819f51d10a4062b78e2483d7e912c82fe76fc9eb62cc3c576c986846ab7"
+    },
+    "nightcell/order_hold_hardpoint": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "you have the centre. Hold the hardpoint, let them come to you.",
+      "generated": "2026-09-24T00:36:27.652Z",
+      "sha256": "0d84e23f31245043cc0eac6189e5ed32c1589b012214c16c7ccf7a5f81b4f998"
+    },
+    "nightcell/order_gantry": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "take the east gantry. Watch the lanes from up there.",
+      "generated": "2026-09-24T00:36:28.077Z",
+      "sha256": "0ee43609f24b6ce5522ee3e44adf0e4c30f9a7c88b7f6e3e9650d985761bec71"
+    },
+    "nightcell/order_good_work": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "good work. Keep that pressure on.",
+      "generated": "2026-09-24T00:36:28.200Z",
+      "sha256": "9c60e31d7d3881de451361b11242e5045bab4d7db55eb9889b00837d80458aaf"
+    },
+    "nightcell/order_last_one": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "one hostile left in the yard. Finish it.",
+      "generated": "2026-09-24T00:36:28.322Z",
+      "sha256": "2b03e99a2a389d22d857accee669af35dbfdf8882545f18060468846d6e923ec"
+    },
+    "nightcell/contact_west_catwalk_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Hostile up on the catwalk!",
+      "generated": "2026-09-24T00:36:28.743Z",
+      "sha256": "cfef92b9e494e1622e502aa29b9b9a814f6958e0525a96efc1a06881f9b59c90"
+    },
+    "nightcell/order_back_in": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "you're back in. Rejoin the squad and keep moving.",
+      "generated": "2026-09-24T00:36:28.844Z",
+      "sha256": "3a768e9960391f1e78b8463bc55e82dbb920cf55cb41e3ae09f8e35c2fe9153b"
+    },
+    "nightcell/contact_pipe_rack_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Movement by the pipe rack!",
+      "generated": "2026-09-24T00:36:29.202Z",
+      "sha256": "2295b044b27c7ab78331830f15613b41e090b53dca7128be760ac0e3794ca9b1"
+    },
+    "nightcell/contact_gantry_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Shooter up on the east gantry!",
+      "generated": "2026-09-24T00:36:29.305Z",
+      "sha256": "9cac775b59eb9358d1e356e6788d32da6e7530c9a969918216069f984bbd2ff0"
+    },
+    "nightcell/contact_pipe_rack_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact, pipe rack!",
+      "generated": "2026-09-24T00:36:29.409Z",
+      "sha256": "9e688faedfefa36db22cf58533210eca6860e629904e63bdb2710920fe25fcfe"
+    },
+    "nightcell/contact_gantry_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact on the gantry!",
+      "generated": "2026-09-24T00:36:29.528Z",
+      "sha256": "289ef3fc2841fdf0af094900b12862149863ba8b1dd5e6de427260bc2a98c337"
+    },
+    "nightcell/contact_tank_row_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact, tank row!",
+      "generated": "2026-09-24T00:36:29.898Z",
+      "sha256": "cb1ee3784f751465d9e137932b9a5346b65ae72e91867a44e9f68e9cc01ca6be"
+    },
+    "nightcell/contact_tank_row_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Hostiles moving through the tanks!",
+      "generated": "2026-09-24T00:36:30.003Z",
+      "sha256": "f4a378a1bef2a42ec41541042a3bfea8664c70063a06a72cefa323081501a874"
+    },
+    "nightcell/contact_north_containers_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Movement in the north containers!",
+      "generated": "2026-09-24T00:36:30.336Z",
+      "sha256": "ca7450693f31dc5d3b9186c20a7b6e775d52194554a1e514c645569ce4c4a1de"
+    },
+    "nightcell/contact_hardpoint_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "They're on the hardpoint!",
+      "generated": "2026-09-24T00:36:30.476Z",
+      "sha256": "dcf74839801bbd59abb051cac325f203719f41af020dc1e00308dd4d81ec325b"
+    },
+    "nightcell/contact_north_containers_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact, north containers!",
+      "generated": "2026-09-24T00:36:30.571Z",
+      "sha256": "7b5016544fab657ffaa432a9da50298d9c821768865f9c28ffdcabf9ec327a46"
+    },
+    "nightcell/contact_south_containers_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact, south containers!",
+      "generated": "2026-09-24T00:36:31.130Z",
+      "sha256": "d8b8353c2f983d0327f8497224850e55e523cf8d130564652139a084e4564088"
+    },
+    "nightcell/contact_hardpoint_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact, on the hardpoint!",
+      "generated": "2026-09-24T00:36:31.235Z",
+      "sha256": "47d67cfdab581e231bc9799e9a4174e671cd71aa7d39674e3fd0e14b5f790a62"
+    },
+    "nightcell/contact_south_containers_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "They're in the south containers, close!",
+      "generated": "2026-09-24T00:36:31.340Z",
+      "sha256": "99f3f6ade802d87eacfecd07c850b4040c1fd9c678a87cc69b5dc59263caa937"
+    },
+    "nightcell/contact_north_gate_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact, north gate!",
+      "generated": "2026-09-24T00:36:31.453Z",
+      "sha256": "0c221fcfa1f04460fcb0689c4fe0f3d4559a4fdf97ec2ddb07b716a9071ca865"
+    },
+    "nightcell/contact_yard_gate_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact at the yard gate, behind us!",
+      "generated": "2026-09-24T00:36:31.549Z",
+      "sha256": "649aa0a5facbf1d391aaa19ff3eec8e72ca43b9247cf53ff39f5b02480e06e7c"
+    },
+    "nightcell/contact_north_gate_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "More of them coming out the north gate!",
+      "generated": "2026-09-24T00:36:31.678Z",
+      "sha256": "b4335d4437df112a8a999dca29205e7b5ab6a73e0deb7f6cc7a4b772024627f5"
+    },
+    "nightcell/enemy_down_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Got one.",
+      "generated": "2026-09-24T00:36:32.272Z",
+      "sha256": "0d46a363467ca0790bd9414e6bc06d9764c4a2a3addcb4c4bf35584af0e9c884"
+    },
+    "nightcell/contact_yard_gate_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Hostiles at our own gate, behind us!",
+      "generated": "2026-09-24T00:38:25.145Z",
+      "sha256": "295492edc8d879ba43d2ff669aeece7a2054168e197ff3d8ef98fde49c320a9f"
+    },
+    "nightcell/enemy_down_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Hostile down.",
+      "generated": "2026-09-24T00:36:32.468Z",
+      "sha256": "0e671a427310b08deafcf78ce7ac46dfea932f0bfc0985969eef94283261d686"
+    },
+    "nightcell/contact_open_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Hostile in the open!",
+      "generated": "2026-09-24T00:36:32.574Z",
+      "sha256": "1f992f15ec05c00ea6f0e6033f8cab570136cc24f4ea0baf7da135c89aac9961"
+    },
+    "nightcell/contact_open_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Contact, open ground!",
+      "generated": "2026-09-24T00:36:32.687Z",
+      "sha256": "ffffeccbddd4e89580ca667a7fa0267b13c85dc7bf048510eb88e1dd5665acbd"
+    },
+    "nightcell/enemy_down_c": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Target down.",
+      "generated": "2026-09-24T00:36:32.788Z",
+      "sha256": "3186000cd196160489a63dee3812f0272d6244f50fc03e5b71f6e4139163b0c2"
+    },
+    "nightcell/man_down_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Man down! Man down!",
+      "generated": "2026-09-24T00:36:33.366Z",
+      "sha256": "bb205774e20bd673d63b32bf1091734021617700006684ccb53ffd03ff8c824b"
+    },
+    "nightcell/man_down_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "We lost one!",
+      "generated": "2026-09-24T00:36:33.495Z",
+      "sha256": "fdeece61601d393e81c6a766d6e0d50b3f5b7c699ad3c2759dbf73dac6f61415"
+    },
+    "nightcell/nice_shot_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Good kill.",
+      "generated": "2026-09-24T00:36:33.587Z",
+      "sha256": "fcbdc0c19d0883e542d2a0b793380735feeb9e42243a723777599f8549a2f612"
+    },
+    "nightcell/operator_down_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "They got our point man!",
+      "generated": "2026-09-24T00:36:33.683Z",
+      "sha256": "358af8a5d7461395507c8da7b12487abfe8a0a1c22f74886f6b913c32aaf1861"
+    },
+    "nightcell/operator_down_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Operator down!",
+      "generated": "2026-09-24T00:36:33.788Z",
+      "sha256": "bc2a83b869a26eed3a843eb8db320e23787922d9734ac9192196b7debbf37af6"
+    },
+    "nightcell/nice_shot_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Nice shot.",
+      "generated": "2026-09-24T00:36:34.015Z",
+      "sha256": "66a3228ade43c56e0ad72662c0351d191cae71dddfd3b8351ce366a7eca12121"
+    },
+    "nightcell/nice_shot_c": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "That's how it's done.",
+      "generated": "2026-09-24T00:36:34.124Z",
+      "sha256": "3937f8348bd4cabab9c5c2c28144faa61dfa7539c757246220885a04c4990014"
+    },
+    "nightcell/grenade_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Grenade! Move!",
+      "generated": "2026-09-24T00:36:34.495Z",
+      "sha256": "efb1dc2a16fa980ca9fd5fd42e28e90835e568c9fe31c53711e139c9886da6eb"
+    },
+    "nightcell/grenade_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Frag out, frag out, get clear!",
+      "generated": "2026-09-24T00:36:34.749Z",
+      "sha256": "99b880177bf1757dc767d4d328a7aadc03b722e6a60799f71492fa43ce261081"
+    },
+    "nightcell/chatter_01": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "All elements, Overwatch. Check your sectors.",
+      "generated": "2026-09-24T00:36:34.869Z",
+      "sha256": "e394dad1adc4ed3b807b5cdf754f5592b6ebbedf25ba08e6863794ef9a92daab"
+    },
+    "nightcell/chatter_02": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Overwatch, Two. In position, holding.",
+      "generated": "2026-09-24T00:36:34.986Z",
+      "sha256": "caf257c32d10e9ad801a0e387e32ebeb2616a321c71df1d1e70b3e317a6512b5"
+    },
+    "nightcell/chatter_04": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Three, ammo check. I'm on my last two mags.",
+      "generated": "2026-09-24T00:36:35.283Z",
+      "sha256": "ea453ccaa60b6e1c572ed4a06cb4037c256521961cf16dae6efc2e38f68cc917"
+    },
+    "nightcell/chatter_05": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "Overwatch, all elements. Drone feed is down, you're on your own eyes.",
+      "generated": "2026-09-24T00:36:35.584Z",
+      "sha256": "2876f21390f90c527e27b24a233616b072b01233526e8909854af39398506d8e"
+    },
+    "nightcell/chatter_03": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "Copy Two. Keep it tight.",
+      "generated": "2026-09-24T00:36:35.730Z",
+      "sha256": "03b12feff2ddcb5e7b5bf1d66cd1c2c3b4cac560dcf2ca1b6ce168ce49aaaf0a"
+    },
+    "nightcell/chatter_08": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "I say again. Stay off the open ground.",
+      "generated": "2026-09-24T00:36:35.990Z",
+      "sha256": "844c7997100c723c4786e8eaed8290782137855b471cdf3acbae021cb7ec8c39"
+    },
+    "nightcell/chatter_06": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Nothing moving on the gantry. Watching it.",
+      "generated": "2026-09-24T00:36:36.128Z",
+      "sha256": "e6ddf85eb97e6cc2f2e95692d58fb1bf7bf5d51553d4e992f125015367787c93"
+    },
+    "nightcell/chatter_09": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "Floodlights on the east side just went out.",
+      "generated": "2026-09-24T00:36:36.274Z",
+      "sha256": "be6fc7400e97f802b543e9f7c22b8bffa04e7092767d34b8e9e1bd9cd50e2859"
+    },
+    "nightcell/chatter_07": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Say again, Overwatch, you're breaking up.",
+      "generated": "2026-09-24T00:36:36.390Z",
+      "sha256": "a966a3aa06ee9ba8cda4282abe41ced03fef29ec3dcf3316dcc180796149cb66"
+    },
+    "nightcell/chatter_11": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Moving. Cover me across.",
+      "generated": "2026-09-24T00:36:36.651Z",
+      "sha256": "13187d5276d6bc8a782d88c50f0dbfa4dab671b7df3c405242b37059f9d4b04a"
+    },
+    "nightcell/chatter_10": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "Be advised, their comms are active. Assume they can hear you.",
+      "generated": "2026-09-24T00:36:36.754Z",
+      "sha256": "b79d39073cab39e58ee426b561d2836a0381b02dcb7755436f0997f1862a15c6"
+    },
+    "nightcell/chatter_12": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "instructions": "An American special operations soldier on a squad radio in the middle of a firefight. Tight, fast, breathing slightly hard, clear enough to understand. No shouting into the mic, just urgent and professional.",
+      "text": "I have you covered. Move now.",
+      "generated": "2026-09-24T00:38:25.262Z",
+      "sha256": "e02ec25c26881589c591a6de57ce2e510fdd64cca97e5e906aa442e46cd88ed1"
+    },
+    "directorate/callsign_leila": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "Farzan,",
+      "generated": "2026-09-24T00:36:37.218Z",
+      "sha256": "bcc5a5586a43306ffd67ba7fc345d1951de47a2f1954a95de6448eb38778e0e0"
+    },
+    "nightcell/chatter_13": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "instructions": "A calm, controlled American woman working a tactical operations radio net at night. Clipped, economical, low and level; she never raises her voice, even when the news is bad. Radio procedure cadence, slight urgency on orders.",
+      "text": "Overwatch copies all. Time is not on our side, keep moving.",
+      "generated": "2026-09-24T00:36:37.418Z",
+      "sha256": "e226553116aa58e4658c755c21b69a2b7f50ec7938aac05fe2097a4204aba1f5"
+    },
+    "nightcell/chatter_14": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "instructions": "A second American operator on a squad radio in combat, lower voice than his teammate, terse and controlled, a little gravel. Urgent but clear.",
+      "text": "Two, you hear that? Something up on the catwalk.",
+      "generated": "2026-09-24T00:36:37.538Z",
+      "sha256": "bc429d31ef4eb0f69525af65f878788cf93d6984e7959d753b30ad3bfddc7bd4"
+    },
+    "directorate/callsign_daryan": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "Colonel,",
+      "generated": "2026-09-24T00:36:37.745Z",
+      "sha256": "d82a22471ef8a60ae45e78d24da02847fb6b41d34838c6058cd542975cb67da8"
+    },
+    "directorate/order_push_hardpoint": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "advance on the hardpoint. Whoever holds the centre holds the yard.",
+      "generated": "2026-09-24T00:36:38.105Z",
+      "sha256": "7f501ac50dbd9a279a296966a7eb9e7366c6be7137662444442ea5954b7e8b0b"
+    },
+    "directorate/order_move_out": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "All units, this is Command. You are cleared to advance. Secure the yard.",
+      "generated": "2026-09-24T00:36:38.234Z",
+      "sha256": "16d0c9ef3a5cf4ce25b6d28b5df577bde4bca11a4d56b5ae2db96fcbe2781f54"
+    },
+    "directorate/order_push_west": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "the west side is weak. Take your team up the pipe rack.",
+      "generated": "2026-09-24T00:36:38.368Z",
+      "sha256": "10a9925fbf3b40f78abdd1a2683501bfba870824689da6b1f7462bccde616685"
+    },
+    "directorate/order_fall_back": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "casualties are too high. Fall back to the containers and regroup.",
+      "generated": "2026-09-24T00:36:38.696Z",
+      "sha256": "f4bee772694eee97c885da27f74ab2703e0c6457139de59f787f2823bdc1f4aa"
+    },
+    "directorate/order_push_east": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "the east lane is clear. Advance through tank row.",
+      "generated": "2026-09-24T00:36:38.809Z",
+      "sha256": "e2031a1d6116255703b4ea21f00fe8cba1760f0037ece5c01146fb95f6bff3c6"
+    },
+    "directorate/order_hold_hardpoint": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "the centre is ours. Hold the hardpoint. Make them come to you.",
+      "generated": "2026-09-24T00:36:38.926Z",
+      "sha256": "1fe1faf14266a4cde3fa780b5e628e8108243902be1e21e7ca3d0db1c7eae0da"
+    },
+    "directorate/order_gantry": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "take the east gantry and cover the lanes from above.",
+      "generated": "2026-09-24T00:36:39.429Z",
+      "sha256": "c5fb8d2b800530c8290396fceece9facf823de041c19ca016f19b42d5e83d2e7"
+    },
+    "directorate/order_catwalk": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "put someone on the west catwalk. I want eyes up high.",
+      "generated": "2026-09-24T00:36:39.539Z",
+      "sha256": "2b9be6b4d0b7c8e199ae25a7640a1148876378c344113aeaa870f93f9c4b862c"
+    },
+    "directorate/order_last_one": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "one intruder left in the yard. Find him and end this.",
+      "generated": "2026-09-24T00:36:39.661Z",
+      "sha256": "7e69834f138332188fea2661870605a9ef2fe5924a5a2a5960231dee416053aa"
+    },
+    "directorate/contact_west_catwalk_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact, west catwalk!",
+      "generated": "2026-09-24T00:36:39.808Z",
+      "sha256": "16e83a22c7f49fb8af08389ac84abe3cc937530f3f1179db2227c1041c4f3bda"
+    },
+    "directorate/order_good_work": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "well done. Keep pressing.",
+      "generated": "2026-09-24T00:36:40.012Z",
+      "sha256": "e9dc7fdd04b48e8aa91058793b0c5fdf43c3c9ed20ceadd0466be19a377e0357"
+    },
+    "directorate/order_back_in": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "you're back on the line. Rejoin your team and advance.",
+      "generated": "2026-09-24T00:36:40.123Z",
+      "sha256": "1f0176392c208d995b1107da06dd0d7e5fb067335942d2c2336dd5618114eebf"
+    },
+    "directorate/contact_pipe_rack_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact, pipe rack!",
+      "generated": "2026-09-24T00:36:40.531Z",
+      "sha256": "11aa4f69dd80118c99a21cca6b7f5528e24b6cd87c657f31207e16487ac0244c"
+    },
+    "directorate/contact_west_catwalk_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Enemy up on the catwalk!",
+      "generated": "2026-09-24T00:36:40.710Z",
+      "sha256": "34a034c7076a1d0fced49e8a45f7d5a306103d7978b231a0a096a26d793e1a05"
+    },
+    "directorate/contact_pipe_rack_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Movement at the pipe rack!",
+      "generated": "2026-09-24T00:36:40.811Z",
+      "sha256": "3b64641b82cc41530a2b324a2671fdbf891dd49b018ff73467f08cc3c4e856de"
+    },
+    "directorate/contact_tank_row_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact, tank row!",
+      "generated": "2026-09-24T00:36:41.011Z",
+      "sha256": "86930e59e70f8208451f92d71a895a623efa02f4104e9b1ec9a3438b9d413e27"
+    },
+    "directorate/contact_tank_row_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Enemy moving between the tanks!",
+      "generated": "2026-09-24T00:36:41.111Z",
+      "sha256": "f57f39986b60e0bf516bacdb5d77911c984dbb213f69513880ff046a7c11aec4"
+    },
+    "directorate/contact_hardpoint_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact, on the hardpoint!",
+      "generated": "2026-09-24T00:36:41.398Z",
+      "sha256": "f0664890ce8273dc6e31050b6ee034e413b3c95a3fdf337c8e80dfe6e74313b6"
+    },
+    "directorate/contact_gantry_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Shooter on the east gantry!",
+      "generated": "2026-09-24T00:36:41.497Z",
+      "sha256": "bdc4a60d807e4be2d563a3234ee09beadd5ef9f83afe19797c3a34378e6b6ca1"
+    },
+    "directorate/contact_hardpoint_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "They have the hardpoint!",
+      "generated": "2026-09-24T00:36:41.613Z",
+      "sha256": "2eb39620af46a1b5ca0ba0733262b9e43460acef2e6878b0b66e100527ee5791"
+    },
+    "directorate/contact_north_containers_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact, north containers!",
+      "generated": "2026-09-24T00:36:41.855Z",
+      "sha256": "3b4ece7b48e32278ad3c580260319a01d7011cbf5bfd74dec2f53fff09023a13"
+    },
+    "directorate/contact_south_containers_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact, south containers!",
+      "generated": "2026-09-24T00:36:41.964Z",
+      "sha256": "bc9660d385da4e205eb21141b025a90d46c9927b279502d818ee8f9387ae610f"
+    },
+    "directorate/contact_north_containers_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "They're in the north containers, close!",
+      "generated": "2026-09-24T00:36:42.211Z",
+      "sha256": "57f82171a968459789262ed768e40f4e9c96ff97a45a1d506cdc4c509372f8dc"
+    },
+    "directorate/contact_south_containers_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Movement in the south containers!",
+      "generated": "2026-09-24T00:36:42.435Z",
+      "sha256": "14679d36ff823412d430cbce0cb81906f2292949135d731629ad41403e983dcf"
+    },
+    "directorate/contact_north_gate_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact at the north gate, behind us!",
+      "generated": "2026-09-24T00:36:42.542Z",
+      "sha256": "38c95f2f1488301cfc051148779051f600edcece82fe40e9fcafdbbf89be227e"
+    },
+    "directorate/contact_yard_gate_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact, yard gate!",
+      "generated": "2026-09-24T00:36:42.647Z",
+      "sha256": "7bbb18286fbb364a46d10ac991d29bc8c2bff2fdf7013351a2f335b3fc082de7"
+    },
+    "directorate/contact_north_gate_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "They're at our gate!",
+      "generated": "2026-09-24T00:36:42.744Z",
+      "sha256": "7145e62265d57f552b5fa79f825da2ef192066152ffc63fdc4e01afba3f3c5ef"
+    },
+    "directorate/contact_open_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Contact, open ground!",
+      "generated": "2026-09-24T00:36:42.958Z",
+      "sha256": "2102fe42c7bb02567f4db9482cded5ce4d8924fc7febface04211febb8cb1967"
+    },
+    "directorate/contact_yard_gate_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "More coming through the yard gate!",
+      "generated": "2026-09-24T00:36:43.061Z",
+      "sha256": "80df109aed1bc2672e5dcfbc593f3a72dbe7cf4d678382b354b74bf7e2505ed6"
+    },
+    "directorate/enemy_down_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Enemy down.",
+      "generated": "2026-09-24T00:36:43.523Z",
+      "sha256": "75d8044d0af4e1ea83b57710d50f628a5f0ff1ff7405720b290defbd0b266c2f"
+    },
+    "directorate/enemy_down_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "He's down.",
+      "generated": "2026-09-24T00:36:43.616Z",
+      "sha256": "86900606020590f76de0c6a937e9fcc2669f0a61490adc3c4121841a668a9fe5"
+    },
+    "directorate/enemy_down_c": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "One less.",
+      "generated": "2026-09-24T00:36:43.714Z",
+      "sha256": "32fde6a55d459fb7053bd655eea8677b7cce49b497ce088d9fa490718c90527a"
+    },
+    "directorate/contact_open_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Enemy in the open!",
+      "generated": "2026-09-24T00:36:43.814Z",
+      "sha256": "8d050b7f06cf80ba862725056f24d6183a64fd7c874c249cc0988ea6236faff4"
+    },
+    "directorate/man_down_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Man down! We have a man down!",
+      "generated": "2026-09-24T00:36:44.291Z",
+      "sha256": "0b46d7c88f21f507b97e4bba024fd68adc30da549e7102515777737d1429a2b1"
+    },
+    "directorate/man_down_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "We lost one!",
+      "generated": "2026-09-24T00:36:44.409Z",
+      "sha256": "6a8cc43144e4bbd52410539673e6041e962a6859c7a5f0d72e027612aa8477fb"
+    },
+    "directorate/operator_down_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "They got our lead!",
+      "generated": "2026-09-24T00:36:44.672Z",
+      "sha256": "e90a6124178fd2569080fb24f645d14be5aa27558148e5d38a6935cc3987dc54"
+    },
+    "directorate/nice_shot_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Good shot.",
+      "generated": "2026-09-24T00:36:44.782Z",
+      "sha256": "2e5173640ebe79e89c5f892283de6e94d28c606640f4bf688f06ff5983c0a659"
+    },
+    "directorate/nice_shot_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Clean kill.",
+      "generated": "2026-09-24T00:36:44.915Z",
+      "sha256": "22c5b436f46c47475ac07e7e0627e2a0116db512e5ccca75dbad5a43b61a00fd"
+    },
+    "directorate/operator_down_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Lead is down!",
+      "generated": "2026-09-24T00:36:45.009Z",
+      "sha256": "7dec74a1791017febe4b6d811c2a13f7dc301147cd92ece4dd92418042000263"
+    },
+    "directorate/grenade_a": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Grenade! Move!",
+      "generated": "2026-09-24T00:36:45.108Z",
+      "sha256": "dcb03cd47eca27c7950108e0608aecee705ee28a6a400be798f1e6887da3c24a"
+    },
+    "directorate/nice_shot_c": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Well done.",
+      "generated": "2026-09-24T00:36:45.479Z",
+      "sha256": "a0e7d8e44a14fed8c747a43efec29133450c775a3100e1c4c34b5d5266f40dfc"
+    },
+    "directorate/chatter_01": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "All units, Command. Report your positions.",
+      "generated": "2026-09-24T00:36:45.675Z",
+      "sha256": "f0022941e246e690553cbbbffffb49f7cb01a29a5a0c173eb68288f8f9f0ddb2"
+    },
+    "directorate/grenade_b": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Grenade, get clear!",
+      "generated": "2026-09-24T00:36:45.788Z",
+      "sha256": "5129812686bb069f4563d24b6a87f02491a714bfa65dbe638ac557767e48bec8"
+    },
+    "directorate/chatter_03": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "Understood, One. Stay alert.",
+      "generated": "2026-09-24T00:36:45.885Z",
+      "sha256": "e403b864385fd1c68bfa5d5dbcb75b08fa49db43a52bba12ab3fb72a34a518ab"
+    },
+    "directorate/chatter_02": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Command, Section One. In position, holding.",
+      "generated": "2026-09-24T00:36:46.151Z",
+      "sha256": "7b03b0d1703d1c022256320a59df9a83d2f4b198beb78e11aad25122dbaebd2a"
+    },
+    "directorate/chatter_04": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Section Two, low on ammunition. Requesting resupply.",
+      "generated": "2026-09-24T00:36:46.359Z",
+      "sha256": "b4311969f10f845e1b34e5679f4614d15901c040cec3c9972530b1c5370bf1cb"
+    },
+    "directorate/chatter_05": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "All units, be advised. The perimeter cameras are down on the east side.",
+      "generated": "2026-09-24T00:36:46.690Z",
+      "sha256": "e8b75951fd33dfd1876442c7257967c7903ee1a1c5f6ec6aaa69d5d6f188005e"
+    },
+    "directorate/chatter_06": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Nothing on the gantry. Still watching.",
+      "generated": "2026-09-24T00:36:46.812Z",
+      "sha256": "8e47f955d649d1dce79763f0cd3be8be0668c85bda31969b9e4f5b142b0cfcf2"
+    },
+    "directorate/chatter_07": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Command, repeat your last, you are breaking up.",
+      "generated": "2026-09-24T00:36:46.923Z",
+      "sha256": "198bc8890d45e3fc756c2b0e5743e2d74e7eeafca0a71e74c8b7676435bb1f9e"
+    },
+    "directorate/chatter_09": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Lights just went out by the tanks.",
+      "generated": "2026-09-24T00:36:47.038Z",
+      "sha256": "07782a4ee55d7af7be0f991d8dac1308898960a3741897b1aec2f63d327d5171"
+    },
+    "directorate/chatter_08": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "I repeat. Stay off the open ground.",
+      "generated": "2026-09-24T00:36:47.143Z",
+      "sha256": "9518fe98fbc189d70445bffe8ff7ecd4fcc57d66d43b51fc385370b31d41ce8a"
+    },
+    "directorate/chatter_11": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Moving up. Cover me.",
+      "generated": "2026-09-24T00:36:47.273Z",
+      "sha256": "d0be0783acef05ddaea243d1d93b561541531a262472c6567524583699d3c4c3"
+    },
+    "directorate/chatter_12": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "cedar",
+      "instructions": "A soldier on a squad radio in the middle of a firefight. Fast, tight, breathing a little hard, professional. Neutral English, no put-on accent.",
+      "text": "Covering. Go now.",
+      "generated": "2026-09-24T00:36:47.578Z",
+      "sha256": "a5d1efd2189ca840c8a217aec8fdc1b0cf0372768e22ea501fed6aca6de215de"
+    },
+    "directorate/chatter_14": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "ballad",
+      "instructions": "A second soldier on a squad radio in combat, terse and controlled, slightly higher and sharper than his teammate. Neutral English, no put-on accent.",
+      "text": "Did you hear that? Up on the catwalk.",
+      "generated": "2026-09-24T00:36:47.976Z",
+      "sha256": "e7e80ab1f0065f43788d5b6ba68bf705dcadee4effbd5dab9047fedf3a153a92"
+    },
+    "directorate/chatter_13": {
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "instructions": "A senior operations officer on a military radio net at night: calm, deliberate, authoritative, measured pace. Neutral English, no put-on accent. Slight urgency on orders.",
+      "text": "Command copies. Hold discipline, nobody fires without a target.",
+      "generated": "2026-09-24T00:36:48.091Z",
+      "sha256": "7601253526a10d53cff29c1fecbec0a1e358b5c7b628540486734ab369681995"
+    }
+  }
+}

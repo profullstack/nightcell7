@@ -26,6 +26,7 @@ import { Opponents } from "./opponents";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
 import { Coach, briefingFor, hasOnboarded, markOnboarded } from "./onboarding";
+import { CommsDirector, captionFor, linesFor } from "./comms";
 import "./style.css";
 
 /**
@@ -270,6 +271,13 @@ async function boot(): Promise<void> {
     onStart: () => player.requestLock(),
   });
 
+  // Squad radio: callouts, orders and chatter for the side the player is on.
+  // Loaded on first deploy (it is not needed on the gate), played only while
+  // the player is in the yard.
+  const comms = new CommsDirector(loadout.side, loadout.character);
+  let radioLoaded = false;
+  let matchClockS = 0;
+
   player.onLockChanged = (locked) => {
     hud.setLocked(locked);
     // The figure stands in the yard only while the gate is up.
@@ -281,6 +289,10 @@ async function boot(): Promise<void> {
     void audio.unlock().then(() => {
       audio.startAmbience();
       audio.startMusic();
+      if (!radioLoaded) {
+        radioLoaded = true;
+        void audio.loadRadio(loadout.side, linesFor(loadout.side));
+      }
     });
   };
   hud.setLocked(false);
@@ -454,6 +466,25 @@ async function boot(): Promise<void> {
     if (packs > 0) earn(packs * CREDITS_PER_PACK, "health pack");
 
     hud.update(status, engine.getFps(), local);
+
+    // The net only runs while the player is in the yard; events from the gate
+    // are dropped rather than replayed late.
+    const commsEvents = opponents.drainCommsEvents();
+    // Not before the radio has loaded, or the opening order is spent on silence.
+    if (status.locked && audio.radioReady()) {
+      matchClockS += deltaMs / 1000;
+      const transmission = comms.observe(
+        matchClockS,
+        opponents.commsSnapshot(),
+        commsEvents,
+        audio.radioBusy(),
+      );
+      if (transmission) {
+        audio.transmit(loadout.side, transmission.lines, transmission.kind);
+        const { speaker, text } = captionFor(loadout.side, transmission.lines);
+        hud.caption(speaker, text, transmission.kind);
+      }
+    }
 
     // The coach only watches while the player is actually in the yard.
     if (coach && status.locked) {

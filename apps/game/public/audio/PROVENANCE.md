@@ -1,9 +1,10 @@
 # Audio provenance
 
-Every clip here is **synthesised** by `tools/art/audio/generate.py`. Nothing is
-sampled, recorded, downloaded or licensed, so the whole set satisfies
-CLAUDE.md's provenance rule: the provenance of any clip is a commit, a script
-and a seed.
+Every effect and ambience clip here is **synthesised** by
+`tools/art/audio/generate.py`. Nothing is sampled, recorded, downloaded or
+licensed, so the set satisfies CLAUDE.md's provenance rule: the provenance of
+any clip is a commit, a script and a seed. The squad radio in `comms/` is the
+one exception, and has its own section at the end.
 
 ## How to rebuild
 
@@ -161,3 +162,39 @@ album. The other three (`More Than Enough`, `the-wolf-called-want`,
 The published trailer's soundtrack is Ironwood Oath. Its source file was one of
 the byte-identical four, so the film already carries album track 003 and was
 not re-rendered; `tools/art/trailer.mjs` now reads it from the album.
+
+## `comms/<side>/*.mp3`: the squad radio
+
+Callouts, orders and chatter on each side's radio net, played by
+`apps/game/src/comms.ts` (what is said and when) through `GameAudio.transmit`.
+
+- **Script:** `apps/game/src/comms-lines.json`, written for this game. Every
+  unit, callsign and place is fictional; the areas are Ardavan Yard's own.
+  English only on both sides: Farsi voice lines wait for native review
+  (`docs/content-and-culture.md`), so the Directorate net is heard in English
+  by convention, with no put-on accent.
+- **Voices:** AI speech from OpenAI's text-to-speech API (`gpt-4o-mini-tts`,
+  stock voices with a written direction per speaker, recorded in the
+  catalogue). No real person's voice is cloned or imitated. OpenAI's usage
+  policies require that listeners are told the voices are AI-generated; the
+  credits page says so.
+- **Masters:** `docs/audio/comms/raw/<side>/<id>.flac`, exactly as delivered
+  and never overwritten. Unlike the synthesised effects these cannot be
+  regenerated bit for bit, so the master is committed and is the record.
+  `docs/audio/comms/manifest.json` holds the model, voice, direction, text,
+  date and sha256 of each.
+- **Radio treatment:** `tools/audio/comms/generate.mjs` runs each master
+  through ffmpeg: silence trimmed, band-limited to 350 Hz to 3.2 kHz,
+  compressed, soft-clipped, with channel hiss under the voice, a key-up click
+  before it and a squelch tail after. Callsigns have no tail and addressed
+  orders no key-up, so "Rook," and "push the hardpoint" play as one
+  transmission. Output is 24 kHz mono MP3 at 48 kbps, about 2.3 MB for both
+  sides, loaded after the first deploy rather than in the boot budget.
+- **Checked by transcription:** `node tools/audio/comms/check.mjs --transcribe`
+  runs every processed clip back through speech-to-text and compares it with the
+  script. Two lines that did not survive the radio treatment ("They're at our
+  gate" heard as "Bear at our gate") were reworded and regenerated.
+- **Captions:** every order and callout is also captioned on screen
+  (accessibility is P0), with the speaker's role.
+- **Licence:** OpenAI's terms assign the output to us, with commercial use
+  permitted.
