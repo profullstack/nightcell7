@@ -1,0 +1,343 @@
+{
+  "rook": {
+    "phenotype": {
+      "gender": 1.0,
+      "age": 0.68,
+      "muscle": 0.72,
+      "weight": 0.42,
+      "height": 0.62,
+      "proportions": 0.75,
+      "race": {
+        "caucasian": 0.92,
+        "asian": 0.04,
+        "african": 0.04
+      }
+    },
+    "targets": {
+      "head-age-incr": 0.6,
+      "chin-prominent-incr": 0.4,
+      "chin-width-incr": 0.35,
+      "head-rectangular": 0.5,
+      "nose-hump-incr": 0.35,
+      "l-cheek-bones-incr": 0.3,
+      "r-cheek-bones-incr": 0.3,
+      "eyebrows-angle-down": 0.3
+    },
+    "skin": "middleage_caucasian_male/middleage_caucasian_male.mhmat",
+    "eyebrows": "eyebrow001/eyebrow001.mhclo",
+    "hair": "short01/short01.mhclo",
+    "strands": {
+      "melanin": 0.93,
+      "redness": 0.2,
+      "length": 0.006,
+      "count": 90000,
+      "tangent": 0.85
+    },
+    "stubble": {
+      "melanin": 0.95,
+      "length": 0.0022,
+      "count": 90000
+    },
+    "iris": ["#5a4a36", "#2a2016"],
+    "clothes": [
+      {
+        "asset": "male_casualsuit05/male_casualsuit05.mhclo",
+        "tint": "#34383a",
+        "rough": 0.8
+      },
+      {
+        "asset": "shoes03/shoes03.mhclo",
+        "tint": "#2a2a2a"
+      }
+    ],
+    "gear": ["carrier", "headset"],
+    "carrier": "#2c2f2d",
+    "rim": "#ff3b30",
+    "key_side": 1,
+    "camera_turn": 0.45,
+    "pose": {
+      "head_pitch": 0.03
+    },
+    "pouches": true,
+    "name": "Rook"
+  },
+  "leila": {
+    "phenotype": {
+      "gender": 0.0,
+      "age": 0.6,
+      "muscle": 0.55,
+      "weight": 0.42,
+      "height": 0.52,
+      "proportions": 0.7,
+      "race": {
+        "caucasian": 0.8,
+        "asian": 0.1,
+        "african": 0.1
+      }
+    },
+    "targets": {
+      "nose-hump-incr": 0.45,
+      "nose-point-width-decr": 0.2,
+      "eyebrows-angle-down": 0.2,
+      "l-cheek-bones-incr": 0.35,
+      "r-cheek-bones-incr": 0.35,
+      "chin-width-decr": 0.2,
+      "head-oval": 0.4
+    },
+    "skin": "middleage_caucasian_female/middleage_caucasian_female.mhmat",
+    "skin_mix": ["#8c6a4c", 0.28],
+    "eyebrows": "eyebrow010/eyebrow010.mhclo",
+    "eyelashes": "eyelashes03/eyelashes03.mhclo",
+    "hair": "ponytail01/ponytail01.mhclo",
+    "iris": ["#3a2618", "#150c07"],
+    "headscarf": "#232326",
+    "clothes": [
+      {
+        "asset": "male_casualsuit05/male_casualsuit05.mhclo",
+        "tint": "#3a3d2c",
+        "rough": 0.85
+      },
+      {
+        "asset": "shoes03/shoes03.mhclo",
+        "tint": "#2a2a2a"
+      }
+    ],
+    "gear": ["carrier", "headset"],
+    "carrier": "#383b2e",
+    "rim": "#5ec8e5",
+    "key_side": -1,
+    "camera_turn": -0.45,
+    "pose": {
+      "head_pitch": 0.02
+    },
+    "pouches": false,
+    "name": "Leila Farzan"
+  },
+  "vale": {
+    "phenotype": {
+      "gender": 1.0,
+      "age": 0.82,
+      "muscle": 0.4,
+      "weight": 0.55,
+      "height": 0.56,
+      "proportions": 0.6,
+      "race": {
+        "caucasian": 0.95,
+        "asian": 0.03,
+        "african": 0.02
+      }
+    },
+    "targets": {
+      "head-age-incr": 0.8,
+      "nose-point-down": 0.3,
+      "eyebrows-angle-down": 0.45,
+      "chin-width-incr": 0.2,
+      "head-oval": 0.3
+    },
+    "skin": "old_caucasian_male/old_caucasian_male.mhmat",
+    "eyebrows": "eyebrow004/eyebrow004.mhclo",
+    "hair": "short04/short04.mhclo",
+    "strands": {
+      "melanin": 0.3,
+      "redness": 0.08,
+      "gray": 0.75,
+      "length": 0.007,
+      "count": 80000,
+      "tangent": 0.85,
+      "shell": "#6e6c6a"
+    },
+    "stubble": {
+      "melanin": 0.5,
+      "gray": 0.7,
+      "length": 0.0012,
+      "count": 60000
+    },
+    "iris": ["#6c7a86", "#34404a"],
+    "clothes": [
+      {
+        "asset": "male_elegantsuit01/male_elegantsuit01.mhclo",
+        "tint": "#3a3834",
+        "rough": 0.85
+      },
+      {
+        "asset": "shoes01/shoes01.mhclo",
+        "tint": "#3a2a20"
+      }
+    ],
+    "gear": [],
+    "rim": "#ffae52",
+    "key_side": 1,
+    "camera_turn": 0.4,
+    "pose": {
+      "head_pitch": 0.06
+    },
+    "name": "Jonas Vale"
+  },
+  "vey": {
+    "phenotype": {
+      "gender": 0.0,
+      "age": 0.74,
+      "muscle": 0.45,
+      "weight": 0.38,
+      "height": 0.56,
+      "proportions": 0.75,
+      "race": {
+        "caucasian": 0.95,
+        "asian": 0.03,
+        "african": 0.02
+      }
+    },
+    "targets": {
+      "head-age-incr": 0.5,
+      "chin-prominent-incr": 0.25,
+      "l-cheek-bones-incr": 0.45,
+      "r-cheek-bones-incr": 0.45,
+      "nose-point-width-decr": 0.3,
+      "head-invertedtriangular": 0.3
+    },
+    "skin": "middleage_caucasian_female/middleage_caucasian_female.mhmat",
+    "eyebrows": "eyebrow007/eyebrow007.mhclo",
+    "eyelashes": "eyelashes03/eyelashes03.mhclo",
+    "hair": "bob02/bob02.mhclo",
+    "hair_tint": "#c8c8cc",
+    "iris": ["#7c8e98", "#3a4a54"],
+    "clothes": [
+      {
+        "asset": "male_elegantsuit01/male_elegantsuit01.mhclo",
+        "tint": "#1d1e22",
+        "rough": 0.7
+      },
+      {
+        "asset": "shoes04/shoes04.mhclo",
+        "tint": "#1a1a1a"
+      }
+    ],
+    "gear": ["headset"],
+    "rim": "#ff3b30",
+    "key_side": -1,
+    "camera_turn": -0.4,
+    "pose": {
+      "head_pitch": -0.02
+    },
+    "name": "Director Mara Vey"
+  },
+  "daryan": {
+    "phenotype": {
+      "gender": 1.0,
+      "age": 0.76,
+      "muscle": 0.45,
+      "weight": 0.48,
+      "height": 0.6,
+      "proportions": 0.7,
+      "race": {
+        "caucasian": 0.85,
+        "asian": 0.05,
+        "african": 0.1
+      }
+    },
+    "targets": {
+      "head-age-incr": 0.6,
+      "nose-hump-incr": 0.6,
+      "nose-point-down": 0.2,
+      "head-oval": 0.5,
+      "head-scale-horiz-decr": 0.2,
+      "chin-width-decr": 0.25,
+      "eyebrows-angle-down": 0.25
+    },
+    "skin": "middleage_caucasian_male/middleage_caucasian_male.mhmat",
+    "skin_mix": ["#8c6a4c", 0.3],
+    "eyebrows": "eyebrow003/eyebrow003.mhclo",
+    "hair": "short04/short04.mhclo",
+    "strands": {
+      "melanin": 0.95,
+      "redness": 0.15,
+      "gray": 0.35,
+      "length": 0.006,
+      "count": 80000,
+      "tangent": 0.85,
+      "shell": "#141210"
+    },
+    "stubble": {
+      "melanin": 0.95,
+      "gray": 0.3,
+      "length": 0.0008,
+      "count": 60000
+    },
+    "iris": ["#3a2618", "#150c07"],
+    "clothes": [
+      {
+        "asset": "male_elegantsuit01/male_elegantsuit01.mhclo",
+        "tint": "#34372d",
+        "rough": 0.85
+      },
+      {
+        "asset": "shoes01/shoes01.mhclo",
+        "tint": "#1e1a17"
+      }
+    ],
+    "gear": ["glasses"],
+    "rim": "#5ec8e5",
+    "key_side": -1,
+    "camera_turn": -0.42,
+    "pose": {
+      "head_pitch": 0.04
+    },
+    "name": "Colonel Arman Daryan"
+  },
+  "kade": {
+    "phenotype": {
+      "gender": 1.0,
+      "age": 0.7,
+      "muscle": 0.7,
+      "weight": 0.5,
+      "height": 0.66,
+      "proportions": 0.8,
+      "race": {
+        "caucasian": 0.97,
+        "asian": 0.02,
+        "african": 0.01
+      }
+    },
+    "targets": {
+      "head-age-incr": 0.5,
+      "head-square": 0.5,
+      "chin-width-incr": 0.4,
+      "chin-prominent-incr": 0.3,
+      "eyebrows-angle-down": 0.4,
+      "nose-point-width-decr": 0.2
+    },
+    "skin": "middleage_caucasian_male/middleage_caucasian_male.mhmat",
+    "eyebrows": "eyebrow006/eyebrow006.mhclo",
+    "hair": "short01/short01.mhclo",
+    "strands": {
+      "melanin": 0.42,
+      "redness": 0.12,
+      "length": 0.005,
+      "count": 90000,
+      "tangent": 0.85,
+      "shell": "#6a5e4c"
+    },
+    "iris": ["#8aa0ac", "#46586a"],
+    "clothes": [
+      {
+        "asset": "male_casualsuit05/male_casualsuit05.mhclo",
+        "tint": "#1b1c1e",
+        "rough": 0.6
+      },
+      {
+        "asset": "shoes03/shoes03.mhclo",
+        "tint": "#1a1a1a"
+      }
+    ],
+    "gear": ["carrier"],
+    "carrier": "#1c1d1e",
+    "pouches": false,
+    "rim": "#ff9a3c",
+    "key_side": 1,
+    "camera_turn": 0.38,
+    "pose": {
+      "head_pitch": -0.03
+    },
+    "name": "Silas Kade"
+  }
+}

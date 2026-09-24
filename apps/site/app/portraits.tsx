@@ -1,8 +1,8 @@
 /**
- * Painted cast portraits.
+ * Cast portraits: 3D characters rendered in Blender and refined.
  *
  * One image per person, 600 × 900, served from `/media/characters`. The game's
- * deploy gate shows the same paintings at thumbnail size, so a player picks the
+ * deploy gate shows the same images at thumbnail size, so a player picks the
  * face they have already met here. How each was made (model, prompt, date) is
  * in `docs/art/characters/manifest.json`; see `media/PROVENANCE.md`.
  *
@@ -36,7 +36,7 @@ export function Portrait({
     <img
       className={className}
       src={`/media/characters/${id}.webp`}
-      alt={`Painted portrait of ${name}`}
+      alt={`Portrait of ${name}`}
       width={600}
       height={900}
       loading={priority ? "eager" : "lazy"}

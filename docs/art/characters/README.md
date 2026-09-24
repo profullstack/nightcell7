@@ -1,45 +1,56 @@
 # Cast portraits: provenance
 
-Painted head-and-shoulders portraits of the six named characters in
-`packages/game-core/src/cast.ts` plus the two protagonists: Rook, Leila Farzan,
-Jonas Vale, Director Mara Vey, Colonel Arman Daryan and Silas Kade.
+3D character portraits of Rook, Leila Farzan, Jonas Vale, Director Mara Vey,
+Colonel Arman Daryan and Silas Kade, shown on `/characters`, the dossiers and
+the game's deploy gate.
 
-| Field                     | Record                                                                                                                                                                           |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Source                    | Generated for this project. Not traced, not sourced from another game, not a photograph of a real person.                                                                        |
-| Provider                  | OpenAI Images API, model `gpt-image-2`, 1024 × 1536, quality `high`.                                                                                                             |
-| Date                      | 2026-09-23 (per-image timestamps in `manifest.json`).                                                                                                                            |
-| Prompts                   | `tools/art/portraits/prompts.json`: one shared style block plus one line per person. The exact prompt each image was made from is stored beside its hash in `manifest.json`.     |
-| Generator                 | `node tools/art/portraits/generate.mjs [--only id,id] [--derive-only]`. Needs `OPENAI_API_KEY` and ffmpeg.                                                                       |
-| Raw files                 | `docs/art/characters/raw/<id>.png`, never overwritten by the script. To remake one, move its master aside and rerun with `--only`.                                               |
-| Production files          | `apps/site/public/media/characters/<id>.webp` (600 × 900, q86) and `apps/game/public/assets/portraits/<id>.webp` (214 × 320, q82), both derived from the raw master with ffmpeg. |
-| Commercial / modification | OpenAI's terms assign output to the user, with commercial use and modification permitted. No third-party reference images were supplied.                                         |
-| Browser distribution      | Permitted: original output, no licence restricts web distribution.                                                                                                               |
-| Attribution               | None required.                                                                                                                                                                   |
-| AI disclosure             | These are AI-generated images. Any storefront that asks (Steam does) must disclose them.                                                                                         |
+## How they are made
+
+1. **Blender.** Each person is built as a 3D character by
+   `tools/art/characters/build.py` from the definitions in `cast.json` and
+   rendered in Cycles. The bodies come from MakeHuman via MPFB 2; the tactical
+   gear, headscarf and glasses are modelled by the script. The render each
+   portrait started from is kept in `blender/<id>.png`.
+2. **Refinement.** `tools/art/characters/refine.mjs` sends that render to the
+   OpenAI image edit endpoint (`gpt-image-2`) with the brief in
+   `tools/art/characters/refine.json`. The brief keeps the person, pose,
+   framing, gear and lights, and raises skin, hair and fabric detail. The
+   result is `raw/<id>.png`, the master every published copy derives from.
+
+`manifest.json` records, per portrait, the model, the exact prompt, the date and
+the sha256 of both the Blender render and the master.
+
+| Field                     | Record                                                                                                                                                                                                           |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source                    | Original 3D characters built for this project, refined by an image model. Not traced, not from another game, not a photograph of a real person.                                                                  |
+| 3D inputs                 | MPFB 2.0.17 (Blender add-on, GPL-3.0; the tool, not shipped) and the MakeHuman system assets (CC0: bodies, skins, eyes, brows, hair shells, garments). Everything else in the scenes is generated by `build.py`. |
+| Image model               | OpenAI Images API, `gpt-image-2`, edit endpoint, 1024 × 1536, quality `high`.                                                                                                                                    |
+| Date                      | 2026-09-23 / 24 (per-image timestamps in `manifest.json`).                                                                                                                                                       |
+| Production files          | `apps/site/public/media/characters/<id>.webp` (600 × 900) and `apps/game/public/assets/portraits/<id>.webp` (214 × 320), derived from `raw/<id>.png` with ffmpeg.                                                |
+| Commercial / modification | CC0 inputs carry no conditions. OpenAI's terms assign output to the user with commercial use and modification permitted.                                                                                         |
+| Browser distribution      | Permitted. No licence involved restricts web distribution.                                                                                                                                                       |
+| Attribution               | None required. MakeHuman is credited on `/credits` as a courtesy.                                                                                                                                                |
+| AI disclosure             | The published images are AI-refined renders. Any storefront that asks (Steam does) must disclose them.                                                                                                           |
 
 ## Review
 
-- **Real-person likeness.** The first Daryan render closely resembled a
-  well-known real Iranian general. CLAUDE.md and `docs/content-and-culture.md`
-  forbid depicting current real-world figures, so it was rejected and not kept
-  in the repository. His prompt now describes a different face (clean-shaven,
-  glasses, a staff officer) and says he must not resemble a public figure. The
-  second attempt drifted away from an Iranian appearance and was also
-  rejected. The shipped image is the third.
-- **Propaganda framing.** Every prompt asks for a calm, dignified, un-heroic
-  portrait, with no flags, insignia, religious symbols, text or weapons aimed at
-  the viewer. The two protagonists share one composition and lighting recipe,
-  so neither side is shown as the richer or more heroic one (PRD §14.3).
+- **Real-person likeness.** An earlier painted Daryan closely resembled a
+  well-known real Iranian general and was rejected. Daryan's brief now describes
+  a different face (clean-shaven, glasses, a staff officer) and says he must not
+  resemble a public figure. Every refined image is checked for real-person
+  likeness before it is published.
+- **Propaganda framing.** The brief asks for calm, dignified, un-heroic
+  portraits with no flags, insignia, religious symbols or text. Rook and Leila
+  share one stage, one lens and one lighting recipe, mirrored, and carry the same
+  level of gear (PRD §14.3).
 - **Cultural review: pending.** Leila's and Daryan's portraits depict Iranian
   characters and go to the Iranian cultural consultant with the rest of the
   theatre (`docs/content-and-culture.md`). Leila wears a plain headscarf, which
   is accurate for an officer on duty; the consultant has the final word.
 
-## Why not Blender
+## Why refined rather than raw Blender
 
-A realistic 3D cast was prototyped in Blender 5.2 with MPFB 2.0.17 and the CC0
-MakeHuman system assets, rendered in Cycles. The result was a generic mannequin
-in civilian clothes: well below the quality of these paintings. The in-game
-operator figures stay the existing IRON RAIN models until real character models
-exist.
+A Blender render from free CC0 assets reads as a game character from fifteen
+years ago: MakeHuman faces are smooth and similar, and its hair and garments are
+low-detail. The raw renders are kept beside the masters so the difference, and
+what the image model changed, is always checkable.
