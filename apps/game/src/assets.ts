@@ -34,8 +34,23 @@ import { bindTacticalMaterials, TACTICAL_WORLD_ALBEDO_SCALE } from "./tactical-m
 
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/`;
 
-/** Material slot names shared with `tools/art/blender/_lib.py`. */
-export const MATERIALS = [] as const;
+/**
+ * Material slot names shared with `tools/art`.
+ *
+ * The night insects introduced the first slots this list has needed: their
+ * cuticle, membrane and lantern are not part of the tactical atlas, so they
+ * are named here both to document them and because `assets.test.ts` treats
+ * this as the allowlist of slots the engine can bind.
+ */
+export const MATERIALS = [
+  "ir_chitin",
+  "ir_chitin_pale",
+  "ir_chitin_dark",
+  "ir_chitin_leg",
+  "ir_membrane",
+  // Bound in `createMaterials` to an unlit emissive, as `lamp_glass` is.
+  "firefly_lantern",
+] as const;
 
 export type MaterialName = (typeof MATERIALS)[number] | "lamp_glass";
 
@@ -72,6 +87,8 @@ export const MODELS = [
   "m2_carbine_fp",
   "m3_field_case",
   "m3_low_cover",
+  "m3_firefly",
+  "m3_mosquito",
 ] as const;
 
 export type ModelName = (typeof MODELS)[number];
@@ -98,6 +115,15 @@ export function createMaterials(scene: Scene): Map<string, PBRMaterial | Standar
   lens.disableLighting = true;
   lens.emissiveColor = new Color3(1.0, 0.71, 0.36);
   materials.set("lamp_glass", lens);
+
+  // The firefly's lantern, for exactly the reason above: it is the light, and
+  // shading it makes the abdomen darker than the glow it throws. `insects.ts`
+  // clones this per firefly and drives `emissiveColor` for the flash, so the
+  // value set here is only the resting ember.
+  const lantern = new StandardMaterial("firefly_lantern", scene);
+  lantern.disableLighting = true;
+  lantern.emissiveColor = new Color3(0.05, 0.06, 0.016);
+  materials.set("firefly_lantern", lantern);
 
   return materials;
 }

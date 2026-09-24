@@ -1,19 +1,40 @@
 # Asset provenance — IRON RAIN
 
-The current runtime contains **30 original NIGHTCELL 7 GLBs and 5 texture files**. All 29 non-approved models are newly built `m3_` assets. The approved `m2_carbine_fp.glb` and its three surface maps are retained. All other M2 runtime geometry and nine obsolete texture maps are removed.
+The current runtime contains **32 original NIGHTCELL 7 GLBs and 5 texture files**. All 29 non-approved models are newly built `m3_` assets. The approved `m2_carbine_fp.glb` and its three surface maps are retained. All other M2 runtime geometry and nine obsolete texture maps are removed.
 
-| Content                                                       | Origin                                                                                                                    |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Structures, vehicles, equipment, two operator bodies and rigs | Original geometry and animation in `tools/art/iron-rain/generate.py`                                                      |
-| World rifle variants                                          | Original approved C7 design family, regenerated for world scale                                                           |
-| M9 Hammerfall launcher and its rocket                         | Original geometry, `tools/art/iron-rain/generate.py` builders `launcher()` and `rocket()`, 2026-09-22                     |
-| Approved first-person rifle                                   | Unmodified original `m2_carbine_fp.glb`                                                                                   |
-| Concrete, blue paint, asphalt and ripstop atlas               | Built-in image generation, 2026-09-16; reusable source and recorded direction in `tools/art/iron-rain/texture-prompts.md` |
-| Environment image                                             | Original deterministic `tools/art/iron-rain/environment.py`                                                               |
-| Retained C7 coating and steel/rubber normals                  | Existing original M2 surface sources; historical prompt and procedural generator records retained                         |
-| Sound effects and streamed soundtrack                         | Unchanged; existing records below apply                                                                                   |
+| Content                                                       | Origin                                                                                                                       |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Structures, vehicles, equipment, two operator bodies and rigs | Original geometry and animation in `tools/art/iron-rain/generate.py`                                                         |
+| World rifle variants                                          | Original approved C7 design family, regenerated for world scale                                                              |
+| M9 Hammerfall launcher and its rocket                         | Original geometry, `tools/art/iron-rain/generate.py` builders `launcher()` and `rocket()`, 2026-09-22                        |
+| Approved first-person rifle                                   | Unmodified original `m2_carbine_fp.glb`                                                                                      |
+| Concrete, blue paint, asphalt and ripstop atlas               | Built-in image generation, 2026-09-16; reusable source and recorded direction in `tools/art/iron-rain/texture-prompts.md`    |
+| Environment image                                             | Original deterministic `tools/art/iron-rain/environment.py`                                                                  |
+| Retained C7 coating and steel/rubber normals                  | Existing original M2 surface sources; historical prompt and procedural generator records retained                            |
+| Night insects (firefly, mosquito)                             | Original geometry, `tools/art/iron-rain/insects.py`, 2026-09-24; proportion and colour referenced from the photographs below |
+| Sound effects and streamed soundtrack                         | Unchanged; existing records below apply                                                                                      |
 
 No third-party character mesh, animation or palette atlas is used by this runtime. Shared primitive helpers and the approved weapon builder are reused; previous environment and character assemblies are not. Original NIGHTCELL 7 work. `art-manifest.json` records shipped hashes and geometry; `manifest.json` records the complete inventory and budget. Build and validation instructions are in `tools/art/iron-rain/README.md`. Historical records below describe earlier releases, not the current inventory.
+
+## Reference photographs — night insects
+
+`m3_firefly.glb` and `m3_mosquito.glb` are original geometry. No pixel, mesh,
+texture or material is taken from any photograph; the images below were used
+only as visual reference for proportion, colour and surface detail, the way a
+modeller uses a photo on a second monitor.
+
+| Model         | Reference                                                                 | Used for                                                                                      |
+| ------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `m3_firefly`  | `wallpapers.com/wallpapers/firefly-hd-0ksuvrpzf9ur25w6.html`              | Raised elytra, fanned hindwings, pale pronotum with its red patch, ventral lantern at the tip |
+| `m3_mosquito` | `wallpapers.com/wallpapers/white-mosquito-on-water-s44lxk8shgblgdqq.html` | _Aedes_ leg and abdomen banding, humped silvered thorax, forward proboscis, plumose antennae  |
+
+Neither photograph's background, depth of field or lighting is reproduced in a
+model. The firefly's lantern is emissive because the animal is, not because the
+photograph was taken at night — it carries `KHR_materials_emissive_strength`
+and is bound unlit at runtime, exactly as the floodlight lens is.
+
+Both were built with Blender 5.2.2 LTS; the other 30 models in this runtime
+were built with Blender 4.5.3 LTS and are unchanged by that build.
 
 ## Historical license and conversion records
 
