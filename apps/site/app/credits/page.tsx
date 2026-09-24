@@ -29,6 +29,12 @@ export default function CreditsPage() {
         and MPFB, then refined with an image model; how each was made is recorded in the repository.
       </p>
 
+      <h3>Voices</h3>
+      <p>
+        The squad radio in the yard uses AI-generated voices (OpenAI text-to-speech), directed and
+        radio-processed for this game. No real person&rsquo;s voice is cloned or imitated.
+      </p>
+
       <h3>Still to come</h3>
       <p>
         Cultural consultation and native Farsi review are required before any Iranian or

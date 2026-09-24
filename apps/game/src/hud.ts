@@ -72,6 +72,12 @@ export interface Hud {
   showHit(amount: number, bearing: number | null): void;
   /** A one-line notice above the status bar — a pickup, mostly. Fades on its own. */
   notify(text: string): void;
+  /**
+   * A radio caption: who is talking and what they said, for the squad radio.
+   * Captions are how a player who cannot hear the net still gets the order
+   * (accessibility is P0); the newest replaces the last.
+   */
+  caption(speaker: string, text: string, kind: "callout" | "order" | "chatter"): void;
   setLocked(locked: boolean): void;
   /** Credits on hand; re-enables and disables the armory's buttons. */
   setCredits(credits: number): void;
@@ -208,6 +214,12 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   // Notices stack just above the status bar.
   const notices = el("div", "notices");
   hud.append(notices);
+  const radio = el("p", "radio-caption");
+  radio.setAttribute("role", "status");
+  radio.setAttribute("aria-live", "polite");
+  radio.hidden = true;
+  hud.append(radio);
+  let radioTimer = 0;
 
   // First-run coach: one control at a time, above the reticle. A live region,
   // so a screen reader announces each new step (accessibility is P0).
@@ -799,6 +811,18 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
       noticeTimers.add(fade);
     },
 
+    caption(speaker: string, text: string, kind: "callout" | "order" | "chatter"): void {
+      radio.replaceChildren(
+        el("span", "radio-caption__who", speaker),
+        el("span", "radio-caption__what", text),
+      );
+      radio.dataset.kind = kind;
+      radio.hidden = false;
+      window.clearTimeout(radioTimer);
+      // Long enough to read a two-sentence order; the next transmission replaces it anyway.
+      radioTimer = window.setTimeout(() => (radio.hidden = true), 1500 + text.length * 55);
+    },
+
     setLocked(locked: boolean): void {
       hud.dataset.active = String(locked);
       gate.hidden = locked;
@@ -822,6 +846,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     },
 
     dispose(): void {
+      window.clearTimeout(radioTimer);
       for (const timer of noticeTimers) window.clearTimeout(timer);
       noticeTimers.clear();
       vignette.remove();
