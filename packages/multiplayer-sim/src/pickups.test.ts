@@ -513,3 +513,71 @@ describe("placement", () => {
     expect(sim.pickups.size).toBe(0);
   });
 });
+
+describe("god mode", () => {
+  const shard = {
+    id: "g1",
+    kind: PICKUP_KIND.GOD_MODE,
+    position: { x: 0, y: 0, z: 0 },
+    heal: 0,
+    weaponId: null,
+    magazine: 0,
+    reserve: 0,
+    expiresAtMs: null,
+    spawnIndex: null,
+  } as const;
+
+  it("is always worth taking, and leaves vitals and weapons alone", () => {
+    // Unlike a health pack it is never refused at full health: thirty seconds
+    // of not dying is worth taking whatever the bar says. The timer lives on
+    // the player, so this must touch neither health nor weapons.
+    const taker = { health: 100, maxHealth: 100, weapons: [], ammo: [] };
+    const outcome = applyPickup(taker, shard, DEFAULT_PICKUP_RULES);
+    expect(outcome).toEqual({ kind: "god_mode", durationMs: DEFAULT_PICKUP_RULES.godDurationMs });
+    expect(taker.health).toBe(100);
+    expect(taker.weapons).toHaveLength(0);
+  });
+
+  it("holds off until its first-spawn delay, then appears and is taken", () => {
+    const sim = new MatchSimulation({
+      matchId: "t",
+      map: FLAT_MAP,
+      pickups: {
+        healthSpawns: [],
+        godSpawns: [{ x: 0, y: 0, z: 0 }],
+        godFirstSpawnMs: 1_000,
+        godDurationMs: 30_000,
+      },
+    });
+    const me = sim.addPlayer({ id: "me", userId: "me", displayName: "Me", preferredTeam: 0 });
+    me.movement.position = { x: 0, y: 0, z: 0 };
+
+    // The opening of a match is no place for it.
+    sim.step();
+    expect(me.godModeUntilMs).toBe(0);
+
+    for (let t = 0; t < 5_000 && me.godModeUntilMs === 0; t += TICK_MS) sim.step();
+
+    expect(me.godModeUntilMs).toBeGreaterThan(sim.elapsedMs);
+    // Thirty seconds, not more.
+    expect(me.godModeUntilMs - sim.elapsedMs).toBeLessThanOrEqual(30_000);
+    // Taken off the ground, and not immediately replaced.
+    expect([...sim.pickups.values()].filter((x) => x.kind === PICKUP_KIND.GOD_MODE)).toHaveLength(
+      0,
+    );
+  });
+
+  it("is disabled entirely when no spawn is configured", () => {
+    const sim = new MatchSimulation({
+      matchId: "t",
+      map: FLAT_MAP,
+      pickups: { healthSpawns: [], godSpawns: [] },
+    });
+    const me = sim.addPlayer({ id: "me", userId: "me", displayName: "Me", preferredTeam: 0 });
+    for (let t = 0; t < 8_000; t += TICK_MS) sim.step();
+    expect(me.godModeUntilMs).toBe(0);
+    expect([...sim.pickups.values()].filter((x) => x.kind === PICKUP_KIND.GOD_MODE)).toHaveLength(
+      0,
+    );
+  });
+});

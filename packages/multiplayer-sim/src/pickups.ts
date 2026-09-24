@@ -17,6 +17,8 @@ import type { Vec3 } from "./vec";
 export const PICKUP_KIND = {
   HEALTH: "health",
   WEAPON: "weapon",
+  /** A timed invulnerability. Rare, loud, and impossible to miss while it runs. */
+  GOD_MODE: "god_mode",
 } as const;
 
 export type PickupKind = (typeof PICKUP_KIND)[keyof typeof PICKUP_KIND];
@@ -62,6 +64,19 @@ export interface PickupRules {
    */
   readonly staminaPerPack: number;
   readonly staminaCap: number;
+  /** Where the God Mode pickup appears. Empty disables it entirely. */
+  readonly godSpawns: readonly Vec3[];
+  /** Nothing before this: the opening of a match is no place for it. */
+  readonly godFirstSpawnMs: number;
+  /** Base delay before it returns after being taken. */
+  readonly godRespawnMs: number;
+  /**
+   * Jitter added to that delay, so it can never be camped on a timer.
+   * The actual gap is `godRespawnMs + rand * godRespawnJitterMs`.
+   */
+  readonly godRespawnJitterMs: number;
+  /** How long it lasts. Taking a second one extends rather than stacks. */
+  readonly godDurationMs: number;
 }
 
 export const DEFAULT_PICKUP_RULES: PickupRules = {
@@ -76,6 +91,11 @@ export const DEFAULT_PICKUP_RULES: PickupRules = {
   reserveCapMultiplier: 2,
   staminaPerPack: 0,
   staminaCap: MAX_HEALTH,
+  godSpawns: [],
+  godFirstSpawnMs: 90_000,
+  godRespawnMs: 120_000,
+  godRespawnJitterMs: 120_000,
+  godDurationMs: 30_000,
 };
 
 /** The subset of a player a pickup can read and change. */
@@ -88,6 +108,7 @@ export interface PickupTaker {
 }
 
 export type PickupOutcome =
+  | { kind: "god_mode"; durationMs: number }
   | { kind: "health"; healed: number; staminaGained: number; stamina: number }
   | { kind: "weapon"; weaponId: WeaponId; slot: number; added: boolean; ammoAdded: number };
 
@@ -137,6 +158,13 @@ export function applyPickup(
       staminaGained,
       stamina: taker.maxHealth,
     };
+  }
+
+  if (pickup.kind === PICKUP_KIND.GOD_MODE) {
+    // The timer lives on the player, which this function deliberately cannot
+    // reach — it owns vitals and weapons, not match state. The simulation
+    // applies the duration; this only says the pickup was worth taking.
+    return { kind: "god_mode", durationMs: rules.godDurationMs };
   }
 
   const weaponId = pickup.weaponId;

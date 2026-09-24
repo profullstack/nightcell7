@@ -153,6 +153,8 @@ export interface WeaponSlotStatus {
 export interface LocalStatus {
   readonly alive: boolean;
   readonly health: number;
+  /** Milliseconds of God Mode left; 0 when it is not running. */
+  readonly godModeMs: number;
   /** Stamina: the ceiling health can reach. */
   readonly maxHealth: number;
   readonly armor: number;
@@ -581,6 +583,7 @@ export class Opponents {
       return {
         alive: true,
         health: 0,
+        godModeMs: 0,
         maxHealth: 0,
         armor: 0,
         respawnInMs: 0,
@@ -595,6 +598,7 @@ export class Opponents {
     return {
       alive: local.alive,
       health: Math.round(local.health),
+      godModeMs: Math.max(0, Math.round(local.godModeUntilMs - this.sim.elapsedMs)),
       maxHealth: Math.round(local.maxHealth),
       armor: Math.round(local.armor),
       respawnInMs: local.alive ? 0 : Math.max(0, local.respawnAtMs - this.sim.elapsedMs),
@@ -856,6 +860,26 @@ export class Opponents {
       return { root, baseY: p.y, phase: Math.random() * Math.PI * 2 };
     }
 
+    if (pickup.kind === PICKUP_KIND.GOD_MODE) {
+      // A hovering, self-lit shard. Unlit and oversized on purpose: a player
+      // has to be able to tell at a glance that this is not a health pack,
+      // from anywhere in the yard.
+      const root = new TransformNode(`pickup_${id}`, this.scene);
+      root.position.set(p.x, p.y + 0.9, p.z);
+      const material = new StandardMaterial(`pickup_${id}_god`, this.scene);
+      material.disableLighting = true;
+      material.emissiveColor = new Color3(1.0, 0.82, 0.25);
+      const shard = MeshBuilder.CreatePolyhedron(
+        `pickup_${id}_shard`,
+        { type: 1, size: 0.34 },
+        this.scene,
+      );
+      shard.material = material;
+      shard.isPickable = false;
+      shard.parent = root;
+      return { root, baseY: p.y + 0.9, phase: 0 };
+    }
+
     // A health pack: an olive field case with a pale cross. Built rather
     // than imported — there is no medical prop in the set, and a box with a
     // cross is legible from across the yard, which is the whole job.
@@ -967,6 +991,8 @@ export class Opponents {
             this.packsTaken += 1;
             const stamina = event.staminaGained > 0 ? ` · stamina ${event.stamina}` : "";
             this.notices.push(`+${Math.round(event.healed)} health${stamina}`);
+          } else if (event.kind === PICKUP_KIND.GOD_MODE) {
+            this.notices.push("GOD MODE — 30 seconds");
           } else if (event.weaponId) {
             const name = getWeapon(event.weaponId).displayName;
             this.notices.push(

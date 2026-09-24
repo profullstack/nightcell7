@@ -339,6 +339,45 @@ body {
   opacity: 0;
 }
 
+/* God Mode countdown.
+   Sits above the notices and does not fade: a player has to be able to see how
+   long is left, which a transient notice cannot tell them. */
+.godmode {
+  position: absolute;
+  left: 50%;
+  bottom: 198px;
+  transform: translateX(-50%);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.22em;
+  color: #ffd24a;
+  text-shadow:
+    0 0 14px rgba(255, 190, 60, 0.75),
+    0 0 4px rgba(0, 0, 0, 0.9);
+}
+
+/* The last five seconds, so the end is never a surprise. */
+.godmode--ending {
+  animation: godmode-pulse 520ms steps(2, end) infinite;
+}
+
+@keyframes godmode-pulse {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .godmode--ending {
+    animation: none;
+    color: #ff9c3a;
+  }
+}
+
 /* Squad radio caption: bottom left, clear of the crosshair and the status bar. */
 .radio-caption {
   position: absolute;
