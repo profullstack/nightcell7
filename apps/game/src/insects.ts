@@ -1,5 +1,13 @@
-import type { AbstractMesh, Camera, TransformNode } from "@babylonjs/core";
-import { Color3, PBRMaterial, StandardMaterial, Vector3 } from "@babylonjs/core";
+import type { AbstractMesh, Camera, Scene, TransformNode } from "@babylonjs/core";
+import {
+  Color3,
+  Color4,
+  PBRMaterial,
+  Sprite,
+  SpriteManager,
+  StandardMaterial,
+  Vector3,
+} from "@babylonjs/core";
 import type { InsectBiteState } from "@nightcell7/game-core";
 
 import type { AssetSet } from "./assets";
@@ -64,11 +72,44 @@ const WINGBEAT_HZ = 9;
 /** Yard bounds to scatter within, in metres. Matches Ardavan Yard's footprint. */
 const FIELD = { x: 30, zNear: -42, zFar: 48, yLow: 0.5, yHigh: 4.2 } as const;
 
+/**
+ * Screen size, in pixels, the lantern glow is held at.
+ *
+ * The mesh alone cannot carry this. A firefly is 25 mm and the lantern is
+ * about a third of it, so even scaled until the whole insect spans three
+ * pixels the *glowing* part is still one — which is why two playtests and
+ * every pixel measurement found nothing. A camera-facing sprite sized in
+ * screen space is the standard answer for a distant point light, and it costs
+ * one draw call for the whole swarm rather than one per insect.
+ */
+const GLOW_PIXELS_RESTING = 5;
+const GLOW_PIXELS_FLASH = 18;
+
+/** A soft radial dot, built at runtime so the swarm ships no texture file. */
+function glowTextureUrl(): string {
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0.0, "rgba(255,255,235,1)");
+  g.addColorStop(0.25, "rgba(226,255,90,0.95)");
+  g.addColorStop(0.55, "rgba(150,220,40,0.35)");
+  g.addColorStop(1.0, "rgba(120,200,30,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return canvas.toDataURL();
+}
+
 interface Firefly {
   readonly root: TransformNode;
   readonly lantern: PBRMaterial | StandardMaterial | null;
   /** The membrane mesh, flapped as one; see `WINGBEAT_HZ`. */
   readonly wings: AbstractMesh | null;
+  /** The camera-facing glow; this, not the mesh, is what a player sees. */
+  readonly glow: Sprite | null;
   /** Centre of this one's wander, so the swarm stays spread out. */
   readonly home: Vector3;
   readonly radius: number;
@@ -89,13 +130,26 @@ export class NightInsects {
   private readonly mosquito: TransformNode | null = null;
   private readonly mosquitoWings: AbstractMesh | null = null;
   private readonly camera: Camera;
+  private readonly glows: SpriteManager | null = null;
+  private readonly engineHeight: () => number;
   /** 0 = parked offscreen, 1 = at the player's ear. Eased, never snapped. */
   private approach = 0;
   private mosquitoAngle = 0;
   private elapsed = 0;
 
-  constructor(assets: AssetSet, options: NightInsectsOptions) {
+  constructor(scene: Scene, assets: AssetSet, options: NightInsectsOptions) {
     this.camera = options.camera;
+    this.engineHeight = () => scene.getEngine().getRenderHeight();
+
+    const url = glowTextureUrl();
+    if (url) {
+      // One manager, one draw call, one texture for the whole swarm.
+      this.glows = new SpriteManager("firefly-glow", url, FIREFLY_COUNT, 64, scene);
+      this.glows.isPickable = false;
+      // Additive, so a lantern brightens the yard behind it rather than
+      // punching a grey square into it.
+      this.glows.blendMode = 1; // BLENDMODE_ADD
+    }
     const rand = options.random ?? Math.random;
 
     const fireflyModel = assets.models.get("m3_firefly");
@@ -116,6 +170,7 @@ export class NightInsects {
           root,
           lantern: lanternMaterial(root),
           wings: membrane(root),
+          glow: this.glows ? new Sprite(`firefly-glow-${index}`, this.glows) : null,
           home: placed.position.clone(),
           radius: 0.8 + rand() * 2.4,
           period: 2.4 + rand() * 2.4,
@@ -171,6 +226,26 @@ export class NightInsects {
       // no loss: an insect beats its pair in sync anyway.
       if (fly.wings) {
         fly.wings.rotation.x = Math.sin(this.elapsed * WINGBEAT_HZ * Math.PI * 2) * 0.42;
+      }
+
+      // The glow is the firefly, as far as a player at yard range is
+      // concerned: held at a fixed pixel size so distance cannot shrink it
+      // out of existence.
+      if (fly.glow) {
+        const range = Math.max(
+          0.2,
+          Vector3.Distance(fly.root.position, this.camera.globalPosition),
+        );
+        const t0 = (fly.phase % fly.period) / fly.period;
+        const lit = t0 < 0.26 ? Math.sin((t0 / 0.26) * Math.PI) ** 0.55 : 0;
+        const px = GLOW_PIXELS_RESTING + lit * (GLOW_PIXELS_FLASH - GLOW_PIXELS_RESTING);
+        // World size that subtends `px` pixels at this range.
+        const fov = (this.camera as unknown as { fov: number }).fov ?? 1.0;
+        const size = 2 * range * Math.tan(fov / 2) * (px / Math.max(1, this.engineHeight()));
+        fly.glow.position.copyFrom(fly.root.position);
+        fly.glow.width = size;
+        fly.glow.height = size;
+        fly.glow.color = new Color4(0.85, 1.0, 0.32, 0.25 + lit * 0.75);
       }
 
       if (!fly.lantern) continue;
@@ -237,7 +312,11 @@ export class NightInsects {
   }
 
   dispose(): void {
-    for (const fly of this.fireflies) fly.root.dispose();
+    for (const fly of this.fireflies) {
+      fly.glow?.dispose();
+      fly.root.dispose();
+    }
+    this.glows?.dispose();
     this.mosquito?.dispose();
     this.fireflies.length = 0;
   }

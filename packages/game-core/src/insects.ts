@@ -33,8 +33,8 @@ export const BITE = {
   /** Health per bite, before armour. Small on purpose. */
   DAMAGE: 2,
   /** A bite lands somewhere in this window after the last one. */
-  MIN_INTERVAL_MS: 90_000,
-  MAX_INTERVAL_MS: 240_000,
+  MIN_INTERVAL_MS: 45_000,
+  MAX_INTERVAL_MS: 110_000,
   /**
    * Health a bite will never take you below.
    *
@@ -53,9 +53,11 @@ export const BITE = {
    *
    * The first contact of a match is the worst possible moment to take the
    * player's hands off the rifle, and a bite in the first ten seconds reads as
-   * a bug rather than atmosphere.
+   * a bug rather than atmosphere. Shortened from a minute once playtesting
+   * showed nobody ever stayed locked long enough to meet a mosquito at all:
+   * `FLOOR` already caps what a whole match can cost, so frequency is cheap.
    */
-  GRACE_MS: 60_000,
+  GRACE_MS: 25_000,
 } as const;
 
 export interface InsectBiteState {
