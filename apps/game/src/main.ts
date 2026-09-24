@@ -399,6 +399,15 @@ async function boot(): Promise<void> {
         maxHealth: opponents.localStatus().maxHealth,
       });
       biteState = step.state;
+      // The swat leads the bite: a hand off the rifle, a wave, a miss. Fired
+      // once per cycle off `startedSwat` so it cannot stutter at low frame
+      // rates, where a window test alone would retrigger every tick.
+      if (step.startedSwat) {
+        player.stagger(1);
+        audio.ui("hover");
+        hud.notify("Swatting at a mosquito");
+      }
+
       if (step.bit) {
         // `damageDealt`, not `BITE.DAMAGE`: the rules clamp at the floor, so
         // a player already low takes the nuisance without the health cost.
@@ -420,11 +429,7 @@ async function boot(): Promise<void> {
             Math.PI
           : null;
         hud.showHit(step.damageDealt, bearing);
-        hud.notify(
-          step.damageDealt > 0
-            ? `Mosquito bite — swatting (-${Math.round(step.damageDealt)})`
-            : "Mosquito bite — swatting",
-        );
+        hud.notify(step.damageDealt > 0 ? `Bitten (-${Math.round(step.damageDealt)})` : "Bitten");
         audio.hurt();
       }
       nightInsects?.update(deltaMs, matchMs, biteState);
