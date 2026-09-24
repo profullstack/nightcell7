@@ -296,7 +296,13 @@ export class NightInsects {
     const facing = (this.camera as unknown as { rotation?: { y: number } }).rotation?.y ?? 0;
     // Babylon yaw 0 looks down +Z, so forward is (sin, cos) — and the weave is
     // capped well inside a 90 degree field of view.
-    const weave = Math.sin(this.elapsed * 0.7 + this.mosquitoAngle) * 0.6;
+    // A hard jink during the swat window, so the wave visibly misses before
+    // the bite lands. Outside it the weave is the slow drift.
+    const untilBiteS = (bite.nextBiteAt - nowMs) / 1000;
+    const dodging = untilBiteS > 0 && untilBiteS < 0.85;
+    const weave =
+      Math.sin(this.elapsed * 0.7 + this.mosquitoAngle) * 0.6 +
+      (dodging ? Math.sin(this.elapsed * 14) * 0.5 : 0);
     const angle = Math.PI / 2 - (facing + weave);
     const origin = this.camera.globalPosition;
 

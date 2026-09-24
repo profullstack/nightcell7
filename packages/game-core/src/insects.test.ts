@@ -39,6 +39,36 @@ describe("insect bite", () => {
     expect(MAX_HEALTH - step.vitals.health).toBeCloseTo(BITE.DAMAGE);
   });
 
+  it("swats first, then bites — never the other way round", () => {
+    const state = createInsectBiteState(fixed(0));
+    const bite = state.nextBiteAt;
+
+    // Too early: no swat yet.
+    const early = stepInsectBite(state, bite - BITE.SWAT_LEAD_MS - 50, fixed(0), on);
+    expect(early.swatting).toBe(false);
+    expect(early.startedSwat).toBe(false);
+    expect(early.bit).toBe(false);
+
+    // Inside the lead: swatting, and the edge fires exactly once.
+    const first = stepInsectBite(state, bite - 400, fixed(0), on);
+    expect(first.swatting).toBe(true);
+    expect(first.startedSwat).toBe(true);
+    expect(first.bit).toBe(false);
+    expect(first.damageDealt).toBe(0);
+
+    const second = stepInsectBite(first.state, bite - 200, fixed(0), on);
+    expect(second.swatting).toBe(true);
+    expect(second.startedSwat).toBe(false);
+
+    // Then it lands, and the swat is over.
+    const landed = stepInsectBite(second.state, bite, fixed(0.5), on);
+    expect(landed.bit).toBe(true);
+    expect(landed.swatting).toBe(false);
+    expect(landed.scratching).toBe(true);
+    // Re-armed for the next cycle.
+    expect(landed.state.swatAnnounced).toBe(false);
+  });
+
   it("never bites twice inside one scratch", () => {
     const first = stepInsectBite(
       createInsectBiteState(fixed(0)),
