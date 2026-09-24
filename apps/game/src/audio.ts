@@ -180,6 +180,8 @@ export interface AudioOptions {
 
 export class GameAudio {
   private readonly context: AudioContext;
+  /** Held while a mosquito is audible; see `whine`. */
+  private whineVoices: { gain: GainNode; oscillators: OscillatorNode[] } | null = null;
   private readonly master: GainNode;
   private readonly buffers = new Map<string, AudioBuffer>();
   private ambience: AudioBufferSourceNode | null = null;
@@ -343,6 +345,65 @@ export class GameAudio {
       osc.start(at);
       osc.stop(at + 0.08);
     });
+  }
+
+  /**
+   * The mosquito's whine, held while one is near and faded out when it leaves.
+   *
+   * Synthesised for the same reason `hurt` is: there is no recorded whine in
+   * the set, and this one suits synthesis better than most — a female Culicid
+   * wingbeat really is a narrow tone near 600 Hz, so an oscillator is closer
+   * to the real thing than a sample would be.
+   *
+   * Two detuned saws a few Hz apart give the beating, wavering quality that
+   * makes it read as an insect rather than a test tone. `nearness` is 0 when
+   * it is across the yard and 1 when it is at the ear; it drives gain and a
+   * little pitch, so the approach is audible before it is visible.
+   *
+   * Call every frame it is wanted and `stopWhine` when it is not. Starting an
+   * oscillator per frame would click; this keeps one alive and rides the gain.
+   */
+  whine(nearness: number): void {
+    if (this.context.state !== "running") return;
+    const now = this.context.currentTime;
+    const level = Math.max(0, Math.min(1, nearness));
+
+    if (!this.whineVoices) {
+      const gain = this.context.createGain();
+      gain.gain.value = 0.0001;
+      gain.connect(this.master);
+      const oscillators = [0, 5.5].map((detune) => {
+        const osc = this.context.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = 610 + detune;
+        // A gentle low-pass keeps the saw from being a buzzsaw: the whine is
+        // thin and nasal, not harsh.
+        const tone = this.context.createBiquadFilter();
+        tone.type = "lowpass";
+        tone.frequency.value = 2400;
+        osc.connect(tone).connect(gain);
+        osc.start(now);
+        return osc;
+      });
+      this.whineVoices = { gain, oscillators };
+    }
+
+    const { gain, oscillators } = this.whineVoices;
+    // Pitch rises slightly as it closes, the way a passing insect does.
+    oscillators.forEach((osc, i) => {
+      osc.frequency.setTargetAtTime(590 + i * 5.5 + level * 70, now, 0.08);
+    });
+    gain.gain.setTargetAtTime(Math.max(0.0001, level * 0.18), now, 0.05);
+  }
+
+  /** Fade the whine out and release its oscillators. */
+  stopWhine(): void {
+    const voices = this.whineVoices;
+    if (!voices) return;
+    this.whineVoices = null;
+    const now = this.context.currentTime;
+    voices.gain.gain.setTargetAtTime(0.0001, now, 0.06);
+    for (const osc of voices.oscillators) osc.stop(now + 0.4);
   }
 
   ui(kind: "hover" | "click" | "error"): void {

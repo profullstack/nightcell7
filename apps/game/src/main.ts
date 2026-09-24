@@ -410,6 +410,11 @@ async function boot(): Promise<void> {
         hud.notify("Mosquito bite");
       }
       nightInsects?.update(deltaMs, matchMs, biteState);
+      // The whine is the whole point of a mosquito. Drive it off the same
+      // approach value the model uses, so sound and silhouette agree.
+      const near = nightInsects?.mosquitoNearness ?? 0;
+      if (near > 0.01) audio.whine(near);
+      else audio.stopWhine();
     }
 
     effects.update();

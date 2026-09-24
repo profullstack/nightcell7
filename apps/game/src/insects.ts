@@ -32,12 +32,27 @@ import { placeAll } from "./assets";
  */
 const FIREFLY_COUNT = 12;
 
+/**
+ * Wingbeat, in flaps per second.
+ *
+ * Nowhere near the truth: a mosquito beats near 600 Hz and a firefly near 45.
+ * Both alias into a strobing mess at 60 fps — below about 12 Hz is the most
+ * that samples cleanly, and past it the wing appears to crawl backwards or
+ * stand still. Games solve this with a blurred fan; at 16 mm the honest
+ * cheap answer is a fast readable flutter that says "flying" and gets out of
+ * the way. The whine carries the real frequency instead, where the ear can
+ * actually resolve it.
+ */
+const WINGBEAT_HZ = 9;
+
 /** Yard bounds to scatter within, in metres. Matches Ardavan Yard's footprint. */
 const FIELD = { x: 34, zNear: -46, zFar: 52, yLow: 0.6, yHigh: 6.5 } as const;
 
 interface Firefly {
   readonly root: TransformNode;
   readonly lantern: PBRMaterial | StandardMaterial | null;
+  /** The membrane mesh, flapped as one; see `WINGBEAT_HZ`. */
+  readonly wings: AbstractMesh | null;
   /** Centre of this one's wander, so the swarm stays spread out. */
   readonly home: Vector3;
   readonly radius: number;
@@ -56,6 +71,7 @@ export interface NightInsectsOptions {
 export class NightInsects {
   private readonly fireflies: Firefly[] = [];
   private readonly mosquito: TransformNode | null = null;
+  private readonly mosquitoWings: AbstractMesh | null = null;
   private readonly camera: Camera;
   /** 0 = parked offscreen, 1 = at the player's ear. Eased, never snapped. */
   private approach = 0;
@@ -83,6 +99,7 @@ export class NightInsects {
         this.fireflies.push({
           root,
           lantern: lanternMaterial(root),
+          wings: membrane(root),
           home: placed.position.clone(),
           radius: 0.8 + rand() * 2.4,
           period: 3.2 + rand() * 3.0,
@@ -98,6 +115,7 @@ export class NightInsects {
         unique: true,
       });
       this.mosquito = root ?? null;
+      this.mosquitoWings = root ? membrane(root) : null;
       // Parked far below the yard until it is wanted; it is a single insect
       // and hiding it costs less than creating and destroying one per bite.
       if (this.mosquito) this.mosquito.setEnabled(false);
@@ -126,6 +144,12 @@ export class NightInsects {
         fly.home.z + Math.cos(fly.wander * 1.3) * fly.radius,
       );
       fly.root.rotation.y = Math.atan2(Math.cos(fly.wander * 0.9), -Math.sin(fly.wander * 1.3));
+
+      // Both wings are one mesh (the exporter joins by material), which is
+      // no loss: an insect beats its pair in sync anyway.
+      if (fly.wings) {
+        fly.wings.rotation.x = Math.sin(this.elapsed * WINGBEAT_HZ * Math.PI * 2) * 0.42;
+      }
 
       if (!fly.lantern) continue;
       fly.phase += dt;
@@ -171,10 +195,23 @@ export class NightInsects {
       origin.z + Math.sin(angle) * distance,
     );
     mosquito.rotation.y = -angle + Math.PI / 2;
+    if (this.mosquitoWings) {
+      this.mosquitoWings.rotation.x = Math.sin(this.elapsed * WINGBEAT_HZ * Math.PI * 2) * 0.5;
+    }
     // It is 14 mm long. Without a lift toward the camera it is a subpixel
     // speck exactly when the player is meant to notice it.
     const scale = 1 + 6 * this.approach;
     mosquito.scaling.setAll(scale);
+  }
+
+  /**
+   * How close the mosquito is, 0 to 1. Drives the whine in `main.ts`.
+   *
+   * Exposed rather than the class owning the sound, because audio belongs to
+   * `GameAudio` and this file is presentation only.
+   */
+  get mosquitoNearness(): number {
+    return this.approach;
   }
 
   dispose(): void {
@@ -182,6 +219,11 @@ export class NightInsects {
     this.mosquito?.dispose();
     this.fireflies.length = 0;
   }
+}
+
+/** The membrane mesh — both wings, joined by the exporter into one material. */
+function membrane(root: TransformNode): AbstractMesh | null {
+  return root.getChildMeshes().find((m) => m.material?.name.includes("ir_membrane")) ?? null;
 }
 
 /** The lantern mesh's own material, cloned per firefly by `unique` placement. */
