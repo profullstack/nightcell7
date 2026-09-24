@@ -22,6 +22,19 @@ import type { ModelName } from "./assets";
  * the collision volumes at boot (`isClearOfSolids`) and again in the test
  * suite, so a coordinate inside a wall cannot ship.
  */
+/**
+ * Where God Mode can appear.
+ *
+ * Deliberately out at the edges and away from the health packs: thirty
+ * seconds of invulnerability should cost a walk across open ground, not sit
+ * on the route a player already runs for health.
+ */
+export const SANDBOX_GOD_SPAWNS: readonly Vec3[] = [
+  { x: 30, y: 0, z: 34 },
+  { x: -30, y: 0, z: -34 },
+  { x: 0, y: 0, z: -40 },
+];
+
 export const SANDBOX_HEALTH_SPAWNS: readonly Vec3[] = [
   // Just south of the central hard point, which itself is solid.
   { x: 0, y: 0, z: 6 },
@@ -76,6 +89,7 @@ export const SANDBOX_ENEMY_TUNING: BotTuning = {
 
 export const SANDBOX_PICKUPS: Partial<PickupRules> = {
   healthSpawns: SANDBOX_HEALTH_SPAWNS,
+  godSpawns: SANDBOX_GOD_SPAWNS,
   healthFirstSpawnMs: 10_000,
   healthRespawnMs: 30_000,
   healAmount: 50,

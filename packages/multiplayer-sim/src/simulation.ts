@@ -110,6 +110,8 @@ export interface SimPlayer {
   alive: boolean;
   respawnAtMs: number;
   spawnProtectedUntilMs: number;
+  /** Match clock until which God Mode holds. Zero when it is not running. */
+  godModeUntilMs: number;
   /** Match time of the last damage taken; gates passive regeneration. */
   lastDamagedAtMs: number;
 
@@ -297,6 +299,10 @@ export class MatchSimulation {
   private readonly humanIncomingDamage: number;
   /** Per health spawn: when the next pack appears there, or null while one sits there. */
   private readonly healthSpawnDueAtMs: (number | null)[] = [];
+  /** When the next God Mode appears, or null while one is already out. */
+  private godSpawnDueAtMs: number | null = null;
+  /** How many have been placed, which drives the spawn point and the jitter. */
+  private godCycle = 0;
 
   private readonly recentDeaths: { position: Vec3; atMs: number }[] = [];
   private nextGrenadeSeq = 0;
@@ -316,8 +322,10 @@ export class MatchSimulation {
       // A spawn inside a solid would be visible and unreachable; drop it here
       // rather than ship it.
       const healthSpawns = merged.healthSpawns.filter((point) => isClearOfSolids(this.map, point));
-      this.pickupRules = { ...merged, healthSpawns };
+      const godSpawns = merged.godSpawns.filter((point) => isClearOfSolids(this.map, point));
+      this.pickupRules = { ...merged, healthSpawns, godSpawns };
       this.healthSpawnDueAtMs.push(...healthSpawns.map(() => merged.healthFirstSpawnMs));
+      if (godSpawns.length > 0) this.godSpawnDueAtMs = merged.godFirstSpawnMs;
     } else {
       this.pickupRules = null;
     }
@@ -368,6 +376,7 @@ export class MatchSimulation {
       alive: true,
       respawnAtMs: 0,
       spawnProtectedUntilMs: 0,
+      godModeUntilMs: 0,
       lastDamagedAtMs: -Infinity,
       kills: 0,
       deaths: 0,
@@ -873,7 +882,7 @@ export class MatchSimulation {
     for (const [playerId, raw] of total) {
       const player = this.players.get(playerId);
       if (!player || !player.alive) continue;
-      if (this.elapsedMs < player.spawnProtectedUntilMs) continue;
+      if (this.isInvulnerable(player)) continue;
 
       const dealt = this.scaleIncoming(player, raw);
       const result = applyDamage(
@@ -952,7 +961,7 @@ export class MatchSimulation {
       if (!player || !player.alive) continue;
       // Spawn protection holds against explosions too, or a grenade lobbed at
       // a spawn exit beats the rule that protects it.
-      if (this.elapsedMs < player.spawnProtectedUntilMs) continue;
+      if (this.isInvulnerable(player)) continue;
 
       const dealt = this.scaleIncoming(player, victim.damage);
       const result = applyDamage(
@@ -1103,7 +1112,7 @@ export class MatchSimulation {
 
     const victim = this.players.get(victimId);
     if (!victim || !victim.alive) return;
-    if (this.elapsedMs < victim.spawnProtectedUntilMs) return;
+    if (this.isInvulnerable(victim)) return;
 
     const dealt = this.scaleIncoming(victim, totalDamage);
     const result = applyDamage(
@@ -1214,6 +1223,9 @@ export class MatchSimulation {
     player.alive = true;
     player.respawnAtMs = 0;
     player.spawnProtectedUntilMs = this.elapsedMs + this.rules.spawnProtectionMs;
+    // God Mode does not survive dying. Carrying it through a respawn would
+    // turn one lucky pickup into a permanent advantage across a life.
+    player.godModeUntilMs = 0;
     player.reloadingUntilMs = 0;
     player.nextFireAtMs = 0;
     // Grenades come back with a life, never during one — a resupply mid-fight
@@ -1287,6 +1299,34 @@ export class MatchSimulation {
       });
     });
 
+    // God Mode: one on the field at a time, at a random one of its spawns,
+    // on a jittered clock so it can never be camped.
+    if (
+      this.godSpawnDueAtMs !== null &&
+      this.elapsedMs >= this.godSpawnDueAtMs &&
+      rules.godSpawns.length > 0
+    ) {
+      this.godSpawnDueAtMs = null;
+      // Deterministic, like `conePellet`: this simulation carries no RNG on
+      // purpose, because the server has to be reproducible for replay and
+      // there is no shared seed to desync against. A golden-ratio sequence
+      // gives an interval and a location that vary without being random, so
+      // the pickup is still not campable on a stopwatch.
+      const at = rules.godSpawns[this.godCycle % rules.godSpawns.length];
+      if (at) {
+        this.placePickup({
+          kind: PICKUP_KIND.GOD_MODE,
+          position: { ...at },
+          heal: 0,
+          weaponId: null,
+          magazine: 0,
+          reserve: 0,
+          expiresAtMs: null,
+          spawnIndex: null,
+        });
+      }
+    }
+
     // Drops nobody wanted are swept up.
     for (const pickup of this.pickups.values()) {
       if (pickup.expiresAtMs !== null && this.elapsedMs >= pickup.expiresAtMs) {
@@ -1313,6 +1353,21 @@ export class MatchSimulation {
         }
         const outcome = applyPickup(player, pickup, rules);
         if (!outcome) continue;
+
+        if (outcome.kind === "god_mode") {
+          // Extend, never stack, and never past the full duration: two taken
+          // back to back must not chain into a minute of invulnerability.
+          const from = Math.max(this.elapsedMs, player.godModeUntilMs);
+          player.godModeUntilMs = Math.min(
+            from + outcome.durationMs,
+            this.elapsedMs + rules.godDurationMs,
+          );
+          this.godCycle += 1;
+          this.godSpawnDueAtMs =
+            this.elapsedMs +
+            rules.godRespawnMs +
+            goldenFraction(this.godCycle) * rules.godRespawnJitterMs;
+        }
 
         this.pickups.delete(pickup.id);
         if (pickup.spawnIndex !== null) {
@@ -1347,6 +1402,17 @@ export class MatchSimulation {
    * as a bug. A drop is the reward for a kill, so it needs a killer who can
    * collect it.
    */
+  /**
+   * Whether a fighter can be hurt right now.
+   *
+   * One predicate rather than a condition repeated at each damage site: there
+   * are three of them, and a fourth added later that forgot God Mode would be
+   * a bug nobody sees until a player dies while invulnerable.
+   */
+  private isInvulnerable(player: SimPlayer): boolean {
+    return this.elapsedMs < player.spawnProtectedUntilMs || this.elapsedMs < player.godModeUntilMs;
+  }
+
   private dropWeapons(victim: SimPlayer, attacker: SimPlayer | null): void {
     const rules = this.pickupRules;
     if (!rules || !rules.dropWeapons) return;
@@ -1413,6 +1479,17 @@ export class MatchSimulation {
     if (this.phase !== "live") return this.rules.durationMs;
     return Math.max(0, this.rules.durationMs - this.elapsedMs);
   }
+}
+
+/**
+ * A low-discrepancy fraction in [0, 1) from a counter.
+ *
+ * Successive values spread evenly rather than clustering, so a schedule built
+ * on it looks irregular without any RNG — the same reason `conePellet` uses a
+ * golden-angle spiral instead of random spread.
+ */
+function goldenFraction(n: number): number {
+  return (n * 0.6180339887498949) % 1;
 }
 
 /**

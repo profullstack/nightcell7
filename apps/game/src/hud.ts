@@ -177,6 +177,12 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
 
   const vitals = el("div", "status__group status__group--vitals");
   vitals.append(el("p", "hud__label", "Health"));
+  // God Mode countdown. Its own line rather than a notice, because a notice
+  // fades after a few seconds and the whole point is that the player can see
+  // how long is left — PRD: never be surprised by it ending.
+  const godBanner = el("p", "godmode", "");
+  godBanner.hidden = true;
+
   const healthValue = el("p", "hud__value status__health", "100");
   vitals.append(healthValue);
   const healthBar = el("div", "status__bar");
@@ -217,6 +223,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
 
   // Notices stack just above the status bar.
   const notices = el("div", "notices");
+  hud.append(godBanner);
   hud.append(notices);
   const radio = el("p", "radio-caption");
   radio.setAttribute("role", "status");
@@ -631,6 +638,20 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
       const now = performance.now();
       const elapsed = Math.min(now - lastTickAt, 250);
       lastTickAt = now;
+
+      // ---- god mode
+      if (local.godModeMs > 0) {
+        const seconds = Math.ceil(local.godModeMs / 1000);
+        const text = `GOD MODE ${seconds}s`;
+        if (godBanner.textContent !== text) godBanner.textContent = text;
+        if (godBanner.hidden) godBanner.hidden = false;
+        // The last five seconds read differently, so the end is never a
+        // surprise even if the player has stopped reading the number.
+        godBanner.classList.toggle("godmode--ending", seconds <= 5);
+      } else if (!godBanner.hidden) {
+        godBanner.hidden = true;
+        godBanner.classList.remove("godmode--ending");
+      }
 
       // ---- vitals
       const health = `${local.health}/${local.maxHealth}`;
