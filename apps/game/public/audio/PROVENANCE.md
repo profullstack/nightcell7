@@ -111,32 +111,28 @@ service worker does not precache it.
 ### Second album: _When the Ravens Lied_
 
 Twelve tracks by **Þrøngva** in `music/Þrøngva/When the Ravens Lied/`, in the
-first album's style: drop-D Viking metal crossed with hip-hop. Unlike the first
-album, every note is **synthesised by code**, the same way as the effects
-above: `tools/music/synth_album.py` (numpy and ffmpeg, nothing sampled, no
-generative audio model). Its provenance is a commit, the script and a seed per
-track, and the seed is written into each file's comment tag.
+first album's style: drop-D Viking metal crossed with hip-hop. Like the first
+album, the audio is our own custom music **made with Suno** by the project
+owner and delivered on 2026-09-23, so each MP3's comment tag says
+"made with suno" and its `lyrics-eng` tag holds the lyrics. Not licensed from a
+third party, so there is no external licence and no attribution obligation.
 
-The source is the lyric sheet `docs/music/when-the-ravens-lied/album.md`,
-which holds the concept, every lyric, and a tempo and style direction for each
-section. The script arranges each section from that direction. It plays a
-drop-D riff with the kick doubling it, boom-bap or 808 bounce drums on the
-hip-hop tracks, choir, strings, tagelharpa, a throat-singing drone, horns, and
-the effects the sheet names. The voice is formant synthesis driven by the
-lyrics, one note per syllable on that syllable's vowel. It follows the words'
-rhythm but is not intelligible speech, so the lyrics also ride in each MP3's
-`lyrics-eng` tag.
+The lyrics and a style direction per section come from the lyric sheet
+`docs/music/when-the-ravens-lied/album.md`. The paste-ready Suno sheets it was
+made from are in `docs/music/when-the-ravens-lied/suno/`, written by
+`tools/music/synth_album.py --suno`.
 
-Output is a 48 kHz WAV master in `build/music-wav/`, which is not committed,
-and a 320 kbps, 48 kHz MP3 at about -10 LUFS. To rebuild:
+A first cut of the album, synthesised entirely by that script (numpy, formant
+voice), shipped briefly in #75 and was replaced by these Suno recordings the
+same day. The script can still render a code-only version:
 
 ```sh
 python3 tools/music/synth_album.py docs/music/when-the-ravens-lied/album.md --jobs 3
 ```
 
-The `--suno` flag writes paste-ready Suno sheets to
-`docs/music/when-the-ravens-lied/suno/`, the path the first album took, for a
-sung version later.
+The game plays both albums as one shuffle bag (`shuffledOrder` in
+`src/audio.ts`): a random song from either album, every track once before any
+repeats, never the same song twice in a row.
 
 | #   | Title                      |
 | --- | -------------------------- |

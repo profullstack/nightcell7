@@ -99,6 +99,26 @@ export function titleFromStem(stem: string): string {
  * `<artist>/<song>.mp3` or `<artist>/<album>/<song>.mp3`, as the glob emits
  * it, to a playable track.
  */
+/**
+ * A shuffled play order over `count` tracks: every track once, in random
+ * order, before any repeats. `avoidFirst` is the track that just finished, so
+ * a reshuffle never plays the same song twice in a row across the boundary.
+ */
+export function shuffledOrder(
+  count: number,
+  random: () => number = Math.random,
+  avoidFirst?: number,
+): number[] {
+  const order = Array.from({ length: count }, (_, i) => i);
+  for (let i = count - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [order[i], order[j]] = [order[j] as number, order[i] as number];
+  }
+  if (count > 1 && order[0] === avoidFirst)
+    [order[0], order[1]] = [order[1] as number, order[0] as number];
+  return order;
+}
+
 export function toTrack(relative: string): Track {
   const segments = relative.split("/");
   const folder = segments[0] ?? "";
@@ -165,6 +185,8 @@ export class GameAudio {
   private ambience: AudioBufferSourceNode | null = null;
   private music: HTMLAudioElement | null = null;
   private musicIndex = 0;
+  /** What plays after the current track: a shuffle bag over every album. */
+  private musicQueue: number[] = [];
   private stepAccumulator = 0;
   private lastVariation = new Map<string, number>();
   private ready = false;
@@ -365,7 +387,8 @@ export class GameAudio {
   }
 
   /**
-   * Start the soundtrack, shuffled, advancing to the next track on end.
+   * Start the soundtrack, shuffled across every album, advancing to another
+   * random track on end.
    *
    * Quiet by default. This sits under gunfire and footsteps, and music that
    * competes with the audio cues a player needs is worse than silence.
@@ -376,7 +399,10 @@ export class GameAudio {
     // zero and loop on a blank src forever.
     if (MUSIC.length === 0) return;
 
-    this.musicIndex = Math.floor(Math.random() * MUSIC.length);
+    // A random song from any album, then more random songs: a shuffle bag, so
+    // every track plays once before any repeats and none plays twice running.
+    this.musicQueue = shuffledOrder(MUSIC.length);
+    this.musicIndex = this.musicQueue.shift() ?? 0;
     const element = new Audio();
     element.volume = volume;
     element.preload = "none";
@@ -391,7 +417,9 @@ export class GameAudio {
     };
 
     const advance = () => {
-      this.musicIndex = (this.musicIndex + 1) % MUSIC.length;
+      if (this.musicQueue.length === 0)
+        this.musicQueue = shuffledOrder(MUSIC.length, Math.random, this.musicIndex);
+      this.musicIndex = this.musicQueue.shift() ?? 0;
       play(MUSIC[this.musicIndex]);
     };
 
