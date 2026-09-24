@@ -24,6 +24,7 @@ import {
   type SideId,
 } from "./loadout";
 import type { Briefing, CoachState } from "./onboarding";
+import { DEFAULT_TIME_OF_DAY, TIMES_OF_DAY, timeOfDayInfo, type TimeOfDay } from "./time-of-day";
 
 /**
  * HUD and start gate.
@@ -41,6 +42,9 @@ export interface HudOptions {
   /** Preselected difficulty, and the sink for whichever the player picks. */
   difficulty?: SandboxDifficultyId;
   onDifficultyChange?: (difficulty: SandboxDifficultyId) => void;
+  /** Preselected time of day, and the sink for whichever the player picks. */
+  timeOfDay?: TimeOfDay;
+  onTimeOfDayChange?: (time: TimeOfDay) => void;
   /** The operator: character (and side), armour, colour. Every change is reported whole. */
   loadout?: Loadout;
   onLoadoutChange?: (loadout: Loadout) => void;
@@ -371,6 +375,34 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   }
   tiers.append(tierBlurb);
   gate.append(tiers);
+
+  // Time of day. Third question on the gate, built exactly like the two above.
+  // It is a lighting choice, not a mode: the same map, the same roster and the
+  // same rules, lit either as the false dawn or under an overhead sun.
+  let when: TimeOfDay = options.timeOfDay ?? DEFAULT_TIME_OF_DAY;
+  const times = el("fieldset", "modes modes--time");
+  times.append(el("legend", "modes__legend", "Time"));
+  const timeBlurb = el("p", "modes__blurb", timeOfDayInfo(when).blurb);
+  for (const entry of TIMES_OF_DAY) {
+    const label = el("label", "modes__option");
+    label.dataset.interactive = "";
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "nc7-time";
+    input.value = entry.id;
+    input.checked = entry.id === when;
+    input.addEventListener("change", () => {
+      if (!input.checked) return;
+      when = entry.id;
+      timeBlurb.textContent = entry.blurb;
+      options.onTimeOfDayChange?.(entry.id);
+    });
+    label.append(input);
+    label.append(el("span", "modes__name", entry.name));
+    times.append(label);
+  }
+  times.append(timeBlurb);
+  gate.append(times);
 
   // ------------------------------------------------------------- operator
   //

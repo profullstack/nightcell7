@@ -11,9 +11,14 @@ exec(compile(p.read_text().split('BUILDERS={')[0],str(p),'exec'),M.__dict__)
 S=M.S;L=M.L;OUT=M.OUT;B=M.B;C=M.C;R=M.R;T=M.T;E=M.ellipsoid
 COLORS={'plaster':(.86,.89,.91),'blue':(.70,.82,.93),'canvas':(.48,.51,.40),'uniform':(.28,.39,.45),'steel':(.26,.31,.35),'rubber':(.035,.042,.046),'glass':(.055,.16,.20),'orange':(.65,.17,.045),'white':(.72,.76,.79),'light':(.72,.86,1),'skin':(.38,.23,.16),'mark':(.69,.52,.20)}
 for k,c in COLORS.items():S.SPECS['ir_'+k]=(c,.65 if k=='steel' else .2 if k in ['glass','blue'] else 0,.24 if k=='glass' else .4 if k=='steel' else .83,None,1)
+sys.path.insert(0,str(Path(__file__).resolve().parent));import insects;insects.install(S,L,E)
 MANIFEST={}
 def reset():
  S.reset();bs=S.MATS['ir_light'].node_tree.nodes.get('Principled BSDF');bs.inputs['Emission Color'].default_value=(.7,.86,1,1);bs.inputs['Emission Strength'].default_value=1.3
+ bs=S.MATS['firefly_lantern'].node_tree.nodes.get('Principled BSDF');bs.inputs['Emission Color'].default_value=(.86,1,.26,1);bs.inputs['Emission Strength'].default_value=6
+ m=S.MATS['ir_membrane'];bs=m.node_tree.nodes.get('Principled BSDF');bs.inputs['Alpha'].default_value=.32
+ # glTF reads alphaMode off the blend method; the attribute moved in 4.2 so try both.
+ [setattr(m,a,v) for a,v in (('blend_method','BLEND'),('surface_render_method','BLENDED')) if hasattr(m,a)]
 
 def box(n,p,s,m='ir_blue'):
  return B(n,p,s,m,min(.035,min(s)*.22),segments=2)
@@ -369,7 +374,11 @@ def rocket():
  finish('rocket')
 def grenade():
  reset();E('Oval grenade',(0,0,.06),(.036,.036,.055),'ir_blue',24,16);C('Safety collar',(0,0,.114),.021,.019,'ir_steel','Z',16);box('Safety lever',(0,.026,.085),(.018,.012,.078),'ir_steel').rotation_euler.x=.28;T('Pull ring',(0,-.027,.125),.014,.01,.003,'ir_steel','X',20);L.add_socket('MUZZLE',(0,-.045,.10));finish('grenade')
-BUILDERS={'cargo_module':cargo,'security_wall':wall,'fuel_reservoir':tanks,'catwalk':catwalk,'pipe_plant':pipes,'command_bunker':bunker,'access_stair':stairs,'floodlight':lamp,'patrol_vehicle':vehicle,'utility_vehicle':lambda:vehicle(True),'fuel_drum':drums,'drum_pallet':lambda:drums(True),'blast_wall':lambda:cover(True),'low_cover':cover,'water_unit':water,'field_case':case,'field_shelter':shelter,'guard_post':tower,'control_tower':lambda:tower(True),'refinery':refinery,'maintenance_hangar':hangar,'operator_nightcell':operator,'operator_directorate':lambda:operator(True),'rifle':lambda:weapon('rifle'),'smg':lambda:weapon('smg'),'marksman':lambda:weapon('marksman'),'launcher':launcher,'rocket':rocket,'grenade':grenade}
+def firefly():
+ reset();insects.build_firefly();finish('firefly')
+def mosquito():
+ reset();insects.build_mosquito();finish('mosquito')
+BUILDERS={'cargo_module':cargo,'security_wall':wall,'fuel_reservoir':tanks,'catwalk':catwalk,'pipe_plant':pipes,'command_bunker':bunker,'access_stair':stairs,'floodlight':lamp,'patrol_vehicle':vehicle,'utility_vehicle':lambda:vehicle(True),'fuel_drum':drums,'drum_pallet':lambda:drums(True),'blast_wall':lambda:cover(True),'low_cover':cover,'water_unit':water,'field_case':case,'field_shelter':shelter,'guard_post':tower,'control_tower':lambda:tower(True),'refinery':refinery,'maintenance_hangar':hangar,'operator_nightcell':operator,'operator_directorate':lambda:operator(True),'rifle':lambda:weapon('rifle'),'smg':lambda:weapon('smg'),'marksman':lambda:weapon('marksman'),'launcher':launcher,'rocket':rocket,'grenade':grenade,'firefly':firefly,'mosquito':mosquito}
 only=sys.argv[sys.argv.index('--only')+1].split(',') if '--only' in sys.argv else None
 for name,fn in BUILDERS.items():
  if only and name not in only:continue

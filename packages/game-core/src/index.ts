@@ -10,6 +10,7 @@ export * from "./ids";
 export * from "./weapons";
 export * from "./grenades";
 export * from "./damage";
+export * from "./insects";
 export * from "./difficulty";
 export * from "./campaign";
 export * from "./cast";

@@ -22,6 +22,7 @@ import {
 } from "@babylonjs/core";
 import { ARDAVAN_YARD, type CollisionMap } from "@nightcell7/multiplayer-sim";
 import type { MapVolume } from "@nightcell7/multiplayer-sim";
+import { LIGHTING, DEFAULT_TIME_OF_DAY, type TimeOfDay } from "./time-of-day";
 import {
   loadAssets,
   meshesUnder,
@@ -158,7 +159,11 @@ function classify(v: Volume, map: CollisionMap): VolumeKind {
  * U is azimuth, which lets the dawn be directional: a broad lobe centred on
  * one quadrant, so the yard has an actual north to read against.
  */
-function skyTexture(scene: Scene): DynamicTexture {
+function skyTexture(
+  scene: Scene,
+  stops: readonly [string, string, string],
+  band: string,
+): DynamicTexture {
   const w = 2048;
   const h = 1024;
   const horizon = h * 0.5;
@@ -166,17 +171,17 @@ function skyTexture(scene: Scene): DynamicTexture {
   const ctx = texture.getContext() as unknown as CanvasRenderingContext2D;
 
   const gradient = ctx.createLinearGradient(0, 0, 0, horizon);
-  gradient.addColorStop(0, "#263d54");
-  gradient.addColorStop(0.6, "#697c89");
-  gradient.addColorStop(1, "#b7b7ac");
+  gradient.addColorStop(0, stops[0]);
+  gradient.addColorStop(0.6, stops[1]);
+  gradient.addColorStop(1, stops[2]);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, w, h);
   for (let layer = 0; layer < 4; layer++) {
     const y = 100 + layer * 90;
     const cloud = ctx.createLinearGradient(0, y - 50, 0, y + 50);
-    cloud.addColorStop(0, "rgba(28,43,58,0)");
-    cloud.addColorStop(0.5, "rgba(28,43,58,.07)");
-    cloud.addColorStop(1, "rgba(28,43,58,0)");
+    cloud.addColorStop(0, `rgba(${band},0)`);
+    cloud.addColorStop(0.5, `rgba(${band},.07)`);
+    cloud.addColorStop(1, `rgba(${band},0)`);
     ctx.fillStyle = cloud;
     ctx.fillRect(0, y - 50, w, 100);
   }
@@ -253,17 +258,24 @@ export async function buildWorld(
   engine: AbstractEngine,
   camera: Camera,
   map: CollisionMap = ARDAVAN_YARD,
+  time: TimeOfDay = DEFAULT_TIME_OF_DAY,
 ): Promise<WorldHandles> {
-  scene.clearColor = new Color4(PALETTE.ink.r, PALETTE.ink.g, PALETTE.ink.b, 1);
-  scene.ambientColor = new Color3(0.14, 0.17, 0.22);
+  // Every value that differs between a day and a night fight lives in
+  // `time-of-day.ts`. The night entry holds the constants that used to be
+  // written inline here, so the default path renders what it always did.
+  const rig = LIGHTING[time];
+  const rgb = (c: readonly [number, number, number]) => new Color3(c[0], c[1], c[2]);
+
+  scene.clearColor = new Color4(rig.clearColor[0], rig.clearColor[1], rig.clearColor[2], 1);
+  scene.ambientColor = rgb(rig.ambientColor);
 
   // Distance haze. Ardavan Yard is 80 x 120 m, so density is tuned to soften
   // the far perimeter without fogging out the mid-lane sightlines.
   scene.fogMode = Scene.FOGMODE_EXP2;
-  scene.fogDensity = 0.0045;
+  scene.fogDensity = rig.fogDensity;
   // Slightly warm and lifted: distance should read as haze catching the yard's
   // sodium light, not as a black void the far perimeter falls into.
-  scene.fogColor = new Color3(0.4, 0.47, 0.52);
+  scene.fogColor = rgb(rig.fogColor);
 
   const assets = await loadAssets(scene);
 
@@ -275,7 +287,7 @@ export async function buildWorld(
   );
   const skyMat = new StandardMaterial("sky", scene);
   skyMat.disableLighting = true;
-  skyMat.emissiveTexture = skyTexture(scene);
+  skyMat.emissiveTexture = skyTexture(scene, rig.sky, rig.skyBand);
   skyMat.backFaceCulling = false;
   skyMat.fogEnabled = false;
   sky.material = skyMat;
@@ -292,38 +304,38 @@ export async function buildWorld(
   // every container and wall; without a strong fill those faces are black
   // silhouettes and the lanes stop reading as space you can move through.
   const ambient = new HemisphericLight("ambient", new Vector3(0.1, 1, 0.05), scene);
-  ambient.intensity = 2.0;
-  ambient.diffuse = new Color3(0.62, 0.7, 0.82);
-  ambient.groundColor = new Color3(0.27, 0.3, 0.32);
-  ambient.specular = new Color3(0.16, 0.2, 0.26);
+  ambient.intensity = rig.hemispheric.intensity;
+  ambient.diffuse = rgb(rig.hemispheric.diffuse);
+  ambient.groundColor = rgb(rig.hemispheric.ground);
+  ambient.specular = rgb(rig.hemispheric.specular);
 
   // The false dawn: a low, warm key raking from the north. Low elevation is
   // what produces the long shadows the yard reads by.
-  const key = new DirectionalLight("false-dawn", new Vector3(0.45, -0.65, 0.55), scene);
-  key.position = new Vector3(-10, 26, -95);
-  key.intensity = 2.1;
-  key.diffuse = new Color3(0.94, 0.97, 1);
-  key.specular = new Color3(0.9, 0.75, 0.5);
+  const key = new DirectionalLight("false-dawn", new Vector3(...rig.key.direction), scene);
+  key.position = new Vector3(...rig.key.position);
+  key.intensity = rig.key.intensity;
+  key.diffuse = rgb(rig.key.diffuse);
+  key.specular = rgb(rig.key.specular);
 
   // Cold counter-rim from the south, so silhouettes separate from the sky
   // instead of dissolving into it.
-  const rim = new DirectionalLight("rim", new Vector3(-0.25, -0.35, -1), scene);
-  rim.position = new Vector3(20, 30, 90);
-  rim.intensity = 0.55;
-  rim.diffuse = new Color3(0.4, 0.58, 0.78);
-  rim.specular = new Color3(0.5, 0.68, 0.85);
+  const rim = new DirectionalLight("rim", new Vector3(...rig.rim.direction), scene);
+  rim.position = new Vector3(...rig.rim.position);
+  rim.intensity = rig.rim.intensity;
+  rim.diffuse = rgb(rig.rim.diffuse);
+  rim.specular = rgb(rig.rim.specular);
 
   const shadows = new ShadowGenerator(2048, key);
   shadows.useExponentialShadowMap = true;
   shadows.usePercentageCloserFiltering = true;
   shadows.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
-  shadows.darkness = 0.55;
+  shadows.darkness = rig.shadowDarkness;
   shadows.bias = 0.0018;
   shadows.normalBias = 0.02;
 
   // --------------------------------------------------------------- glow
   const glow = new GlowLayer("glow", scene, { blurKernelSize: 48 });
-  glow.intensity = 0.55;
+  glow.intensity = rig.glowIntensity;
 
   // ------------------------------------------------------------- geometry
 

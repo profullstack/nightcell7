@@ -523,6 +523,25 @@ export class Opponents {
   }
 
   /**
+   * A mosquito bite: a few points off the local player, nothing else.
+   *
+   * Kept apart from the weapon damage path on purpose. This is ambience, it
+   * cannot kill (health floors at 1), it never scores, and it never credits a
+   * killer — routing it through the shot pipeline would put a nuisance in the
+   * kill feed and in the match statistics. Armour does not stop an insect
+   * either, so it bypasses the absorption model in `applyDamage`.
+   *
+   * Single-player only. In multiplayer the server owns damage (CLAUDE.md), and
+   * `main.ts` runs the bite with `damage: false` so the visual and the whine
+   * still play without the client inventing health changes.
+   */
+  bite(amount: number): void {
+    const local = this.sim.players.get(LOCAL_ID);
+    if (!local || !local.alive) return;
+    local.health = Math.max(1, local.health - Math.max(0, amount));
+  }
+
+  /**
    * Repaint both sides for a colour picked on the gate.
    *
    * The gate lets a player change colour without redeploying, and the figures

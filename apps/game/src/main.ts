@@ -1,5 +1,6 @@
 import { FreeCamera, Scene, Vector3 } from "@babylonjs/core";
 import { ARDAVAN_YARD, mapChecksum, spawnsForTeam } from "@nightcell7/multiplayer-sim";
+import { BITE, createInsectBiteState, stepInsectBite } from "@nightcell7/game-core";
 import { decideAccess, loadViewer, parseMode } from "./access";
 import { modeLabel, renderGate } from "./gate";
 import { createHud, renderFault } from "./hud";
@@ -25,6 +26,8 @@ import { WeaponEffects } from "./vfx";
 import { Opponents } from "./opponents";
 import { createRenderer, DynamicResolution } from "./renderer";
 import { buildWorld } from "./world";
+import { NightInsects } from "./insects";
+import { LIGHTING, preferredTimeOfDay, rememberTimeOfDay } from "./time-of-day";
 import { Coach, briefingFor, hasOnboarded, markOnboarded } from "./onboarding";
 import { CommsDirector, captionFor, linesFor } from "./comms";
 import "./style.css";
@@ -109,7 +112,10 @@ async function boot(): Promise<void> {
   // Input is owned by PlayerController, which runs the shared authoritative
   // simulation. Attaching Babylon's own controls here would fight it.
 
-  const world = await buildWorld(scene, engine, camera, ARDAVAN_YARD);
+  // Chosen before the world is built: the lighting rig, the sky texture and
+  // whether insects exist at all are decided once, at boot.
+  const timeOfDay = preferredTimeOfDay(window.location.search, safeStorage());
+  const world = await buildWorld(scene, engine, camera, ARDAVAN_YARD, timeOfDay);
 
   // Photo mode: park the camera at a named vantage, leave the UI layer empty,
   // and skip the controller entirely. Used to regenerate marketing captures
@@ -190,10 +196,11 @@ async function boot(): Promise<void> {
 
   // Mode and difficulty are both set at boot: the yard is dressed and the
   // bots are tuned once, so changing either reloads with both in the URL.
-  const reloadWith = (next: { mode?: string; difficulty?: string }) => {
+  const reloadWith = (next: { mode?: string; difficulty?: string; time?: string }) => {
     const params = new URLSearchParams();
     params.set("mode", next.mode ?? gameMode);
     params.set("difficulty", next.difficulty ?? difficulty);
+    params.set("time", next.time ?? timeOfDay);
     window.location.search = `?${params.toString()}`;
   };
 
@@ -238,6 +245,14 @@ async function boot(): Promise<void> {
     onDifficultyChange: (next) => {
       rememberDifficulty(next, safeStorage());
       if (next !== difficulty) reloadWith({ difficulty: next });
+    },
+    timeOfDay,
+    // Same reasoning as the mode picker: the yard is lit once at boot, and
+    // relighting it live would mean rebuilding the sky, the shadow generator
+    // and the insect population mid-match.
+    onTimeOfDayChange: (next) => {
+      rememberTimeOfDay(next, safeStorage());
+      if (next !== timeOfDay) reloadWith({ time: next });
     },
     loadout,
     onLoadoutChange: (next) => {
@@ -305,6 +320,22 @@ async function boot(): Promise<void> {
   }
 
   const dynamicResolution = new DynamicResolution(engine);
+
+  // ------------------------------------------------------------- insects
+  //
+  // Night only. `LIGHTING[time].insects` is the single switch; by day nothing
+  // below is constructed and the bite clock never starts.
+  //
+  // The bite is applied locally because these single-player modes are where
+  // the client *is* the authority on its own vitals. CLAUDE.md reserves damage
+  // to the server in multiplayer, so when the online path lands this flag is
+  // what has to flip to false — the mosquito, the approach and the scratch all
+  // still play, and only the health change goes away.
+  const insectsEnabled = LIGHTING[timeOfDay].insects;
+  const nightInsects = insectsEnabled ? new NightInsects(world.assets, { camera }) : null;
+  let biteState = createInsectBiteState(Math.random);
+  let matchMs = 0;
+
   let lastDryFireAt = 0;
   let lastKills = 0;
   const earn = (amount: number, why: string) => {
@@ -354,6 +385,31 @@ async function boot(): Promise<void> {
         const frame = player.lastInput();
         if (frame) opponents.applyLocalInput(frame);
       }
+    }
+
+    // Insects advance on the match clock, which only runs while the player is
+    // actually in the yard — otherwise a match left paused on the gate would
+    // come back to a bite already owed.
+    if (insectsEnabled && status.locked) {
+      matchMs += deltaMs;
+      const step = stepInsectBite(biteState, matchMs, Math.random, {
+        enabled: !status.dead,
+        damage: true,
+        vitals: { health: opponents.localStatus().health, armor: 0 },
+      });
+      biteState = step.state;
+      if (step.bit) {
+        // `damageDealt`, not `BITE.DAMAGE`: the rules clamp at `BITE.FLOOR`,
+        // so a player already low takes the nuisance without the health cost.
+        opponents.bite(step.damageDealt);
+        // `stagger` is the existing flinch: it slows the player briefly and
+        // kicks the view, and it already honours the reduced-motion setting.
+        // That is exactly the pause-to-scratch beat, so this reuses it rather
+        // than adding a second, subtly different way to interrupt control.
+        player.stagger(BITE.DAMAGE);
+        hud.notify("Mosquito bite");
+      }
+      nightInsects?.update(deltaMs, matchMs, biteState);
     }
 
     effects.update();

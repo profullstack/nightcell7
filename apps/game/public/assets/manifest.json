@@ -17,6 +17,7 @@
     "m3_drum_pallet.glb",
     "m3_field_case.glb",
     "m3_field_shelter.glb",
+    "m3_firefly.glb",
     "m3_floodlight.glb",
     "m3_fuel_drum.glb",
     "m3_fuel_reservoir.glb",
@@ -26,6 +27,7 @@
     "m3_low_cover.glb",
     "m3_maintenance_hangar.glb",
     "m3_marksman.glb",
+    "m3_mosquito.glb",
     "m3_operator_directorate.glb",
     "m3_operator_nightcell.glb",
     "m3_patrol_vehicle.glb",
@@ -95,9 +97,9 @@
     "Þrøngva/After the Winter of Want/20. Valhalla on Loop.mp3"
   ],
   "bytes": {
-    "models": 6330116,
+    "models": 6523652,
     "textures": 720622,
     "audio": 402789,
-    "total": 7453527
+    "total": 7647063
   }
 }

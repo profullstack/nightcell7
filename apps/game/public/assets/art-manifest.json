@@ -533,6 +533,32 @@
       "triangles": 1612,
       "animations": [],
       "materials": ["nc7_alloy", "nc7_coating", "nc7_dark"]
+    },
+    "m3_firefly": {
+      "name": "m3_firefly",
+      "origin": "Original NIGHTCELL 7 geometry; proportions and colour from the reference photographs in PROVENANCE.md",
+      "bytes": 75628,
+      "sha256": "a35de3484bcf21ecc6478916cad51948a83b7014b88e05b5624e506c430294c6",
+      "triangles": 2950,
+      "animations": [],
+      "materials": [
+        "firefly_lantern",
+        "ir_chitin",
+        "ir_chitin_dark",
+        "ir_chitin_leg",
+        "ir_chitin_pale",
+        "ir_membrane",
+        "ir_orange"
+      ]
+    },
+    "m3_mosquito": {
+      "name": "m3_mosquito",
+      "origin": "Original NIGHTCELL 7 geometry; proportions and colour from the reference photographs in PROVENANCE.md",
+      "bytes": 117908,
+      "sha256": "02fe890e00f45d49aee814e87fd2261cd1f1360e73cc12e24d056b152bf38fdc",
+      "triangles": 4088,
+      "animations": [],
+      "materials": ["ir_chitin", "ir_chitin_dark", "ir_chitin_pale", "ir_membrane", "ir_white"]
     }
   },
   "optimization": "glTF Transform 4.5.0: dedup, weld, 16-bit positions/weights, 12-bit normals; UVs retain full precision outside 0-1; KHR_mesh_quantization",

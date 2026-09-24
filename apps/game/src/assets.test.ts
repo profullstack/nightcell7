@@ -102,6 +102,11 @@ describe("generated models", () => {
       "m3_launcher",
       "m3_rocket",
       "m3_grenade",
+      // The night insects are ambience: they drift, they are never shot at,
+      // and nothing in the yard collides with them. A collision hull on a
+      // 25 mm firefly would be geometry that exists only to satisfy a rule.
+      "m3_firefly",
+      "m3_mosquito",
     ]);
 
     for (const model of MODELS) {
