@@ -32,9 +32,8 @@ export function CaptureGallery() {
         height={manifest.viewport.height}
       />
       <p className="gallery__note">
-        Captured in engine from the current build at {manifest.viewport.width}&times;
-        {manifest.viewport.height}. Click any frame to view it full size. Ardavan Yard is the
-        geometry the multiplayer server enforces &mdash; what you see is what you collide with.
+        Click any frame to view it full size. In Ardavan Yard, what you see is what you can take
+        cover behind.
       </p>
     </>
   );
@@ -91,9 +90,8 @@ export function CaptureStrip({ names }: { names: readonly string[] }) {
 export function CaptureNotice() {
   return (
     <p className="gallery__note">
-      In-engine capture of Ardavan Yard &mdash; the 6v6 map built from Episode 1&rsquo;s refinery
-      architecture. Every solid you see is the collision geometry the multiplayer server enforces.
-      Alpha footage: campaign locations are not yet photographable.
+      Ardavan Yard, the 6v6 multiplayer map, built from Episode 1&rsquo;s refinery. Alpha footage:
+      the campaign locations are not shown yet.
     </p>
   );
 }

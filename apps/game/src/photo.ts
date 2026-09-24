@@ -28,8 +28,7 @@ export interface Vantage {
 export const VANTAGES: readonly Vantage[] = [
   {
     name: "yard-approach",
-    caption:
-      "The C7 carbine at the Nightcell muster point, looking north through the IRON RAIN cargo yard in cool industrial daylight.",
+    caption: "Looking north from the Nightcell end of the yard, toward the hardpoint.",
     showWeapon: true,
     position: [0, 1.7, 44],
     yaw: Math.PI,
@@ -54,8 +53,7 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "central-hardpoint",
-    caption:
-      "The C7 carbine beside the central hard point, with pale concrete cargo modules and the refinery structures beyond.",
+    caption: "The hardpoint in the middle of the yard. Whoever holds it holds the centre lane.",
     showWeapon: true,
     position: [-17, 1.7, 15],
     yaw: Math.PI * 0.88,
@@ -63,8 +61,7 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "gantry-overlook",
-    caption:
-      "From the east gantry, looking back across the container yard under the white floodlight masts.",
+    caption: "From the east gantry, looking back across the containers under the floodlights.",
     position: [30, 8.1, -14],
     yaw: Math.PI * 1.32,
     pitch: 0.2,
@@ -72,8 +69,7 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "north-gate",
-    caption:
-      "The Directorate end of the yard, looking toward the operations buildings beyond the north wall.",
+    caption: "The Directorate end of the yard, by the north gate.",
     position: [0, 1.7, -22],
     yaw: Math.PI,
     pitch: 0.06,
@@ -89,8 +85,7 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "container-alley",
-    caption:
-      "Between the northern container stacks. The concrete panels and reinforced corners provide cover in the centre lane, and both sides can reach it in the opening seconds.",
+    caption: "Between the north containers, where both sides meet in the first seconds of a match.",
     position: [0, 1.7, -8],
     yaw: Math.PI,
     pitch: 0.0,

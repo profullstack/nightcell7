@@ -94,18 +94,14 @@ export default function PressPage() {
       <h3>Using these</h3>
       <p>
         Every image and the film on this page may be used in coverage with a credit to NIGHTCELL 7.
-        Open any frame to get it at full size, or take the originals from the repository:{" "}
-        <code>docs/screenshots/</code> for the gameplay frames, <code>docs/art/</code> for the asset
-        sheet, <code>docs/trailer/</code> for the film. Each directory carries a manifest recording
-        the commit it was made from.
+        Open any frame to get it at full size, and download the film from the link under it. For
+        anything else, including the cast portraits on the <a href="/characters">cast page</a>,
+        write to the address below.
       </p>
 
       <DraftNotice>
-        There is no key art and no illustrated character art yet, so there is no full press pack to
-        download. What is here is the build: the operators above are renders and captures of the
-        models that ship in it, and the trailer is alpha gameplay of the multiplayer map, not a cut
-        trailer — no title cards, no campaign footage. We would rather say that than hand out
-        screenshots of untextured boxes labelled as finished work.
+        There is no packaged press kit yet. The trailer and screenshots show the multiplayer map in
+        alpha; campaign footage is not available.
       </DraftNotice>
 
       <h3>Contact</h3>

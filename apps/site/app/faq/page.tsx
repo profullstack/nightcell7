@@ -35,7 +35,7 @@ const QUESTIONS = [
   },
   {
     q: "Is the game finished?",
-    a: "No. This is an early build. The multiplayer map is a greybox, the campaigns are not playable yet, and the screenshots on this site are in-engine captures of untextured geometry, labelled as such.",
+    a: "No. This is an early build. The multiplayer yard and the free demo are playable today; the campaigns are not yet.",
   },
   {
     q: "Is this about a real conflict?",
