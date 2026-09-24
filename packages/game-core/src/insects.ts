@@ -55,6 +55,15 @@ export const BITE = {
   /** How long the player swats and scratches — the pause has to be felt. */
   SCRATCH_MS: 1_800,
   /**
+   * How long before the bite the player starts swatting at it.
+   *
+   * The swat leads the bite rather than following it, because that is the
+   * beat: you hear it, you take a hand off the rifle to wave it away, you
+   * miss, and it gets you anyway. Ordering it the other way round made the
+   * swat read as a reaction to damage, which is just a flinch.
+   */
+  SWAT_LEAD_MS: 850,
+  /**
    * Nothing bites in the opening minute.
    *
    * The first contact of a match is the worst possible moment to take the
@@ -69,6 +78,8 @@ export const BITE = {
 export interface InsectBiteState {
   /** Match clock, in ms, at which the next bite lands. */
   readonly nextBiteAt: number;
+  /** Set once the swat for this cycle has been reported, so it fires once. */
+  readonly swatAnnounced: boolean;
   /** Match clock until which the player is scratching; 0 when they are not. */
   readonly scratchUntil: number;
   /** Bites taken this match. Surfaced on the end-of-match card. */
@@ -83,7 +94,12 @@ function interval(rand: Random): number {
 }
 
 export function createInsectBiteState(rand: Random): InsectBiteState {
-  return { nextBiteAt: BITE.GRACE_MS + interval(rand), scratchUntil: 0, bites: 0 };
+  return {
+    nextBiteAt: BITE.GRACE_MS + interval(rand),
+    swatAnnounced: false,
+    scratchUntil: 0,
+    bites: 0,
+  };
 }
 
 export interface InsectBiteOptions {
@@ -100,6 +116,10 @@ export interface InsectBiteOptions {
 
 export interface InsectBiteStep {
   readonly state: InsectBiteState;
+  /** True through the swat window that leads the bite. */
+  readonly swatting: boolean;
+  /** True only on the tick the swat begins — drive the one-shot effect off this. */
+  readonly startedSwat: boolean;
   /** Health actually removed. Zero at or below the floor. */
   readonly damageDealt: number;
   /** True only on the tick a bite lands — drive the sting effect off this. */
@@ -126,10 +146,21 @@ export function stepInsectBite(
   const scratching = nowMs < state.scratchUntil;
 
   if (!options.enabled || scratching || nowMs < state.nextBiteAt) {
+    // The swat window: close enough to the bite that the player is already
+    // waving at it, but it has not landed yet.
+    const swatting =
+      options.enabled &&
+      !scratching &&
+      nowMs >= state.nextBiteAt - BITE.SWAT_LEAD_MS &&
+      nowMs < state.nextBiteAt;
+    const startedSwat = swatting && !state.swatAnnounced;
+
     return {
-      state: { ...state },
+      state: startedSwat ? { ...state, swatAnnounced: true } : { ...state },
       damageDealt: 0,
       bit: false,
+      swatting,
+      startedSwat,
       scratching,
       vitals: { ...options.vitals },
     };
@@ -149,10 +180,15 @@ export function stepInsectBite(
     damageDealt: options.damage ? amount : 0,
     state: {
       nextBiteAt: nowMs + interval(rand),
+      // Armed again for the next cycle's swat.
+      swatAnnounced: false,
       scratchUntil: nowMs + BITE.SCRATCH_MS,
       bites: state.bites + 1,
     },
     bit: true,
+    // The swat is over the instant it connects; what follows is the scratch.
+    swatting: false,
+    startedSwat: false,
     scratching: true,
     vitals,
   };
