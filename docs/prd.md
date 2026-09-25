@@ -48,7 +48,7 @@ commit as the code (CLAUDE.md).
 | Realtime endpoint                | `wss://nightcell7.com/api/v1/multiplayer/sync/...`                       |
 | Multiplayer framework            | Colyseus on Node.js                                                      |
 | Ephemeral realtime state         | Railway Redis                                                            |
-| Durable database                 | Turso/libSQL + Drizzle                                                   |
+| Durable database                 | Postgres + Drizzle                                                       |
 | Authentication                   | Better Auth, verified email                                              |
 | Payments                         | **CoinPayPortal only** — direct Stripe integration prohibited            |
 | Email                            | Resend                                                                   |

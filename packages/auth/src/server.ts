@@ -43,7 +43,7 @@ export function createAuth(config: AuthConfig) {
     basePath: "/api/v1/auth",
 
     database: drizzleAdapter(config.db, {
-      provider: "sqlite",
+      provider: "pg",
       // Our tables are plural; Better Auth's models are singular.
       schema: {
         user: users,

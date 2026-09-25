@@ -17,8 +17,8 @@ export default function CreditsPage() {
       <h3>Built with</h3>
       <p>
         Babylon.js for rendering, Colyseus for authoritative multiplayer, Next.js for this site,
-        Hono for the API, Drizzle and libSQL for data, BullMQ for background work. Full list on the{" "}
-        <a href="/licenses">licenses page</a>.
+        Hono for the API, Drizzle and Postgres for data, BullMQ for background work. Full list on
+        the <a href="/licenses">licenses page</a>.
       </p>
 
       <h3>Artwork</h3>

@@ -22,6 +22,9 @@
     "@nightcell7/database": "workspace:*",
     "@nightcell7/game-core": "workspace:*",
     "drizzle-orm": "^0.38.3",
-    "@libsql/client": "^0.14.0"
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.10"
   }
 }

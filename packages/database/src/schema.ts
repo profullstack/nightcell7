@@ -1,42 +1,59 @@
 import { sql } from "drizzle-orm";
-import { index, integer, primaryKey, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
+import {
+  bigint,
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
 
 /**
- * Durable application data (PRD §25) on Turso/libSQL.
+ * Durable application data (PRD §25) on Postgres.
  *
  * What is NOT here matters as much as what is: per-tick match state, matchmaking
  * queues, presence and ticket replay guards live in Redis and are discarded
  * after the durable match summary is accepted. Never write per-tick state here.
+ *
+ * The schema was born on Turso/libSQL and moved to Postgres with the shapes
+ * kept as they were: application timestamps stay ISO-8601 text (the services
+ * write `new Date().toISOString()`), only the Better Auth columns are real
+ * timestamps, and the two JSON columns become jsonb.
  */
 
+/**
+ * SQLite's `current_timestamp` is `YYYY-MM-DD HH:MM:SS` in UTC. The Postgres
+ * default mirrors that so rows created by either database compare the same.
+ */
+const currentTimestampText = sql`to_char(timezone('utc', now()), 'YYYY-MM-DD HH24:MI:SS')`;
+
 const timestamps = {
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
+  createdAt: text("created_at").notNull().default(currentTimestampText),
+  updatedAt: text("updated_at").notNull().default(currentTimestampText),
 };
 
 /**
  * Timestamps for the Better Auth-managed tables.
  *
- * Better Auth writes epoch milliseconds, not ISO strings. Stored in a text
- * column those read back as "1785045862563.0", and `new Date(...)` on that is
- * Invalid Date — which silently turned the session-expiry comparison into
- * `NaN <= now`, i.e. false, i.e. expired sessions accepted forever. Integer
- * timestamp columns make Drizzle hand back real Date objects instead.
+ * Better Auth writes Date objects and compares session expiry against `now`,
+ * so these are real `timestamptz` columns and Drizzle hands back Dates. (On
+ * libSQL they were epoch-millisecond integers for the same reason; the row
+ * copier converts those on the way across.)
  */
 const authTimestamps = {
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 };
 
 // --------------------------------------------------------------------------
 // Accounts
 // --------------------------------------------------------------------------
 
-export const users = sqliteTable(
+export const users = pgTable(
   "users",
   {
     id: text("id").primaryKey(),
@@ -46,7 +63,7 @@ export const users = sqliteTable(
      * "verified" everywhere, including multiplayer eligibility — a second
      * timestamp column would eventually disagree with it.
      */
-    emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
+    emailVerified: boolean("email_verified").notNull().default(false),
     /** Better Auth requires `name`; the game shows `displayName`. */
     name: text("name"),
     image: text("image"),
@@ -70,7 +87,7 @@ export const users = sqliteTable(
  * Field names match what the Drizzle adapter expects so no mapping layer is
  * needed; `revokedAt` is ours, for the device-revocation flow.
  */
-export const sessions = sqliteTable(
+export const sessions = pgTable(
   "sessions",
   {
     id: text("id").primaryKey(),
@@ -78,7 +95,7 @@ export const sessions = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     token: text("token").notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     revokedAt: text("revoked_at"),
@@ -94,7 +111,7 @@ export const sessions = sqliteTable(
  * Credential and OAuth records, written by Better Auth.
  * Password hashes live here, never on `users`.
  */
-export const accounts = sqliteTable(
+export const accounts = pgTable(
   "accounts",
   {
     id: text("id").primaryKey(),
@@ -105,8 +122,14 @@ export const accounts = sqliteTable(
     providerId: text("provider_id").notNull(),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
-    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp_ms" }),
-    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp_ms" }),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     scope: text("scope"),
     idToken: text("id_token"),
     password: text("password"),
@@ -119,13 +142,13 @@ export const accounts = sqliteTable(
 );
 
 /** Email-verification and password-reset tokens, written by Better Auth. */
-export const verifications = sqliteTable(
+export const verifications = pgTable(
   "verifications",
   {
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
     ...authTimestamps,
   },
   (table) => ({
@@ -133,7 +156,7 @@ export const verifications = sqliteTable(
   }),
 );
 
-export const devices = sqliteTable(
+export const devices = pgTable(
   "devices",
   {
     id: text("id").primaryKey(),
@@ -154,7 +177,7 @@ export const devices = sqliteTable(
 // Catalog
 // --------------------------------------------------------------------------
 
-export const episodes = sqliteTable("episodes", {
+export const episodes = pgTable("episodes", {
   id: text("id").primaryKey(),
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
@@ -170,7 +193,7 @@ export const episodes = sqliteTable("episodes", {
   ...timestamps,
 });
 
-export const episodeVersions = sqliteTable(
+export const episodeVersions = pgTable(
   "episode_versions",
   {
     id: text("id").primaryKey(),
@@ -181,7 +204,8 @@ export const episodeVersions = sqliteTable(
     /** R2 key of the content manifest for this version. */
     manifestKey: text("manifest_key").notNull(),
     minimumGameVersion: text("minimum_game_version").notNull(),
-    sizeBytes: integer("size_bytes").notNull(),
+    /** An episode can exceed 2 GiB; SQLite's integer was 64-bit. */
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
     status: text("status").notNull().default("draft"),
     publishedAt: text("published_at"),
   },
@@ -190,7 +214,7 @@ export const episodeVersions = sqliteTable(
   }),
 );
 
-export const prices = sqliteTable(
+export const prices = pgTable(
   "prices",
   {
     id: text("id").primaryKey(),
@@ -201,7 +225,7 @@ export const prices = sqliteTable(
     /** Minor units. The server catalog is the price authority (PRD §24.6). */
     unitAmount: integer("unit_amount").notNull(),
     coinpayProductId: text("coinpay_product_id").notNull(),
-    active: integer("active", { mode: "boolean" }).notNull().default(true),
+    active: boolean("active").notNull().default(true),
     taxCode: text("tax_code").notNull(),
   },
   (table) => ({ episodeIdx: index("prices_episode_idx").on(table.episodeId) }),
@@ -211,7 +235,7 @@ export const prices = sqliteTable(
 // Commerce — CoinPayPortal only (PRD §24)
 // --------------------------------------------------------------------------
 
-export const orders = sqliteTable(
+export const orders = pgTable(
   "orders",
   {
     id: text("id").primaryKey(),
@@ -240,7 +264,7 @@ export const orders = sqliteTable(
   }),
 );
 
-export const orderItems = sqliteTable(
+export const orderItems = pgTable(
   "order_items",
   {
     id: text("id").primaryKey(),
@@ -256,7 +280,7 @@ export const orderItems = sqliteTable(
   (table) => ({ orderIdx: index("order_items_order_idx").on(table.orderId) }),
 );
 
-export const paymentEvents = sqliteTable(
+export const paymentEvents = pgTable(
   "payment_events",
   {
     id: text("id").primaryKey(),
@@ -277,7 +301,7 @@ export const paymentEvents = sqliteTable(
   }),
 );
 
-export const entitlements = sqliteTable(
+export const entitlements = pgTable(
   "entitlements",
   {
     id: text("id").primaryKey(),
@@ -301,7 +325,7 @@ export const entitlements = sqliteTable(
 );
 
 /** Append-only audit trail. Support tooling writes here; it never edits above. */
-export const entitlementEvents = sqliteTable(
+export const entitlementEvents = pgTable(
   "entitlement_events",
   {
     id: text("id").primaryKey(),
@@ -310,15 +334,13 @@ export const entitlementEvents = sqliteTable(
       .references(() => entitlements.id, { onDelete: "cascade" }),
     type: text("type").notNull(),
     actor: text("actor").notNull(),
-    metadata: text("metadata", { mode: "json" }),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(current_timestamp)`),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: text("created_at").notNull().default(currentTimestampText),
   },
   (table) => ({ entitlementIdx: index("entitlement_events_idx").on(table.entitlementId) }),
 );
 
-export const offlineLicenses = sqliteTable(
+export const offlineLicenses = pgTable(
   "offline_licenses",
   {
     id: text("id").primaryKey(),
@@ -340,7 +362,7 @@ export const offlineLicenses = sqliteTable(
   }),
 );
 
-export const downloads = sqliteTable(
+export const downloads = pgTable(
   "downloads",
   {
     id: text("id").primaryKey(),
@@ -348,7 +370,8 @@ export const downloads = sqliteTable(
     episodeId: text("episode_id").references(() => episodes.id),
     versionId: text("version_id").references(() => episodeVersions.id),
     platform: text("platform").notNull(),
-    bytes: integer("bytes"),
+    /** Bytes transferred; a full episode exceeds 32-bit. */
+    bytes: bigint("bytes", { mode: "number" }),
     startedAt: text("started_at").notNull(),
     completedAt: text("completed_at"),
     result: text("result"),
@@ -360,7 +383,7 @@ export const downloads = sqliteTable(
 // Multiplayer (PRD §25)
 // --------------------------------------------------------------------------
 
-export const multiplayerProfiles = sqliteTable("multiplayer_profiles", {
+export const multiplayerProfiles = pgTable("multiplayer_profiles", {
   userId: text("user_id")
     .primaryKey()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -376,7 +399,7 @@ export const multiplayerProfiles = sqliteTable("multiplayer_profiles", {
   ...timestamps,
 });
 
-export const multiplayerMatches = sqliteTable(
+export const multiplayerMatches = pgTable(
   "multiplayer_matches",
   {
     id: text("id").primaryKey(),
@@ -402,7 +425,7 @@ export const multiplayerMatches = sqliteTable(
   }),
 );
 
-export const multiplayerMatchPlayers = sqliteTable(
+export const multiplayerMatchPlayers = pgTable(
   "multiplayer_match_players",
   {
     matchId: text("match_id")
@@ -410,7 +433,7 @@ export const multiplayerMatchPlayers = sqliteTable(
       .references(() => multiplayerMatches.id, { onDelete: "cascade" }),
     userId: text("user_id").notNull(),
     team: integer("team").notNull(),
-    isBot: integer("is_bot", { mode: "boolean" }).notNull().default(false),
+    isBot: boolean("is_bot").notNull().default(false),
     joinedAt: text("joined_at").notNull(),
     leftAt: text("left_at"),
     reconnectCount: integer("reconnect_count").notNull().default(0),
@@ -427,7 +450,7 @@ export const multiplayerMatchPlayers = sqliteTable(
   }),
 );
 
-export const multiplayerReports = sqliteTable(
+export const multiplayerReports = pgTable(
   "multiplayer_reports",
   {
     id: text("id").primaryKey(),
@@ -441,11 +464,9 @@ export const multiplayerReports = sqliteTable(
     category: text("category").notNull(),
     description: text("description"),
     /** Server-known session metadata only — never uploads from the client. */
-    evidenceMetadata: text("evidence_metadata", { mode: "json" }),
+    evidenceMetadata: jsonb("evidence_metadata").$type<Record<string, unknown>>(),
     status: text("status").notNull().default("open"),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(current_timestamp)`),
+    createdAt: text("created_at").notNull().default(currentTimestampText),
     reviewedAt: text("reviewed_at"),
     reviewedBy: text("reviewed_by"),
   },
@@ -460,7 +481,7 @@ export const multiplayerReports = sqliteTable(
   }),
 );
 
-export const multiplayerBlocks = sqliteTable(
+export const multiplayerBlocks = pgTable(
   "multiplayer_blocks",
   {
     userId: text("user_id")
@@ -469,14 +490,12 @@ export const multiplayerBlocks = sqliteTable(
     blockedUserId: text("blocked_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(current_timestamp)`),
+    createdAt: text("created_at").notNull().default(currentTimestampText),
   },
   (table) => ({ pk: primaryKey({ columns: [table.userId, table.blockedUserId] }) }),
 );
 
-export const multiplayerBans = sqliteTable(
+export const multiplayerBans = pgTable(
   "multiplayer_bans",
   {
     id: text("id").primaryKey(),
@@ -499,18 +518,16 @@ export const multiplayerBans = sqliteTable(
 // Marketing and feedback
 // --------------------------------------------------------------------------
 
-export const newsletterSubscribers = sqliteTable("newsletter_subscribers", {
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   verifiedAt: text("verified_at"),
   source: text("source"),
   unsubscribedAt: text("unsubscribed_at"),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
+  createdAt: text("created_at").notNull().default(currentTimestampText),
 });
 
-export const feedback = sqliteTable("feedback", {
+export const feedback = pgTable("feedback", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id),
   buildVersion: text("build_version").notNull(),
@@ -519,7 +536,5 @@ export const feedback = sqliteTable("feedback", {
   multiplayerMatchId: text("multiplayer_match_id"),
   category: text("category").notNull(),
   message: text("message").notNull(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
+  createdAt: text("created_at").notNull().default(currentTimestampText),
 });

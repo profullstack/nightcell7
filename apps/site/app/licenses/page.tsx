@@ -10,7 +10,7 @@ const STACK = [
   ["React", "MIT", "Site and in-game menus"],
   ["Hono", "MIT", "HTTP API"],
   ["Drizzle ORM", "Apache-2.0", "Database schema and queries"],
-  ["libSQL / Turso client", "MIT", "Durable data"],
+  ["node-postgres (pg)", "MIT", "Durable data"],
   ["BullMQ", "MIT", "Background jobs"],
   ["ioredis", "MIT", "Redis client"],
   ["Zod", "MIT", "Runtime validation"],

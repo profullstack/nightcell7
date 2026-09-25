@@ -532,6 +532,13 @@ export async function appendEntitlementEvent(
 }
 
 function isUniqueViolation(error: unknown): boolean {
+  // Postgres reports unique_violation as SQLSTATE 23505; drizzle wraps the
+  // driver error as `cause`. The message check keeps the SQLite-era wording
+  // working for anything that still surfaces it.
+  const candidates = [error, (error as { cause?: unknown })?.cause];
+  for (const candidate of candidates) {
+    if ((candidate as { code?: unknown })?.code === "23505") return true;
+  }
   const message = String((error as { message?: unknown })?.message ?? error).toUpperCase();
-  return message.includes("UNIQUE") || message.includes("SQLITE_CONSTRAINT");
+  return message.includes("UNIQUE") || message.includes("DUPLICATE KEY");
 }
