@@ -146,7 +146,7 @@ Secrets that must be set per environment:
   `multiplayer` (verifies). `MATCH_RESULT_SECRET` must match between
   `multiplayer` (signs) and `worker` (verifies).
 - `COINPAY_API_KEY`, `COINPAY_WEBHOOK_SECRET`
-- `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
+- `DATABASE_URL` (postgres://)
 - `RESEND_API_KEY`
 - `R2_*`
 

@@ -4,8 +4,8 @@ import { baseEnvSchema, parseEnv } from "@nightcell7/observability";
 export const workerEnvSchema = baseEnvSchema.extend({
   WORKER_PORT: z.coerce.number().int().positive().default(3003),
   REDIS_URL: z.string().min(1),
-  TURSO_DATABASE_URL: z.string().min(1),
-  TURSO_AUTH_TOKEN: z.string().optional(),
+  /** postgres:// connection string; the database package rejects anything else. */
+  DATABASE_URL: z.string().min(1),
   MATCH_RESULT_SECRET: z.string().min(16),
   /** Signs guest-claim tokens; must match the API that mints them. */
   AUTH_SECRET: z.string().min(16),

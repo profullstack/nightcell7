@@ -59,8 +59,8 @@ browser/PWA/Electron -> gateway -> multiplayer
 **Durable work** (never inline in a request):
 
 ```
-api -> Redis (BullMQ) -> worker -> Turso
-multiplayer -> Redis (BullMQ) -> worker -> Turso
+api -> Redis (BullMQ) -> worker -> Postgres
+multiplayer -> Redis (BullMQ) -> worker -> Postgres
 ```
 
 Route precedence at the gateway is load-bearing and unit-tested: the multiplayer
@@ -73,12 +73,12 @@ WebSocket upgrade gets swallowed by ordinary API middleware.
 | ------------------------------------------------------------ | -------------------- | ------------------------------------------- |
 | Live room state                                              | Match process memory | 30 Hz; nothing else can keep up             |
 | Presence, room directory, queues, rate limits, ticket nonces | Redis                | Shared across replicas, ephemeral by design |
-| Orders, entitlements, match history, profiles, reports       | Turso/libSQL         | Durable, auditable                          |
+| Orders, entitlements, match history, profiles, reports       | Postgres             | Durable, auditable                          |
 | Campaign progress, settings, checkpoints                     | Device (IndexedDB)   | V1 keeps saves local; cloud saves are P1    |
 | Large content packs                                          | Cloudflare R2        | Entitlement-gated, presigned per object     |
 
 Redis is never the authoritative source for completed commerce or durable match
-history. Per-tick state is never written to Turso.
+history. Per-tick state is never written to Postgres.
 
 ## Failure behaviour
 

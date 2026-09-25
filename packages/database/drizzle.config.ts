@@ -2,10 +2,10 @@ import type { Config } from "drizzle-kit";
 
 export default {
   schema: "./src/schema.ts",
-  out: "./drizzle",
-  dialect: "turso",
+  out: "./drizzle-pg",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env.TURSO_DATABASE_URL ?? "file:./local.db",
-    authToken: process.env.TURSO_AUTH_TOKEN,
+    // `generate` never connects; the URL only matters for push/studio.
+    url: process.env.DATABASE_URL ?? "postgres://localhost:5432/nightcell7",
   },
 } satisfies Config;

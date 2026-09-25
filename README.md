@@ -79,7 +79,7 @@ packages/
   multiplayer-sim/      Server-safe movement, hitscan, simulation, bots
   entitlements/         Order state machine, catalog pricing, entitlement rules
   coinpay/              CoinPayPortal client and webhook verification
-  database/             Drizzle schema + libSQL client
+  database/             Drizzle schema + Postgres client
   auth/ save-data/ content-schema/ observability/ ui/
 infra/
   railway/      Service matrix, env contract, deployment runbook

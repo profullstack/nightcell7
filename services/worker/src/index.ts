@@ -32,7 +32,7 @@ const logger = createLogger({
 const health = new HealthReporter("worker", env.BUILD_VERSION);
 
 const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
-const db = getDatabase({ url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN });
+const db = getDatabase({ url: env.DATABASE_URL });
 const email = createResendSender(env.RESEND_API_KEY, env.EMAIL_FROM, logger);
 
 const workers: Worker[] = [];

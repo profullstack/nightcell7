@@ -16,8 +16,8 @@ export const apiEnvSchema = baseEnvSchema.extend({
   MATCH_RESULT_SECRET: z.string().min(16),
 
   REDIS_URL: z.string().min(1),
-  TURSO_DATABASE_URL: z.string().min(1),
-  TURSO_AUTH_TOKEN: z.string().optional(),
+  /** postgres:// connection string; the database package rejects anything else. */
+  DATABASE_URL: z.string().min(1),
 
   COINPAY_API_BASE: z.string().url(),
   COINPAY_API_KEY: z.string().min(1),

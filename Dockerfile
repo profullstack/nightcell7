@@ -28,7 +28,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 # Whole tree: `next start` needs its app directory, and the externalised
-# native modules (libsql) must be resolvable at runtime.
+# externalised database driver (pg) must be resolvable at runtime.
 COPY --from=build /app ./
 
 EXPOSE 8080

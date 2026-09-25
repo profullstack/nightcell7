@@ -34,7 +34,7 @@ const logger = createLogger({
 const health = new HealthReporter("api", env.BUILD_VERSION, PROTOCOL_VERSION);
 
 const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
-const database = getDatabase({ url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN });
+const database = getDatabase({ url: env.DATABASE_URL });
 
 const queues = new Map<string, Queue>();
 function queueFor(name: string): Queue {

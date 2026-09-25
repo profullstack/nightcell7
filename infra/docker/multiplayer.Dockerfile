@@ -24,7 +24,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 RUN corepack enable
 
-# Native modules (libsql) stay external, so runtime deps must be installed.
+# The database driver (pg) stays external, so runtime deps must be installed.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages ./packages
 COPY services ./services

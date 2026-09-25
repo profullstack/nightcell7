@@ -18,8 +18,8 @@ import { ORDER_STATUS, isNonTerminal, transition } from "@nightcell7/entitlement
 
 const envSchema = baseEnvSchema.extend({
   REDIS_URL: z.string().min(1),
-  TURSO_DATABASE_URL: z.string().min(1),
-  TURSO_AUTH_TOKEN: z.string().optional(),
+  /** postgres:// connection string; the database package rejects anything else. */
+  DATABASE_URL: z.string().min(1),
   COINPAY_API_BASE: z.string().url(),
   COINPAY_API_KEY: z.string().min(1),
   /** Orders older than this with no terminal status get reconciled. */
@@ -34,7 +34,7 @@ const logger = createLogger({
   level: env.LOG_LEVEL,
   buildVersion: env.BUILD_VERSION,
 });
-const db = getDatabase({ url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN });
+const db = getDatabase({ url: env.DATABASE_URL });
 
 const COMMANDS = {
   RECONCILE_PAYMENTS: "reconcile-payments",

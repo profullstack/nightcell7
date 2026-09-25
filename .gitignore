@@ -7,7 +7,7 @@ build/
 coverage/
 *.tsbuildinfo
 
-# Local libSQL development databases
+# Local libSQL development databases (pre-Postgres; harmless to keep ignoring)
 *.db
 *.db-shm
 *.db-wal
