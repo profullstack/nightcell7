@@ -26,7 +26,7 @@ export interface DatabaseConfig {
 function assertPostgresUrl(url: string | undefined): string {
   if (!url) {
     throw new Error(
-      "DATABASE_URL is required (postgres://user:pass@host:5432/nightcell7). " +
+      "DATABASE_URL is required (postgres://host:5432/nightcell7). " +
         "The database moved from Turso to Postgres; TURSO_DATABASE_URL is no longer read.",
     );
   }

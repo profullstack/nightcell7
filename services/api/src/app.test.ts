@@ -29,7 +29,7 @@ const env: ApiEnv = {
   TICKET_TTL_SECONDS: 45,
   MATCH_RESULT_SECRET: "match-result-secret-for-tests-0",
   REDIS_URL: "redis://localhost:6379",
-  DATABASE_URL: "postgres://test:test@localhost:5432/test",
+  DATABASE_URL: "postgres://localhost:5432/nightcell7_test",
   COINPAY_API_BASE: "https://api.coinpayportal.test",
   COINPAY_API_KEY: "key",
   COINPAY_WEBHOOK_SECRET: WEBHOOK_SECRET,
