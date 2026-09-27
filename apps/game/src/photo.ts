@@ -7,13 +7,14 @@
  * plus a name, instead of someone hand-flying a camera and never finding the
  * same framing twice.
  *
- * Nothing here changes the map or the simulation. The camera is placed at eye
- * height in the real playable volume, so a photo-mode frame is a view a player
- * can actually stand in and see.
+ * Nothing here changes the simulation. Eye-level frames show playable routes;
+ * explicitly captioned overview frames use elevated survey cameras.
  */
 
 export interface Vantage {
   readonly name: string;
+  readonly yard?: string;
+  readonly time?: "day" | "night";
   /** Short line used in the capture manifest and the site's alt text. */
   readonly caption: string;
   readonly position: readonly [number, number, number];
@@ -108,6 +109,90 @@ export const VANTAGES: readonly Vantage[] = [
     yaw: Math.PI * 1.04,
     pitch: 0.22,
     fovDegrees: 80,
+  },
+  {
+    name: "saffron-overview",
+    caption:
+      "Saffron Freight: amber cargo islands and staggered crosscuts, seen from above the south flank.",
+    yard: "saffron_freight",
+    time: "day",
+    position: [32, 11, 38],
+    yaw: -2.5,
+    pitch: 0.23,
+    fovDegrees: 74,
+  },
+  {
+    name: "saffron-crosscut",
+    caption: "Saffron Freight: a close approach through the cargo lanes.",
+    yard: "saffron_freight",
+    time: "day",
+    position: [1, 1.7, 22],
+    yaw: -2.55,
+    pitch: 0.01,
+    showWeapon: true,
+  },
+  {
+    name: "saffron-detail",
+    caption:
+      "Saffron freight module: corrugated amber panels, rivets, hazard stripes and sector markings.",
+    yard: "saffron_freight",
+    time: "day",
+    position: [1, 2.2, 28],
+    yaw: -1.8,
+    pitch: 0.02,
+    fovDegrees: 60,
+  },
+  {
+    name: "saffron-night",
+    caption: "Saffron Freight after dark, with floodlights across the open flank.",
+    yard: "saffron_freight",
+    time: "night",
+    position: [32, 8, 38],
+    yaw: -2.5,
+    pitch: 0.16,
+    fovDegrees: 74,
+  },
+  {
+    name: "nacre-overview",
+    caption:
+      "Nacre Relay: four relay houses frame an open central plaza and connected outer lanes.",
+    yard: "nacre_relay",
+    time: "day",
+    position: [32, 11, 38],
+    yaw: -2.5,
+    pitch: 0.23,
+    fovDegrees: 74,
+  },
+  {
+    name: "nacre-plaza",
+    caption: "Nacre Relay: the exposed plaza between the ivory and jade relay houses.",
+    yard: "nacre_relay",
+    time: "day",
+    position: [6, 1.7, 6],
+    yaw: -2.0,
+    pitch: 0.01,
+    showWeapon: true,
+  },
+  {
+    name: "nacre-detail",
+    caption:
+      "Nacre relay house: ceramic panels, jade signal bands, ventilation and NR identification plates.",
+    yard: "nacre_relay",
+    time: "day",
+    position: [7, 2.2, 29],
+    yaw: 2.1,
+    pitch: 0.01,
+    fovDegrees: 60,
+  },
+  {
+    name: "nacre-night",
+    caption: "Nacre Relay at night: lit relay houses across the south approach.",
+    yard: "nacre_relay",
+    time: "night",
+    position: [32, 8, 38],
+    yaw: -2.5,
+    pitch: 0.16,
+    fovDegrees: 74,
   },
 ];
 
