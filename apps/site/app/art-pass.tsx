@@ -1,6 +1,8 @@
 import { YardArtGallery } from "./new-yards";
 import manifest from "../public/media/art/manifest.json";
 import { ClickableGallery } from "./_components/clickable-gallery";
+import vehicleManifest from "../public/media/yard-vehicles/manifest.json";
+import { ClickableStrip } from "./_components/clickable-figures";
 import { ClickableSheet } from "./_components/clickable-figures";
 import type { LightboxShot } from "./_components/lightbox";
 
@@ -33,7 +35,7 @@ const SHEET_SHOT: LightboxShot = {
 const FRAME_SHOTS: LightboxShot[] = FRAMES.shots.map((shot) => ({ ...shot, dir: "art" }));
 
 /** One-line summary of the current pass, for a section lede. */
-export const SHEET_SUMMARY = `${SHEET.models} weapon, vehicle, operator and Ardavan structure models, plus the new Saffron Freight and Nacre Relay architecture below.`;
+export const SHEET_SUMMARY = `${SHEET.models} models in the original asset sheet, plus new helicopter and patrol jeep models and expanded yard layouts below.`;
 
 /** The four gameplay frames — the operators and the HUD, not empty geometry. */
 export function GameplayFrames() {
@@ -56,7 +58,17 @@ export function AssetSheet() {
         height={SHEET.height}
       />
       <p className="gallery__note">Open the sheet to read the labels.</p>
-      <h3>New yard architecture</h3>
+      <h3>New vehicles</h3>
+      <p>
+        Original helicopter and patrol jeep models, shown in studio lighting. Both appear in all
+        three playable yards.
+      </p>
+      <ClickableStrip
+        shots={vehicleManifest.shots.map((shot) => ({ ...shot, dir: "yard-vehicles" }))}
+        width={vehicleManifest.width}
+        height={vehicleManifest.height}
+      />
+      <h3>Expanded yard layouts</h3>
       <p>
         Helicopters, patrol jeeps, cargo roofs and relay compounds using the full environment kit.
         Explore their surfaces and markings up close.

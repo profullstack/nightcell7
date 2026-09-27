@@ -4,12 +4,11 @@ Original map and architectural art authored for NIGHTCELL 7 on 2026-09-27.
 No external reference images, generated bitmap assets, or third-party models
 were added. Existing perimeter and skyline art retains its recorded provenance.
 
-Saffron Freight uses amber corrugated freight islands in alternating rows,
-with taller stacks on the lateral approaches. Nacre Relay uses pale ceramic
-relay houses, charcoal ventilation panels and jade signal bands around an open
-cross-shaped plaza. Both have protected central spawn approaches and continuous
-outer flanks. These are independently authored interiors, not transformed copies
-of Ardavan Yard.
+Saffron Freight combines amber loading roofs, cargo modules, a tank farm and
+an aircraft service bay. Nacre Relay combines two pale ceramic relay houses,
+field shelters, a bunker and an aircraft plaza. Both have protected central
+spawn approaches, continuous outer flanks and stair-accessible elevated routes.
+The interiors use distinct arrangements of the full environment asset kit.
 
 `packages/multiplayer-sim/src/map.ts` owns every architectural solid.
 `apps/game/src/yard-art.ts` draws each at its exact collision extent and adds
@@ -22,7 +21,8 @@ are adapted to the new interiors. Day/night selection remains independent.
 
 Validation includes player capsule clearance and navigation to every spawn,
 pickup and range target, selected-map combat simulation, browser selection,
-and rendered scene inspection. No new download assets are required.
+and rendered scene inspection. The vehicle expansion adds two compact GLBs
+within the existing download budget.
 
 ## Screenshots and gameplay films
 
