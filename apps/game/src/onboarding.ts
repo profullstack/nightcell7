@@ -66,7 +66,7 @@ export function briefingFor(side: SideId): Briefing {
     title: "First deployment",
     lines: [
       `You are deploying with ${own.name}, ${SIDE_STORY[side]}. ${own.summary}`,
-      "This is Ardavan Yard, the multiplayer map, played as squad Team Deathmatch against bots. The campaigns are one-person stories; the yard is where you learn to fight.",
+      "Your selected yard supports squad combat against bots, target practice and free exploration. The campaigns are one-person stories; these yards are where you learn to fight.",
       "Your squad wears the colour you choose below, and the other side is always given a colour you cannot confuse with it. Once you deploy, a short coach walks you through the controls one at a time.",
     ],
   };
