@@ -12,6 +12,7 @@ import {
 } from "@babylonjs/core";
 import {
   ARDAVAN_YARD,
+  type CollisionMap,
   BotController,
   DEFAULT_PICKUP_RULES,
   MatchSimulation,
@@ -56,6 +57,7 @@ const ENEMY_COUNT = 4;
 const FRIENDLY_COUNT = 3;
 
 export interface OpponentOptions {
+  readonly map?: CollisionMap;
   /**
    * Roster size. Both default to a full Team Deathmatch.
    *
@@ -256,7 +258,7 @@ export class Opponents {
 
     this.sim = new MatchSimulation({
       matchId: "sandbox",
-      map: ARDAVAN_YARD,
+      map: options.map ?? ARDAVAN_YARD,
       // The public sandbox has no results screen or match rotation. Keep it
       // playable; competitive server rooms retain the normal TDM limits.
       rules: {
@@ -338,7 +340,7 @@ export class Opponents {
       // Initial spawn scoring ties before the first tick. Spread the roster
       // across its real faction pads rather than stacking every mesh together.
       const player = this.sim.players.get(id)!;
-      const pads = spawnsForTeam(ARDAVAN_YARD, player.team);
+      const pads = spawnsForTeam(this.sim.map, player.team);
       const offset = spawnOffsets.get(player.team) ?? 0;
       spawnOffsets.set(player.team, offset + 1);
       // The player takes their team's first pad (see main.ts), and nothing

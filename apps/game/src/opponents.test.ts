@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 import { BUTTON } from "@nightcell7/multiplayer-protocol";
 import { type MatchSimulation, PICKUP_KIND, TEAM_IDS, TICK_MS } from "@nightcell7/multiplayer-sim";
 import { ARDAVAN_YARD, spawnsForTeam } from "@nightcell7/multiplayer-sim";
+import { NACRE_RELAY, type CollisionMap } from "@nightcell7/multiplayer-sim";
 import { Opponents } from "./opponents";
 import { materialRole } from "./targets";
 import { type AssetSet } from "./assets";
@@ -27,7 +28,7 @@ interface Inspection {
   >;
 }
 
-async function fixture() {
+async function fixture(map?: CollisionMap) {
   const engine = new NullEngine();
   const scene = new Scene(engine);
   new FreeCamera("test-camera", new Vector3(0, 2, 20), scene);
@@ -45,7 +46,7 @@ async function fixture() {
       ),
     ),
   ) as AssetSet["models"];
-  const opponents = new Opponents(scene, { models, materials: new Map() });
+  const opponents = new Opponents(scene, { models, materials: new Map() }, map ? { map } : {});
   return {
     engine,
     scene,
@@ -337,4 +338,14 @@ describe("the two sides are visibly different in the yard", () => {
       f.dispose();
     }
   });
+});
+
+it("runs local combat on the selected yard geometry", async () => {
+  const f = await fixture(NACRE_RELAY);
+  try {
+    expect(f.inspect.sim.map).toBe(NACRE_RELAY);
+    expect(f.inspect.sim.players.size).toBe(8);
+  } finally {
+    f.dispose();
+  }
 });

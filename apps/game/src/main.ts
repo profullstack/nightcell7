@@ -1,5 +1,6 @@
+import { preferredYard, rememberYard } from "./yards";
 import { FreeCamera, Scene, Vector3 } from "@babylonjs/core";
-import { ARDAVAN_YARD, mapChecksum, spawnsForTeam } from "@nightcell7/multiplayer-sim";
+import { mapChecksum, spawnsForTeam } from "@nightcell7/multiplayer-sim";
 import { BITE, createInsectBiteState, stepInsectBite } from "@nightcell7/game-core";
 import { decideAccess, loadViewer, parseMode } from "./access";
 import { modeLabel, renderGate } from "./gate";
@@ -83,12 +84,14 @@ async function boot(): Promise<void> {
 
   const { engine, kind } = await createRenderer(canvas);
 
-  const checksum = mapChecksum(ARDAVAN_YARD);
+  const map = preferredYard(window.location.search, safeStorage());
+  rememberYard(map.id, safeStorage());
+  const checksum = mapChecksum(map);
   console.info(
     JSON.stringify({
       msg: "renderer ready",
       renderer: kind,
-      map: ARDAVAN_YARD.id,
+      map: map.id,
       mapChecksum: checksum,
     }),
   );
@@ -102,7 +105,7 @@ async function boot(): Promise<void> {
   // in the URL, and changing the mode or difficulty reloads without it.
   rememberLoadout(loadout, safeStorage());
   const team = sideTeam(loadout.side);
-  const spawn = spawnsForTeam(ARDAVAN_YARD, team)[0];
+  const spawn = spawnsForTeam(map, team)[0];
   if (!spawn) throw new Error("map has no spawn for the chosen side");
 
   const camera = new FreeCamera("camera", new Vector3(0, 1.65, 40), scene);
@@ -115,7 +118,7 @@ async function boot(): Promise<void> {
   // Chosen before the world is built: the lighting rig, the sky texture and
   // whether insects exist at all are decided once, at boot.
   const timeOfDay = preferredTimeOfDay(window.location.search, safeStorage());
-  const world = await buildWorld(scene, engine, camera, ARDAVAN_YARD, timeOfDay);
+  const world = await buildWorld(scene, engine, camera, map, timeOfDay);
 
   // Ambience belongs to the yard, not to a match.
   //
@@ -181,7 +184,7 @@ async function boot(): Promise<void> {
 
   // Muzzle flash, tracers and impacts. Presentation only — the server owns
   // hit registration; this decides where to draw a spark.
-  const effects = new WeaponEffects(scene, ARDAVAN_YARD);
+  const effects = new WeaponEffects(scene, map);
 
   // The flash lights the yard, not the gun held in front of it.
   effects.excludeFromFlash(viewmodel.meshes());
@@ -197,6 +200,7 @@ async function boot(): Promise<void> {
   const roster = gameMode === GAME_MODE.DEATHMATCH ? {} : ({ enemies: 0, friendlies: 0 } as const);
   const opponents = new Opponents(scene, world.assets, {
     ...roster,
+    map,
     shadows: world.shadows,
     difficulty: difficultyInfo(difficulty),
     team,
@@ -213,19 +217,26 @@ async function boot(): Promise<void> {
 
   // Mode and difficulty are both set at boot: the yard is dressed and the
   // bots are tuned once, so changing either reloads with both in the URL.
-  const reloadWith = (next: { mode?: string; difficulty?: string; time?: string }) => {
+  const reloadWith = (next: {
+    mode?: string;
+    difficulty?: string;
+    time?: string;
+    yard?: string;
+  }) => {
     const params = new URLSearchParams();
     params.set("mode", next.mode ?? gameMode);
     params.set("difficulty", next.difficulty ?? difficulty);
     params.set("time", next.time ?? timeOfDay);
+    params.set("yard", next.yard ?? map.id);
     window.location.search = `?${params.toString()}`;
   };
 
   // Stationary targets, for the range only. They are presentation-only hit
   // volumes; nothing here is scored.
-  const targets = gameMode === GAME_MODE.RANGE ? new TrainingTargets(scene, world.assets) : null;
+  const targets =
+    gameMode === GAME_MODE.RANGE ? new TrainingTargets(scene, world.assets, map) : null;
 
-  const player = new PlayerController(scene, camera, canvas, ARDAVAN_YARD, spawn);
+  const player = new PlayerController(scene, camera, canvas, map, spawn);
 
   // First run: a briefing on the gate, then a coach in the yard until the
   // player has used every control once or skips it. Remembered, so a returning
@@ -245,7 +256,9 @@ async function boot(): Promise<void> {
       finishCoaching();
     },
     renderer: kind,
-    mapName: ARDAVAN_YARD.displayName,
+    mapName: map.displayName,
+    yard: map.id,
+    ...(mode !== "multiplayer" ? { onYardChange: (yard: string) => reloadWith({ yard }) } : {}),
     mapChecksum: checksum,
     mode: gameMode,
     // Remembered immediately rather than on start, so a player who picks a mode
