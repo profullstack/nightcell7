@@ -271,7 +271,7 @@ async function main() {
   page.on("pageerror", (e) => errors.push(String(e)));
   const cdp = await page.context().newCDPSession(page);
   await page.addInitScript(VIRTUAL_CLOCK);
-  await page.addInitScript(() => localStorage.setItem("nc7.onboarded", "1"));
+  await page.addInitScript('localStorage.setItem("nc7.onboarded", "1")');
 
   const params = new URLSearchParams({
     mode: "deathmatch",

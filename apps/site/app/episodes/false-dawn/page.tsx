@@ -1,3 +1,4 @@
+import { YardShowcase } from "../../new-yards";
 import type { Metadata } from "next";
 import { MISSION_SPECS, SIDE } from "@nightcell7/game-core";
 import { CATALOG, formatPrice } from "@nightcell7/entitlements";
@@ -74,6 +75,16 @@ export default function EpisodePage() {
         </p>
         <CaptureStrip names={["yard-approach", "central-hardpoint", "gantry-overlook"]} />
         <CaptureNotice />
+
+        <h3 style={{ marginTop: "4rem" }}>Explore the new free-play yards</h3>
+        <p>
+          Saffron Freight and Nacre Relay are open for bot deathmatch, firing-range practice and
+          free roam. Choose day or night on the deploy screen.
+        </p>
+        <YardShowcase />
+        <p>
+          <a href="/yards">See every yard and more screenshots</a>
+        </p>
 
         <h3 style={{ marginTop: "4rem" }}>Content notes</h3>
         <ul className="includes">

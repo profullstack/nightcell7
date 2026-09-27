@@ -1,3 +1,4 @@
+import { YardShowcase } from "../new-yards";
 import type { Metadata } from "next";
 import { MULTIPLAYER_MAP, TDM_RULES } from "@nightcell7/game-core";
 import { CaptureStrip, CapturePlate, CaptureNotice } from "../gallery";
@@ -91,6 +92,16 @@ export default async function MultiplayerPage() {
         </p>
         <CaptureStrip names={["tank-row", "central-hardpoint", "north-gate"]} />
         <CaptureNotice />
+
+        <h3 style={{ marginTop: "4rem" }}>Explore the new free-play yards</h3>
+        <p>
+          Saffron Freight and Nacre Relay are open for bot deathmatch, firing-range practice and
+          free roam. Choose day or night on the deploy screen.
+        </p>
+        <YardShowcase />
+        <p>
+          <a href="/yards">See every yard and more screenshots</a>
+        </p>
 
         <h3 style={{ marginTop: "4rem" }}>How it works</h3>
         <ul className="includes">

@@ -1,3 +1,5 @@
+import { YardFilms } from "../yard-films";
+import { YardShowcase } from "../new-yards";
 import type { Metadata } from "next";
 import { PageShell, DraftNotice } from "../_components/page-shell";
 import { CaptureStrip, CaptureNotice } from "../gallery";
@@ -91,6 +93,17 @@ export default function PressPage() {
       <CaptureStrip names={["west-catwalk", "tank-row", "gantry-overlook"]} />
       <CaptureNotice />
 
+      <h3 style={{ marginTop: "4rem" }}>Explore the new free-play yards</h3>
+      <p>
+        Saffron Freight and Nacre Relay are open for bot deathmatch, firing-range practice and free
+        roam. Choose day or night on the deploy screen.
+      </p>
+      <YardShowcase />
+      <YardFilms />
+      <p>
+        <a href="/yards">See every yard and more screenshots</a>
+      </p>
+
       <h3>Using these</h3>
       <p>
         Every image and the film on this page may be used in coverage with a credit to NIGHTCELL 7.
@@ -100,8 +113,9 @@ export default function PressPage() {
       </p>
 
       <DraftNotice>
-        There is no packaged press kit yet. The trailer and screenshots show the multiplayer map in
-        alpha; campaign footage is not available.
+        There is no packaged press kit yet. The trailer shows Ardavan Yard; the screenshots also
+        cover the new free-play yards. All footage is from the alpha; campaign footage is not
+        available.
       </DraftNotice>
 
       <h3>Contact</h3>

@@ -1,6 +1,6 @@
+import { YardShowcase } from "../new-yards";
 import type { Metadata } from "next";
 import { PageShell } from "../_components/page-shell";
-import { CapturePlate } from "../gallery";
 
 export const metadata: Metadata = { title: "News" };
 
@@ -17,6 +17,11 @@ interface Entry {
  * what actually shipped, not what is planned.
  */
 const ENTRIES: Entry[] = [
+  {
+    date: "2026-09-27",
+    title: "Two new yards: Saffron Freight and Nacre Relay",
+    body: "Take the cargo lanes of Saffron Freight or cross the open plaza at Nacre Relay. Both yards bring new layouts and architectural art to free bot matches, range practice and exploration. Choose your yard and time of day on the deploy screen, and see the new screenshots in the art gallery.",
+  },
   {
     date: "2026-07-26",
     title: "Ardavan Yard is standing up",
@@ -49,7 +54,10 @@ export default function NewsPage() {
         </article>
       ))}
 
-      <CapturePlate name="container-alley" label="Latest build" />
+      <YardShowcase />
+      <p>
+        <a href="/gallery">View the updated art and asset gallery</a>
+      </p>
     </PageShell>
   );
 }

@@ -160,7 +160,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   // Top-right: build / integrity, mirroring the join-handshake checksum.
   const tr = el("div", "hud__block hud__block--tr");
   tr.append(el("p", "hud__label", "Deployment"));
-  tr.append(el("p", "hud__value hud__value--cyan", "ARDAVAN"));
+  tr.append(el("p", "hud__value hud__value--cyan", options.mapName.toUpperCase()));
   tr.append(el("p", "hud__sub", "TACTICAL OPERATIONS"));
   hud.append(tr);
 
@@ -283,7 +283,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   mark.append(seven);
   gate.append(mark);
 
-  gate.append(el("p", "gate__sub", "IRON RAIN / ARDAVAN INDUSTRIAL DISTRICT"));
+  gate.append(el("p", "gate__sub", `IRON RAIN / ${options.mapName.toUpperCase()}`));
   gate.append(
     el(
       "p",
@@ -626,7 +626,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   };
   refreshArmory();
 
-  const button = el("button", "gate__button", "Deploy to Ardavan");
+  const button = el("button", "gate__button", `Deploy to ${options.mapName}`);
   button.type = "button";
   button.addEventListener("click", () => options.onStart());
   gate.append(button);

@@ -12,11 +12,13 @@ export function PageShell({
   title,
   lede,
   children,
+  wide = false,
 }: {
   label: string;
   title: string;
   lede?: string;
   children: ReactNode;
+  wide?: boolean;
 }) {
   return (
     <section className="section" style={{ borderTop: "none" }}>
@@ -24,7 +26,7 @@ export function PageShell({
         <p className="section__label">{label}</p>
         <h2>{title}</h2>
         {lede ? <p className="lede">{lede}</p> : null}
-        <div className="prose">{children}</div>
+        <div className={wide ? "prose prose--wide" : "prose"}>{children}</div>
       </div>
     </section>
   );

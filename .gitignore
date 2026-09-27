@@ -43,3 +43,6 @@ docs/POLYGON_Military_SourceFiles_v5.zip
 # The repo is public; a licence to use assets in the game is not a licence to
 # redistribute them. See apps/game/public/assets/PROVENANCE.md.
 nightcell7-assets/
+
+# Optional intermediate frames from per-yard gameplay capture.
+/apps/site/public/media/yard-films/**/frames/
