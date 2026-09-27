@@ -33,9 +33,9 @@ export const MIN_SUPPORTED_PROTOCOL_VERSION = 2 as const;
  * spawn points and weapon tuning. It is deliberately separate from the visual
  * asset pack version — art can ship without invalidating a match.
  */
-// 1.3.0 ships the IRON RAIN world and operator redesign.
-// Collision volumes and the wire protocol are unchanged.
-export const CONTENT_VERSION = "1.3.0" as const;
+// 1.4.0 adds Saffron Freight and Nacre Relay, vehicle cover and walkable stairs.
+// Updated collision geometry requires clients and servers to share this content.
+export const CONTENT_VERSION = "1.4.0" as const;
 
 export interface BuildIdentity {
   /** Human-facing build string, e.g. "0.1.0+2026.07.25.1". */
