@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-09-27T02:40:28.480Z",
-  "commit": "36adc061ace6612a6e4bfdef5134e98e2079257d",
+  "generatedAt": "2026-09-27T03:27:25.695Z",
+  "commit": "da93cf61b4fa254815fbf27e6cd10647d2b449e4",
   "tool": "tools/art/trailer.mjs",
   "file": "saffron_freight-gameplay.mp4",
   "poster": "saffron_freight-poster.webp",
   "yard": "saffron_freight",
   "time": "day",
   "audio": "Game soundtrack and yard ambience; offline gameplay capture does not record live sound effects.",
-  "sha256": "ab2ea425875c9153769b30b5e20ed434f640e3de5a02b733500d4461e32cd9bd",
-  "bytes": 7784802,
+  "sha256": "88654a6b9f",
+  "bytes": 5835402,
   "width": 1280,
   "height": 720,
   "fps": 30,
@@ -67,7 +67,5 @@
       "name": "hold-the-crossing",
       "frames": 90
     }
-  ],
-  "musicTitle": "Ironwood Oath",
-  "musicArtist": "Þrøngva"
+  ]
 }

@@ -1369,7 +1369,9 @@ body {
 }
 .gate {
   justify-items: start;
-  place-content: center start;
+  /* This panel is taller than the viewport. Centering hides its first rows
+     above the scroll origin, including the yard picker on small screens. */
+  place-content: start;
   text-align: left;
   padding: clamp(24px, 7vw, 120px);
   gap: 1.3rem;

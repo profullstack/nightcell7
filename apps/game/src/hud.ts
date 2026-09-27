@@ -288,7 +288,9 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     el(
       "p",
       "gate__hint",
-      "Secure the industrial district. Move between cover, watch the elevated lanes, and keep your squad in the fight.",
+      options.onYardChange
+        ? "Choose a yard below, then set up your operator and deploy."
+        : "Secure the industrial district. Move between cover, watch the elevated lanes, and keep your squad in the fight.",
     ),
   );
 
@@ -316,8 +318,6 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     );
   };
   renderBriefing((options.loadout ?? DEFAULT_LOADOUT).side);
-  gate.append(briefing);
-
   if (options.onYardChange) {
     const yards = el("fieldset", "yards");
     yards.append(el("legend", "modes__legend", "Choose your yard"));
@@ -363,6 +363,8 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     }
     gate.append(yards);
   }
+
+  gate.append(briefing);
 
   // Mode picker.
   //

@@ -231,7 +231,8 @@ async function boot(): Promise<void> {
     yard?: string;
   }) => {
     const params = new URLSearchParams();
-    params.set("mode", next.mode ?? gameMode);
+    // Yard/setup choices keep the public demo link in demo mode.
+    params.set("mode", next.mode ?? (mode === "demo" ? "demo" : gameMode));
     params.set("difficulty", next.difficulty ?? difficulty);
     params.set("time", next.time ?? timeOfDay);
     params.set("yard", next.yard ?? map.id);
