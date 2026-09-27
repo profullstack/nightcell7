@@ -1,0 +1,101 @@
+{
+  "generator": "tools/art/capture.mjs",
+  "source": "In-engine captures of Saffron Freight and Nacre Relay; original architectural art and shared collision layouts.",
+  "license": "NIGHTCELL 7 in-engine captures of the original IRON RAIN geometry and generated surface textures. See apps/game/public/assets/PROVENANCE.md.",
+  "commit": "36adc061ace6612a6e4bfdef5134e98e2079257d",
+  "capturedAt": "2026-09-27T02:30:44.989Z",
+  "viewport": {
+    "width": 1600,
+    "height": 900
+  },
+  "shots": [
+    {
+      "name": "saffron-overview",
+      "caption": "Saffron Freight: amber cargo islands and staggered crosscuts, seen from above the south flank.",
+      "yard": "saffron_freight",
+      "time": "day",
+      "position": [32, 11, 38],
+      "yaw": -2.5,
+      "pitch": 0.23,
+      "fovDegrees": 74,
+      "file": "saffron-overview-6b843af554.webp"
+    },
+    {
+      "name": "saffron-crosscut",
+      "caption": "Saffron Freight: a close approach through the cargo lanes.",
+      "yard": "saffron_freight",
+      "time": "day",
+      "position": [1, 1.7, 22],
+      "yaw": -2.55,
+      "pitch": 0.01,
+      "showWeapon": true,
+      "file": "saffron-crosscut-bde4cfbec8.webp"
+    },
+    {
+      "name": "saffron-detail",
+      "caption": "Saffron freight module: corrugated amber panels, rivets, hazard stripes and sector markings.",
+      "yard": "saffron_freight",
+      "time": "day",
+      "position": [1, 2.2, 28],
+      "yaw": -1.8,
+      "pitch": 0.02,
+      "fovDegrees": 60,
+      "file": "saffron-detail-c2cdcef50e.webp"
+    },
+    {
+      "name": "saffron-night",
+      "caption": "Saffron Freight after dark, with floodlights across the open flank.",
+      "yard": "saffron_freight",
+      "time": "night",
+      "position": [32, 8, 38],
+      "yaw": -2.5,
+      "pitch": 0.16,
+      "fovDegrees": 74,
+      "file": "saffron-night-bba3e6d793.webp"
+    },
+    {
+      "name": "nacre-overview",
+      "caption": "Nacre Relay: four relay houses frame an open central plaza and connected outer lanes.",
+      "yard": "nacre_relay",
+      "time": "day",
+      "position": [32, 11, 38],
+      "yaw": -2.5,
+      "pitch": 0.23,
+      "fovDegrees": 74,
+      "file": "nacre-overview-f4e96e4bde.webp"
+    },
+    {
+      "name": "nacre-plaza",
+      "caption": "Nacre Relay: the exposed plaza between the ivory and jade relay houses.",
+      "yard": "nacre_relay",
+      "time": "day",
+      "position": [6, 1.7, 6],
+      "yaw": -2,
+      "pitch": 0.01,
+      "showWeapon": true,
+      "file": "nacre-plaza-cce78e1de2.webp"
+    },
+    {
+      "name": "nacre-detail",
+      "caption": "Nacre relay house: ceramic panels, jade signal bands, ventilation and NR identification plates.",
+      "yard": "nacre_relay",
+      "time": "day",
+      "position": [7, 2.2, 29],
+      "yaw": 2.1,
+      "pitch": 0.01,
+      "fovDegrees": 60,
+      "file": "nacre-detail-1e2f766c83.webp"
+    },
+    {
+      "name": "nacre-night",
+      "caption": "Nacre Relay at night: lit relay houses across the south approach.",
+      "yard": "nacre_relay",
+      "time": "night",
+      "position": [32, 8, 38],
+      "yaw": -2.5,
+      "pitch": 0.16,
+      "fovDegrees": 74,
+      "file": "nacre-night-5dce674da4.webp"
+    }
+  ]
+}

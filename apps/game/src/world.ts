@@ -1,3 +1,4 @@
+import { createYardArchitecture } from "./yard-art";
 import { surfaceTexture } from "./iron-rain-materials";
 import {
   Color3,
@@ -352,7 +353,12 @@ export async function buildWorld(
     casters.push(...meshesUnder(placeAll(model(name), label, placements)));
   };
 
+  const architecture = createYardArchitecture(scene);
   map.boxes.forEach((box, index) => {
+    if (box.tag === "freight_module" || box.tag === "relay_block") {
+      casters.push(...architecture(box, index));
+      return;
+    }
     const v = volumeOf(box);
     const kind = classify(v, map);
 

@@ -24,6 +24,10 @@
  *   node tools/art/trailer.mjs --out docs/trailer
  *
  * Options:
+ *   --yard <id>       Record a specific yard (requires --out)
+ *   --seconds <n>     Exact duration; trims or extends the final gameplay beat
+ *   --gameplay-only   Omit the deploy-screen opening
+ *   --time <day|night> Lighting selection (default night)
  *   --out <dir>       Output directory (default docs/trailer)
  *   --width <px>      Render width  (default 1280)
  *   --height <px>     Render height (default 720)
@@ -64,6 +68,12 @@ const MUSIC = resolve(
 );
 const AMBIENCE = join(AUDIO, "ambience_yard.mp3");
 const FRAME_MS = 1000 / FPS;
+const YARD = opt("yard");
+const SECONDS = opt("seconds") ? Number(opt("seconds")) : undefined;
+const VIDEO_FILE = YARD ? `${YARD}-gameplay.mp4` : "nightcell7-trailer.mp4";
+if (YARD && !opt("out")) throw new Error("--yard requires a separate --out directory");
+if (SECONDS !== undefined && (!Number.isFinite(SECONDS) || SECONDS <= 0))
+  throw new Error("Invalid --seconds");
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -190,7 +200,7 @@ const VIRTUAL_CLOCK = `{
  * hold keys or the trigger for its duration. The camera is steered with the
  * arrow keys — keyboard turning is deterministic, a synthetic mouse is not.
  */
-const BEATS = [
+const ORIGINAL_BEATS = [
   { name: "look-left", frames: 24, keys: ["ArrowLeft"] },
   { name: "look-right", frames: 40, keys: ["ArrowRight"] },
   { name: "settle", frames: 12 },
@@ -210,7 +220,28 @@ const BEATS = [
   { name: "hold", frames: 90 },
 ];
 
+const BEATS = YARD
+  ? [
+      { name: "leave-spawn", frames: 126, keys: ["KeyW"] },
+      { name: "flank-into-centre", frames: 81, keys: ["KeyA"] },
+      { name: "covering-fire", frames: 90, fire: true },
+      { name: "push-the-lane", frames: 90, keys: ["KeyW"] },
+      { name: "scan-right", frames: 12, keys: ["ArrowLeft"] },
+      { name: "engage", frames: 90, fire: true },
+      { name: "frag", frames: 6, press: "KeyG" },
+      { name: "watch-the-frag", frames: 60 },
+      { name: "reload", frames: 6, press: "KeyR" },
+      { name: "reposition", frames: 45, keys: ["KeyD"] },
+      { name: "advance-fire", frames: 90, keys: ["KeyW"], fire: true },
+      { name: "scan-left", frames: 12, keys: ["ArrowRight"] },
+      { name: "hold-the-crossing", frames: 90, fire: true },
+    ]
+  : ORIGINAL_BEATS;
+
 async function main() {
+  // Capture provenance at boot; later commits must not relabel a film already
+  // rendering from the earlier build.
+  const sourceCommit = execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim();
   await stat(join(DIST, "index.html")).catch(() => {
     throw new Error("apps/game/dist missing — run: pnpm --filter @nightcell7/game build");
   });
@@ -237,13 +268,22 @@ async function main() {
   const page = await browser.newPage({
     viewport: { width: WIDTH, height: HEIGHT },
     deviceScaleFactor: 1,
+    serviceWorkers: "block",
   });
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   const cdp = await page.context().newCDPSession(page);
   await page.addInitScript(VIRTUAL_CLOCK);
+  await page.addInitScript('localStorage.setItem("nc7.onboarded", "1")');
 
-  await page.goto(`http://127.0.0.1:${PORT}/play/?mode=deathmatch&difficulty=easy`, {
+  const params = new URLSearchParams({
+    mode: "deathmatch",
+    capture: "video",
+    difficulty: "easy",
+    time: opt("time", "night"),
+    ...(YARD ? { yard: YARD } : {}),
+  });
+  await page.goto(`http://127.0.0.1:${PORT}/play/?${params}`, {
     waitUntil: "load",
     timeout: 90_000,
   });
@@ -280,7 +320,7 @@ async function main() {
 
   // Title: the deploy gate with the operator idling in the yard, held for
   // a second and a half.
-  for (let i = 0; i < Math.round(FPS * 1.5); i += 1) await step();
+  if (!flag("gameplay-only")) for (let i = 0; i < Math.round(FPS * 1.5); i += 1) await step();
 
   // Deploy with a real click (it focuses the page and takes pointer lock).
   // The lock wait polls on a real interval: animation frames are ours now.
@@ -298,7 +338,11 @@ async function main() {
     for (const key of beat.keys ?? []) await page.keyboard.down(key);
     if (beat.fire) await page.mouse.down();
     if (beat.press) await page.keyboard.down(beat.press);
-    for (let i = 0; i < beat.frames; i += 1) {
+    for (
+      let i = 0;
+      i < beat.frames && (SECONDS === undefined || frameIndex < SECONDS * FPS);
+      i += 1
+    ) {
       await step();
       if (beat.press && i === 1) await page.keyboard.up(beat.press);
     }
@@ -307,6 +351,7 @@ async function main() {
     console.log(`${beat.name}: ${beat.frames} frames (${frameIndex} total)`);
   }
 
+  while (SECONDS !== undefined && frameIndex < SECONDS * FPS) await step();
   await browser.close();
   server.close();
   if (errors.length) throw new Error(`page errors:\n${errors.join("\n")}`);
@@ -314,7 +359,7 @@ async function main() {
   // Encode. Video fades in and out; music and ambience sit under it, the
   // music trimmed to the film and faded at both ends.
   const seconds = frameIndex / FPS;
-  const output = join(OUT, "nightcell7-trailer.mp4");
+  const output = join(OUT, VIDEO_FILE);
   execFileSync(
     "ffmpeg",
     [
@@ -371,26 +416,39 @@ async function main() {
   );
   if (!flag("keep-frames")) await rm(frameDir, { recursive: true, force: true });
 
+  const poster = YARD ? `${YARD}-poster.webp` : "poster.webp";
+  execFileSync("ffmpeg", [
+    "-y",
+    "-loglevel",
+    "error",
+    "-ss",
+    "10",
+    "-i",
+    output,
+    "-frames:v",
+    "1",
+    "-quality",
+    "90",
+    join(OUT, poster),
+  ]);
   const bytes = (await stat(output)).size;
   const hash = createHash("sha256")
     .update(await readFile(output))
     .digest("hex")
     .slice(0, 10);
-  const commit = (() => {
-    try {
-      return execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim();
-    } catch {
-      return null;
-    }
-  })();
   await writeFile(
     join(OUT, "manifest.json"),
     JSON.stringify(
       {
         generatedAt: new Date().toISOString(),
-        commit,
+        commit: sourceCommit,
         tool: "tools/art/trailer.mjs",
-        file: "nightcell7-trailer.mp4",
+        file: VIDEO_FILE,
+        poster,
+        yard: YARD ?? "ardavan-yard",
+        time: opt("time", "night"),
+        audio:
+          "Game soundtrack and yard ambience; offline gameplay capture does not record live sound effects.",
         sha256: hash,
         bytes,
         width: WIDTH,

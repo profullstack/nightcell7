@@ -16,6 +16,7 @@
  *   --width <px>    Capture width  (default 2560)
  *   --height <px>   Capture height (default 1440)
  *   --port <n>      Local static port (default 8901)
+ *   --collection new-yards  Capture the new yards into a separate --out directory
  *   --chrome <path> Explicit Chromium/Chrome binary
  */
 
@@ -148,12 +149,16 @@ function chromePath() {
 }
 
 async function main() {
-  if (opt("only") && !opt("out"))
-    throw new Error("--only requires a separate --out preview directory");
+  if ((opt("only") || opt("collection")) && !opt("out"))
+    throw new Error("--only and --collection require a separate --out directory");
   const previous = JSON.parse(
     await readFile(join(OUT, "manifest.json"), "utf8").catch(() => "null"),
   );
-  const vantages = (await loadVantages()).filter((v) => !opt("only") || v.name === opt("only"));
+  const vantages = (await loadVantages()).filter(
+    (v) =>
+      (opt("collection") === "new-yards" ? Boolean(v.yard) : !v.yard) &&
+      (!opt("only") || v.name === opt("only")),
+  );
   if (!vantages.length) throw new Error("no vantages found in apps/game/src/photo.ts");
 
   await stat(join(DIST, "index.html")).catch(() => {
@@ -180,6 +185,7 @@ async function main() {
   for (const vantage of vantages) {
     const page = await browser.newPage({
       viewport: { width: WIDTH, height: HEIGHT },
+      serviceWorkers: "block",
       deviceScaleFactor: 1,
     });
     const errors = [];
@@ -194,7 +200,12 @@ async function main() {
       });
     }`);
 
-    const url = `http://127.0.0.1:${PORT}/play/?photo=${vantage.name}`;
+    const params = new URLSearchParams({
+      photo: vantage.name,
+      ...(vantage.yard ? { yard: vantage.yard } : {}),
+      ...(vantage.time ? { time: vantage.time } : {}),
+    });
+    const url = `http://127.0.0.1:${PORT}/play/?${params}`;
     await page.goto(url, { waitUntil: "load", timeout: 60_000 });
     // Passed as a string: this expression is evaluated in the page, not in
     // Node, so a closure here would reference a `window` that does not exist
@@ -240,7 +251,10 @@ async function main() {
       JSON.stringify(
         {
           generator: "tools/art/capture.mjs",
-          source: "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
+          source:
+            opt("collection") === "new-yards"
+              ? "In-engine captures of Saffron Freight and Nacre Relay; original architectural art and shared collision layouts."
+              : "In-engine capture of ARDAVAN_YARD from apps/game (Babylon.js).",
           license:
             "NIGHTCELL 7 in-engine captures of the original IRON RAIN geometry and generated surface textures. See apps/game/public/assets/PROVENANCE.md.",
           commit,

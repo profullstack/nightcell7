@@ -1,3 +1,4 @@
+import { YARDS } from "./yards";
 import type { ControllerStatus } from "./player";
 import type { LocalStatus } from "./opponents";
 import { DEFAULT_GAME_MODE, GAME_MODES, modeInfo, type GameMode } from "./modes";
@@ -36,6 +37,8 @@ import { DEFAULT_TIME_OF_DAY, TIMES_OF_DAY, timeOfDayInfo, type TimeOfDay } from
  */
 
 export interface HudOptions {
+  yard?: string;
+  onYardChange?: (yard: string) => void;
   /** Preselected mode, and the sink for whichever the player picks. */
   mode?: GameMode;
   onModeChange?: (mode: GameMode) => void;
@@ -157,7 +160,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   // Top-right: build / integrity, mirroring the join-handshake checksum.
   const tr = el("div", "hud__block hud__block--tr");
   tr.append(el("p", "hud__label", "Deployment"));
-  tr.append(el("p", "hud__value hud__value--cyan", "ARDAVAN"));
+  tr.append(el("p", "hud__value hud__value--cyan", options.mapName.toUpperCase()));
   tr.append(el("p", "hud__sub", "TACTICAL OPERATIONS"));
   hud.append(tr);
 
@@ -280,7 +283,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   mark.append(seven);
   gate.append(mark);
 
-  gate.append(el("p", "gate__sub", "IRON RAIN / ARDAVAN INDUSTRIAL DISTRICT"));
+  gate.append(el("p", "gate__sub", `IRON RAIN / ${options.mapName.toUpperCase()}`));
   gate.append(
     el(
       "p",
@@ -314,6 +317,52 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   };
   renderBriefing((options.loadout ?? DEFAULT_LOADOUT).side);
   gate.append(briefing);
+
+  if (options.onYardChange) {
+    const yards = el("fieldset", "yards");
+    yards.append(el("legend", "modes__legend", "Choose your yard"));
+    for (const entry of YARDS) {
+      const label = el("label", "yard-card");
+      label.dataset.interactive = "";
+      label.style.setProperty("--yard-accent", entry.color);
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "nc7-yard";
+      input.value = entry.map.id;
+      input.checked = entry.map.id === options.yard;
+      input.addEventListener("change", () => {
+        if (input.checked) options.onYardChange?.(entry.map.id);
+      });
+      const diagram = document.createElement("canvas");
+      diagram.width = 160;
+      diagram.height = 160;
+      diagram.className = "yard-card__plan";
+      diagram.setAttribute("aria-hidden", "true");
+      const ctx = diagram.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#111b20";
+        ctx.fillRect(0, 0, 160, 160);
+        ctx.fillStyle = entry.color;
+        for (const box of entry.map.boxes.slice(1)) {
+          ctx.fillRect(
+            (box.min.x + 40) * 2,
+            ((box.min.z + 60) * 4) / 3,
+            (box.max.x - box.min.x) * 2,
+            ((box.max.z - box.min.z) * 4) / 3,
+          );
+        }
+      }
+      label.append(
+        input,
+        diagram,
+        el("span", "yard-card__number", `SECTOR ${entry.code}`),
+        el("span", "yard-card__name", entry.map.displayName),
+        el("span", "yard-card__blurb", entry.blurb),
+      );
+      yards.append(label);
+    }
+    gate.append(yards);
+  }
 
   // Mode picker.
   //
@@ -577,7 +626,7 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   };
   refreshArmory();
 
-  const button = el("button", "gate__button", "Deploy to Ardavan");
+  const button = el("button", "gate__button", `Deploy to ${options.mapName}`);
   button.type = "button";
   button.addEventListener("click", () => options.onStart());
   gate.append(button);

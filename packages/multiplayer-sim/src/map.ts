@@ -43,7 +43,9 @@ export type VolumeTag =
   | "water_tank"
   | "barrel_stack"
   | "tent"
-  | "guard_tower";
+  | "guard_tower"
+  | "freight_module"
+  | "relay_block";
 
 /** A collision volume, optionally naming what the client should draw for it. */
 export interface MapVolume extends Aabb {
@@ -273,8 +275,49 @@ export const ARDAVAN_YARD: CollisionMap = {
   ],
 };
 
+/** Additional free-play yards. Shared bounds keep spawn exits familiar; interiors
+ * are independently authored. All new architectural art fits these solids. */
+export const SAFFRON_FREIGHT: CollisionMap = {
+  ...ARDAVAN_YARD,
+  id: "saffron_freight",
+  displayName: "Saffron Freight",
+  boxes: [
+    ...ARDAVAN_YARD.boxes.slice(0, 5),
+    // Alternating freight islands: narrow crosscuts and two broad outer flanks.
+    ...[-26, -10, 10, 26].flatMap((z, row) =>
+      (row % 2 === 0 ? [-22, 10] : [-10, 22]).map((x) =>
+        prop("freight_module", x - 5, 0, z - 3, x + 5, 3.6, z + 3),
+      ),
+    ),
+    prop("freight_module", -26, 0, -4, -18, 6, 4),
+    prop("freight_module", 18, 0, -4, 26, 6, 4),
+    prop("freight_module", -5, 0, -35, 5, 3.6, -31),
+    prop("freight_module", -5, 0, 31, 5, 3.6, 35),
+  ],
+};
+
+export const NACRE_RELAY: CollisionMap = {
+  ...ARDAVAN_YARD,
+  id: "nacre_relay",
+  displayName: "Nacre Relay",
+  boxes: [
+    ...ARDAVAN_YARD.boxes.slice(0, 5),
+    // Four relay houses frame a cross-shaped plaza; perimeter lanes connect
+    // around both ends of every house. Centre remains open for a risky shortcut.
+    ...[-1, 1].flatMap((x) =>
+      [-1, 1].map((z) => prop("relay_block", x * 16 - 5, 0, z * 15 - 8, x * 16 + 5, 5, z * 15 + 8)),
+    ),
+    ...[-1, 1].flatMap((side) => [
+      prop("relay_block", -5, 0, side * 33 - 2, 5, 3, side * 33 + 2),
+      prop("relay_block", side * 29 - 2, 0, -4, side * 29 + 2, 7, 4),
+    ]),
+  ],
+};
+
 export const MAPS: Readonly<Record<string, CollisionMap>> = {
   [ARDAVAN_YARD.id]: ARDAVAN_YARD,
+  [SAFFRON_FREIGHT.id]: SAFFRON_FREIGHT,
+  [NACRE_RELAY.id]: NACRE_RELAY,
 };
 
 export function getMap(id: string): CollisionMap {

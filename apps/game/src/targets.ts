@@ -1,3 +1,4 @@
+import { ARDAVAN_YARD, type CollisionMap } from "@nightcell7/multiplayer-sim";
 import {
   Color3,
   PBRMaterial,
@@ -31,12 +32,20 @@ import { colorInfo } from "./loadout";
  */
 
 /** Where targets stand. All verified clear of the collision volumes. */
-const POSITIONS: ReadonlyArray<readonly [number, number]> = [
+export const RANGE_POSITIONS: ReadonlyArray<readonly [number, number]> = [
   [-4, 9],
   [10, 18],
   [-12, 24],
   [14, 31],
   [-18, 35],
+];
+
+export const EXTRA_YARD_RANGE_POSITIONS: ReadonlyArray<readonly [number, number]> = [
+  [-6, 8],
+  [6, 18],
+  [-2, 26],
+  [6, -8],
+  [0, -18],
 ];
 
 /** Matches the simulated player capsule, so shooting one feels honest. */
@@ -249,12 +258,13 @@ export function brightenCharacter(root: TransformNode, palette?: TeamPalette): v
 export class TrainingTargets {
   private readonly targets: Target[] = [];
 
-  constructor(scene: Scene, assets: AssetSet) {
+  constructor(scene: Scene, assets: AssetSet, map: CollisionMap = ARDAVAN_YARD) {
     const character = assets.models.get("m3_operator_directorate");
     const carbine = assets.models.get("m3_rifle");
     if (!character) throw new Error("character model not loaded");
 
-    POSITIONS.forEach(([x, z], index) => {
+    const positions = map.id === ARDAVAN_YARD.id ? RANGE_POSITIONS : EXTRA_YARD_RANGE_POSITIONS;
+    positions.forEach(([x, z], index) => {
       const placed = placeAnimated(character, `target${index}`, {
         position: new Vector3(x, 0, z),
         // Facing south, toward the spawn a player enters from.

@@ -1,3 +1,5 @@
+import { YardFilms } from "./yard-films";
+import { YardShowcase } from "./new-yards";
 import Image from "next/image";
 import { SHARED_TIMELINE, SIDE } from "@nightcell7/game-core";
 import { CATALOG, formatPrice } from "@nightcell7/entitlements";
@@ -70,6 +72,24 @@ export default function HomePage() {
               macOS and Linux · <a href="/downloads">Windows and package managers</a>
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="shell">
+          <p className="section__label">New yards · Free to play</p>
+          <h2>New ground. New angles.</h2>
+          <p className="lede">
+            Saffron Freight and Nacre Relay join Ardavan Yard. Two new layouts, each with its own
+            architecture, routes and rhythm.
+          </p>
+          <YardShowcase />
+          <h3>Thirty seconds on each new battlefield.</h3>
+          <YardFilms />
+          <p className="gallery__note">
+            <a href="/yards">Explore all three yards</a> ·{" "}
+            <a href="/gallery">Art and asset gallery</a>
+          </p>
         </div>
       </section>
 
@@ -196,7 +216,7 @@ export default function HomePage() {
       <section className="section">
         <div className="shell">
           <p className="section__label">The arsenal</p>
-          <h2>Every weapon, vehicle and structure, on one sheet.</h2>
+          <h2>The arsenal. The architecture. The details.</h2>
           <p className="lede">{SHEET_SUMMARY}</p>
           <AssetSheet />
         </div>

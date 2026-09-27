@@ -1,3 +1,4 @@
+import { YardArtGallery } from "./new-yards";
 import manifest from "../public/media/art/manifest.json";
 import { ClickableGallery } from "./_components/clickable-gallery";
 import { ClickableSheet } from "./_components/clickable-figures";
@@ -24,7 +25,7 @@ const FRAMES = manifest.frames;
 /** Shots carry their own media directory (see `captureSrc`). */
 const SHEET_SHOT: LightboxShot = {
   name: "asset-sheet",
-  caption: "Every weapon, vehicle, operator and structure in the game, on one sheet.",
+  caption: "The shipped weapon, vehicle, operator and Ardavan structure models.",
   file: SHEET.file,
   dir: "art",
 };
@@ -32,7 +33,7 @@ const SHEET_SHOT: LightboxShot = {
 const FRAME_SHOTS: LightboxShot[] = FRAMES.shots.map((shot) => ({ ...shot, dir: "art" }));
 
 /** One-line summary of the current pass, for a section lede. */
-export const SHEET_SUMMARY = `All ${SHEET.models} models you fight with and among in Ardavan Yard: the weapons, the vehicles, both factions' operators and the yard itself.`;
+export const SHEET_SUMMARY = `${SHEET.models} weapon, vehicle, operator and Ardavan structure models, plus the new Saffron Freight and Nacre Relay architecture below.`;
 
 /** The four gameplay frames — the operators and the HUD, not empty geometry. */
 export function GameplayFrames() {
@@ -55,6 +56,12 @@ export function AssetSheet() {
         height={SHEET.height}
       />
       <p className="gallery__note">Open the sheet to read the labels.</p>
+      <h3>New yard architecture</h3>
+      <p>
+        Amber corrugated freight modules and ivory relay houses with jade signal bands. Explore
+        their surfaces and markings up close.
+      </p>
+      <YardArtGallery />
     </>
   );
 }

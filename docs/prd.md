@@ -260,3 +260,14 @@ clock owns bot respawn. New character rigs, faction-safe roster construction,
 visibility-aware navigation and corrected aim restore visible opponents and
 return fire. Competitive server TDM limits remain unchanged. Details and full
 coverage are in `docs/art/modern-assets-and-demo.md`.
+
+### Additional free-play yards (2026-09-27)
+
+The free-play deploy gate offers Ardavan Yard, Saffron Freight and Nacre Relay.
+Saffron Freight uses staggered amber freight stacks and connected outer flanks;
+Nacre Relay uses ivory relay houses surrounding an open cross-shaped plaza.
+Each has original architectural art generated from shared collision volumes.
+The chosen yard persists across mode, difficulty, operator and time-of-day
+changes, and is directly addressable with `?yard=saffron_freight` or
+`?yard=nacre_relay`. Bot combat, movement, projectiles and respawns use that same
+map. The competitive online map remains Ardavan Yard.

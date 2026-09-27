@@ -109,6 +109,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/episodes/false-dawn">Episode 1</a>
             <a href="/multiplayer">Multiplayer</a>
             <a href="/downloads">Downloads</a>
+            <a href="/yards">Yards</a>
+            <a href="/gallery">Gallery</a>
             <a href="/news">News</a>
             <a href="/play">Play</a>
             <a href="/account">Account</a>
@@ -184,6 +186,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <a href="/support">Support</a>
                 </li>
                 <li>
+                  <a href="/yards">Yards</a>
+                  <a href="/gallery">Gallery</a>
                   <a href="/news">News</a>
                 </li>
                 <li>
