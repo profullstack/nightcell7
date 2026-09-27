@@ -58,8 +58,8 @@ export function AssetSheet() {
       <p className="gallery__note">Open the sheet to read the labels.</p>
       <h3>New yard architecture</h3>
       <p>
-        Amber corrugated freight modules and ivory relay houses with jade signal bands. Explore
-        their surfaces and markings up close.
+        Helicopters, patrol jeeps, cargo roofs and relay compounds using the full environment kit.
+        Explore their surfaces and markings up close.
       </p>
       <YardArtGallery />
     </>

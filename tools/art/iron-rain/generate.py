@@ -378,7 +378,9 @@ def firefly():
  reset();insects.build_firefly();finish('firefly')
 def mosquito():
  reset();insects.build_mosquito();finish('mosquito')
-BUILDERS={'cargo_module':cargo,'security_wall':wall,'fuel_reservoir':tanks,'catwalk':catwalk,'pipe_plant':pipes,'command_bunker':bunker,'access_stair':stairs,'floodlight':lamp,'patrol_vehicle':vehicle,'utility_vehicle':lambda:vehicle(True),'fuel_drum':drums,'drum_pallet':lambda:drums(True),'blast_wall':lambda:cover(True),'low_cover':cover,'water_unit':water,'field_case':case,'field_shelter':shelter,'guard_post':tower,'control_tower':lambda:tower(True),'refinery':refinery,'maintenance_hangar':hangar,'operator_nightcell':operator,'operator_directorate':lambda:operator(True),'rifle':lambda:weapon('rifle'),'smg':lambda:weapon('smg'),'marksman':lambda:weapon('marksman'),'launcher':launcher,'rocket':rocket,'grenade':grenade,'firefly':firefly,'mosquito':mosquito}
+import vehicles
+vehicles.install(globals())
+BUILDERS={'jeep':vehicles.jeep,'helicopter':vehicles.helicopter,'cargo_module':cargo,'security_wall':wall,'fuel_reservoir':tanks,'catwalk':catwalk,'pipe_plant':pipes,'command_bunker':bunker,'access_stair':stairs,'floodlight':lamp,'patrol_vehicle':vehicle,'utility_vehicle':lambda:vehicle(True),'fuel_drum':drums,'drum_pallet':lambda:drums(True),'blast_wall':lambda:cover(True),'low_cover':cover,'water_unit':water,'field_case':case,'field_shelter':shelter,'guard_post':tower,'control_tower':lambda:tower(True),'refinery':refinery,'maintenance_hangar':hangar,'operator_nightcell':operator,'operator_directorate':lambda:operator(True),'rifle':lambda:weapon('rifle'),'smg':lambda:weapon('smg'),'marksman':lambda:weapon('marksman'),'launcher':launcher,'rocket':rocket,'grenade':grenade,'firefly':firefly,'mosquito':mosquito}
 only=sys.argv[sys.argv.index('--only')+1].split(',') if '--only' in sys.argv else None
 for name,fn in BUILDERS.items():
  if only and name not in only:continue

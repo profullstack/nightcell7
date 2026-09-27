@@ -54,3 +54,25 @@ node tools/art/trailer.mjs --yard nacre_relay --seconds 30 --gameplay-only --tim
 Each output directory contains a manifest with its source commit, capture time,
 settings and file metadata. The films appear on the homepage, yards, gallery and
 press pages with native controls and no autoplay or video preloading.
+
+## Vehicle and route expansion — 2026-09-27
+
+Both additional yards now use the full shipped environment kit, with cargo
+modules, tanks, pipes, bunkers, shelters, guard towers, barriers, low cover,
+water tanks, barrel pallets, supply cases, floodlights, patrol and utility
+vehicles, and accessible catwalks. The control tower, refinery and maintenance
+hangar remain outside the perimeter as large skyline landmarks. Only two
+custom architectural masses remain in each yard; the layouts are independently
+authored rather than rows of repeated buildings.
+
+New original Blender models add a parked utility helicopter and two jeeps per
+yard, including Ardavan. Vehicles are static scenery/cover. Aircraft bodies and
+tails use separate shared collision volumes; thin rotors and fittings are
+cosmetic. See the runtime assets' PROVENANCE.md and per-model manifest.
+
+Each yard has four stair flights. Every flight's shared collision uses the same
+ten treads per segment as the existing stair GLB, scaled to the destination
+height. Ardavan's old 1.5 m collision risers are replaced with climbable treads,
+and its east access now goes around the tanks. Tests walk every route up and
+down through the real simulation without jumping. Spawns, range targets and
+health/God pickups retain clear connected ground routes.

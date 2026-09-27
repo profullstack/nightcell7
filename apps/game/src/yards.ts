@@ -16,13 +16,14 @@ export const YARDS = [
     map: SAFFRON_FREIGHT,
     code: "02",
     color: "#e9aa51",
-    blurb: "Amber freight stacks. Staggered crosscuts, close encounters and wide flanking routes.",
+    blurb:
+      "Cargo roofs, tank farm and helicopter service bay. Climb the loading stairs or flank the convoy.",
   },
   {
     map: NACRE_RELAY,
     code: "03",
     color: "#8ad9cb",
-    blurb: "Ivory relay houses. Circle the compound or risk the open central plaza.",
+    blurb: "Relay rooftops, field shelters and patrol jeeps around an exposed helicopter plaza.",
   },
 ] as const;
 
