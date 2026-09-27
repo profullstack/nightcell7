@@ -1,0 +1,73 @@
+{
+  "generatedAt": "2026-09-27T02:40:28.480Z",
+  "commit": "36adc061ace6612a6e4bfdef5134e98e2079257d",
+  "tool": "tools/art/trailer.mjs",
+  "file": "saffron_freight-gameplay.mp4",
+  "poster": "saffron_freight-poster.webp",
+  "yard": "saffron_freight",
+  "time": "day",
+  "audio": "Game soundtrack and yard ambience; offline gameplay capture does not record live sound effects.",
+  "sha256": "ab2ea425875c9153769b30b5e20ed434f640e3de5a02b733500d4461e32cd9bd",
+  "bytes": 7784802,
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "seconds": 30,
+  "music": "apps/game/public/audio/music/Þrøngva/After the Winter of Want/003. Ironwood Oath.mp3",
+  "beats": [
+    {
+      "name": "leave-spawn",
+      "frames": 126
+    },
+    {
+      "name": "flank-into-centre",
+      "frames": 81
+    },
+    {
+      "name": "covering-fire",
+      "frames": 90
+    },
+    {
+      "name": "push-the-lane",
+      "frames": 90
+    },
+    {
+      "name": "scan-right",
+      "frames": 12
+    },
+    {
+      "name": "engage",
+      "frames": 90
+    },
+    {
+      "name": "frag",
+      "frames": 6
+    },
+    {
+      "name": "watch-the-frag",
+      "frames": 60
+    },
+    {
+      "name": "reload",
+      "frames": 6
+    },
+    {
+      "name": "reposition",
+      "frames": 45
+    },
+    {
+      "name": "advance-fire",
+      "frames": 90
+    },
+    {
+      "name": "scan-left",
+      "frames": 12
+    },
+    {
+      "name": "hold-the-crossing",
+      "frames": 90
+    }
+  ],
+  "musicTitle": "Ironwood Oath",
+  "musicArtist": "Þrøngva"
+}

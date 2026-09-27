@@ -1,6 +1,8 @@
+import saffron from "../public/media/yard-films/saffron/manifest.json";
+import nacre from "../public/media/yard-films/nacre/manifest.json";
 const FILMS = [
-  { name: "Saffron Freight", directory: "saffron", id: "saffron_freight" },
-  { name: "Nacre Relay", directory: "nacre", id: "nacre_relay" },
+  { ...saffron, name: "Saffron Freight", directory: "saffron", id: "saffron_freight" },
+  { ...nacre, name: "Nacre Relay", directory: "nacre", id: "nacre_relay" },
 ] as const;
 
 /** Thirty seconds of actual bot-match gameplay per yard; files and poster
@@ -9,7 +11,7 @@ export function YardFilms() {
   return (
     <div className="yard-showcase">
       {FILMS.map((film) => {
-        const base = `/media/yard-films/${film.directory}/${film.id}`;
+        const base = `/media/yard-films/${film.directory}`;
         return (
           <figure className="film" key={film.id}>
             <video
@@ -17,26 +19,28 @@ export function YardFilms() {
               controls
               preload="none"
               playsInline
-              width={1280}
-              height={720}
-              poster={`${base}-poster.webp`}
-              aria-label={`${film.name}: 30 seconds of gameplay`}
+              width={film.width}
+              height={film.height}
+              poster={`${base}/${film.poster}`}
+              aria-label={`${film.name}: ${film.seconds} seconds of gameplay`}
             >
-              <source src={`${base}-gameplay.mp4`} type="video/mp4" />
+              <source src={`${base}/${film.file}`} type="video/mp4" />
               <p>
-                <a href={`${base}-gameplay.mp4`} download>
+                <a href={`${base}/${film.file}`} download>
                   Download {film.name} gameplay
                 </a>
               </p>
             </video>
             <figcaption>
-              <span className="film__label">{film.name} · 30 seconds · Bot deathmatch</span>
+              <span className="film__label">
+                {film.name} · {film.seconds} seconds · Bot deathmatch
+              </span>
               <span>
-                In-game movement and combat, with the NIGHTCELL 7 soundtrack and yard ambience.
+                In-game movement and combat. Music: “Ironwood Oath” by Þrøngva, with yard ambience.
               </span>
             </figcaption>
             <p>
-              <a href={`${base}-gameplay.mp4`} download>
+              <a href={`${base}/${film.file}`} download>
                 Download the gameplay clip
               </a>
             </p>

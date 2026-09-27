@@ -239,6 +239,9 @@ const BEATS = YARD
   : ORIGINAL_BEATS;
 
 async function main() {
+  // Capture provenance at boot; later commits must not relabel a film already
+  // rendering from the earlier build.
+  const sourceCommit = execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim();
   await stat(join(DIST, "index.html")).catch(() => {
     throw new Error("apps/game/dist missing — run: pnpm --filter @nightcell7/game build");
   });
@@ -433,19 +436,12 @@ async function main() {
     .update(await readFile(output))
     .digest("hex")
     .slice(0, 10);
-  const commit = (() => {
-    try {
-      return execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim();
-    } catch {
-      return null;
-    }
-  })();
   await writeFile(
     join(OUT, "manifest.json"),
     JSON.stringify(
       {
         generatedAt: new Date().toISOString(),
-        commit,
+        commit: sourceCommit,
         tool: "tools/art/trailer.mjs",
         file: VIDEO_FILE,
         poster,

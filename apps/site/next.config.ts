@@ -45,6 +45,10 @@ const config: NextConfig = {
         headers: [{ key: "cache-control", value: "public, max-age=0, must-revalidate" }],
       },
       {
+        source: "/media/yard-films/:path*",
+        headers: [{ key: "cache-control", value: "public, max-age=0, must-revalidate" }],
+      },
+      {
         // The gameplay frames and the asset sheet are regenerated whenever the
         // art pass or the build changes, and the sheet keeps its filename, so
         // it gets the same rule as everything else under /media.
