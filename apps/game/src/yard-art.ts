@@ -116,7 +116,7 @@ export function createYardArchitecture(scene: Scene): (box: MapVolume, index: nu
     };
     part("body", size.x, size.y, size.z, centre.x, centre.y, centre.z, isFreight ? freight : relay);
     // Dark plinth and cap articulate the mass without introducing hidden cover.
-    for (const y of [box.min.y + 0.12, box.max.y - 0.12])
+    for (const y of [box.min.y + 0.1, box.max.y - 0.1])
       part("frame", size.x + 0.02, 0.24, size.z + 0.02, centre.x, y, centre.z, dark);
     for (const side of [-1, 1]) {
       const faceZ = centre.z + side * (size.z / 2 + 0.014);

@@ -119,6 +119,13 @@ async function boot(): Promise<void> {
   // whether insects exist at all are decided once, at boot.
   const timeOfDay = preferredTimeOfDay(window.location.search, safeStorage());
   const world = await buildWorld(scene, engine, camera, map, timeOfDay);
+  // Offline gameplay capture uses the same simulation and lighting with a
+  // lighter antialiasing/shadow budget for software-rendered video frames.
+  if (new URLSearchParams(window.location.search).get("capture") === "video") {
+    world.pipeline.samples = 1;
+    world.shadows.getShadowMap()?.resize(512);
+    engine.setHardwareScalingLevel(1.5);
+  }
 
   // Ambience belongs to the yard, not to a match.
   //

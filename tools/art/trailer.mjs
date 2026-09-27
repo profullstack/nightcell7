@@ -275,6 +275,7 @@ async function main() {
 
   const params = new URLSearchParams({
     mode: "deathmatch",
+    capture: "video",
     difficulty: "easy",
     time: opt("time", "night"),
     ...(YARD ? { yard: YARD } : {}),
