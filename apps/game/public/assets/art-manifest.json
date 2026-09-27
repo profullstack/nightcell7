@@ -582,8 +582,8 @@
     "m3_helicopter": {
       "name": "m3_helicopter",
       "origin": "Original NIGHTCELL 7 fictional vehicle geometry; authored in Blender; no imported meshes",
-      "bytes": 125772,
-      "sha256": "e06b15819e85e5298d03aad41e0bf24e9e79dfa449449c08d9b4b9351694459d",
+      "bytes": 125776,
+      "sha256": "68c640b3e548ea9e99566b1574ab6fa6c31066916bc45e41ed1d58931328ec89",
       "triangles": 5212,
       "animations": [],
       "materials": [

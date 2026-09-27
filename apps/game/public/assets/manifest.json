@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
   "blender": "Blender 5.2.2 LTS",
-  "commit": "dcb387f8161936f3d585382b29b700a48a3be7c4",
+  "commit": "4317d45510267223c1e7983dcf2cb5a8ad65eccc",
   "license": "Original NIGHTCELL 7 geometry, rigging, animation and generated surfaces; see PROVENANCE.md.",
   "source": "IRON RAIN original environment and operators; approved C7 first-person rifle retained. See art-manifest.json for per-model hashes and materials.",
   "textureSize": 1024,
@@ -111,9 +111,9 @@
     "Þrøngva/When the Ravens Lied/012. True Dawn.mp3"
   ],
   "bytes": {
-    "models": 6972500,
+    "models": 6972504,
     "textures": 720622,
     "audio": 402789,
-    "total": 8095911
+    "total": 8095915
   }
 }

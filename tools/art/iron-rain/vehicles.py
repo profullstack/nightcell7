@@ -49,8 +49,8 @@ def helicopter():
     M.hull('Utility cabin',[(-2.7,.65,.9,1.5),(-1.9,1.17,.6,2.45),(.3,1.28,.58,2.75),(2.7,.7,1,2.3)],'ir_plaster',.08)
     # Faceted dark cockpit panes and distinct blue sliding cargo doors.
     for side in (-1,1):
-        pane=box('Cockpit glazing',(side*.68,-2.03,1.93),(1.04,.04,.69),'ir_glass');pane.rotation_euler.x=-.47
-        box('Pilot side window',(side*1.16,-1.2,1.98),(.035,.84,.66),'ir_glass')
+        pane=box('Cockpit glazing',(side*.51,-2.40,1.91),(.94,.04,.76),'ir_glass');pane.rotation_euler.x=-.70
+        box('Pilot side window',(side*1.25,-1.2,1.98),(.035,.84,.66),'ir_glass')
         box('Sliding door',(side*1.27,.45,1.58),(.04,1.75,1.57),'ir_blue')
         box('Cabin window',(side*1.30,.4,1.98),(.02,1.16,.49),'ir_glass')
         box('Door handle',(side*1.32,-.12,1.35),(.03,.24,.045),'ir_white')

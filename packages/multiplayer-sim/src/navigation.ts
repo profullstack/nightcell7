@@ -11,12 +11,44 @@ export class GroundNavigator {
   constructor(map: CollisionMap) {
     // Leave room for the player's 0.3 m radius; elevated catwalks can be walked under.
     const clearance = 0.43;
-    this.obstacles = map.boxes
+    const projected = map.boxes
       .filter((box) => box.max.y > 0.4 && box.min.y < 1.8)
       .map((box) => ({
         min: { x: box.min.x - clearance, y: -1, z: box.min.z - clearance },
         max: { x: box.max.x + clearance, y: 2, z: box.max.z + clearance },
       }));
+    // Adjacent stair treads share a single ground footprint. Keeping a corner
+    // node for every riser makes the visibility graph needlessly quadratic.
+    // Merge only rectangles whose union is exactly another rectangle, so this
+    // changes no blocked ground or clear sightline.
+    this.obstacles = [];
+    for (const projectedBox of projected) {
+      let merged = projectedBox;
+      for (let i = 0; i < this.obstacles.length;) {
+        const other = this.obstacles[i]!;
+        const sameX = merged.min.x === other.min.x && merged.max.x === other.max.x;
+        const sameZ = merged.min.z === other.min.z && merged.max.z === other.max.z;
+        const touchesZ = merged.min.z <= other.max.z && merged.max.z >= other.min.z;
+        const touchesX = merged.min.x <= other.max.x && merged.max.x >= other.min.x;
+        if ((sameX && touchesZ) || (sameZ && touchesX)) {
+          merged = {
+            min: {
+              x: Math.min(merged.min.x, other.min.x),
+              y: -1,
+              z: Math.min(merged.min.z, other.min.z),
+            },
+            max: {
+              x: Math.max(merged.max.x, other.max.x),
+              y: 2,
+              z: Math.max(merged.max.z, other.max.z),
+            },
+          };
+          this.obstacles.splice(i, 1);
+          i = 0;
+        } else i++;
+      }
+      this.obstacles.push(merged);
+    }
     const free = (p: Vec3) =>
       p.x > map.bounds.min.x &&
       p.x < map.bounds.max.x &&

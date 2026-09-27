@@ -526,7 +526,30 @@ export async function buildWorld(
   });
 
   for (const [index, flight] of (map.stairs ?? []).entries()) {
-    put("m3_access_stair", `access-flight_${index}`, stairPlacements(flight));
+    const placements = stairPlacements(flight);
+    put("m3_access_stair", `access-flight_${index}`, placements);
+    // The stair GLB is a single short flight. Fill below elevated segments so
+    // the rendered concrete matches the ground-to-tread shared solids.
+    for (const [segment, placement] of placements.entries()) {
+      if (segment === 0) continue;
+      const height = placement.position.y;
+      const support = MeshBuilder.CreateBox(
+        `stair-foundation_${index}_${segment}`,
+        {
+          width: flight.width,
+          height,
+          depth: Math.abs(flight.endZ - flight.startZ) / placements.length,
+        },
+        scene,
+      );
+      support.position.set(flight.x, height / 2, placement.position.z);
+      support.material =
+        model("m3_access_stair").materials.find((material) => material.name === "ir_plaster") ??
+        null;
+      support.isPickable = false;
+      support.freezeWorldMatrix();
+      casters.push(support);
+    }
   }
 
   // --------------------------------------------------------- sodium lamps

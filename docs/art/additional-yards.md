@@ -76,3 +76,9 @@ height. Ardavan's old 1.5 m collision risers are replaced with climbable treads,
 and its east access now goes around the tanks. Tests walk every route up and
 down through the real simulation without jumping. Spawns, range targets and
 health/God pickups retain clear connected ground routes.
+
+The ground navigator coalesces adjacent rectangular obstacle footprints before
+building its visibility graph. This retains the same blocked ground while
+avoiding a navigation node for every stair riser; player collision keeps every
+tread. Rendered foundations fill the space beneath elevated stair segments so
+there is no apparently open passage inside the solid stair base.
