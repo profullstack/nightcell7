@@ -1,7 +1,7 @@
 {
   "generator": "tools/art/build-assets.mjs",
-  "blender": "Blender 4.5.3 LTS",
-  "commit": "5dcac1599a760d53a2f3093f65785540c00476f9",
+  "blender": "Blender 5.2.2 LTS",
+  "commit": "4317d45510267223c1e7983dcf2cb5a8ad65eccc",
   "license": "Original NIGHTCELL 7 geometry, rigging, animation and generated surfaces; see PROVENANCE.md.",
   "source": "IRON RAIN original environment and operators; approved C7 first-person rifle retained. See art-manifest.json for per-model hashes and materials.",
   "textureSize": 1024,
@@ -23,6 +23,8 @@
     "m3_fuel_reservoir.glb",
     "m3_grenade.glb",
     "m3_guard_post.glb",
+    "m3_helicopter.glb",
+    "m3_jeep.glb",
     "m3_launcher.glb",
     "m3_low_cover.glb",
     "m3_maintenance_hangar.glb",
@@ -94,12 +96,24 @@
     "Þrøngva/After the Winter of Want/017. Storm Crown Oath.mp3",
     "Þrøngva/After the Winter of Want/018. When the Last Coin Falls (Part 2).mp3",
     "Þrøngva/After the Winter of Want/019. Valhalla Bounce.mp3",
-    "Þrøngva/After the Winter of Want/20. Valhalla on Loop.mp3"
+    "Þrøngva/After the Winter of Want/20. Valhalla on Loop.mp3",
+    "Þrøngva/When the Ravens Lied/001. Huginn Brings the Word.mp3",
+    "Þrøngva/When the Ravens Lied/002. Who Fired First.mp3",
+    "Þrøngva/When the Ravens Lied/003. Loki's Mirror.mp3",
+    "Þrøngva/When the Ravens Lied/004. Merchant of the Long Knife.mp3",
+    "Þrøngva/When the Ravens Lied/005. Ledger of Ash.mp3",
+    "Þrøngva/When the Ravens Lied/006. Heimdall Does Not Sleep.mp3",
+    "Þrøngva/When the Ravens Lied/007. Same Rain on Both Shields.mp3",
+    "Þrøngva/When the Ravens Lied/008. Lower the Spear.mp3",
+    "Þrøngva/When the Ravens Lied/009. Muninn Remembers.mp3",
+    "Þrøngva/When the Ravens Lied/010. Longship Bounce.mp3",
+    "Þrøngva/When the Ravens Lied/011. Not Our Ragnarök.mp3",
+    "Þrøngva/When the Ravens Lied/012. True Dawn.mp3"
   ],
   "bytes": {
-    "models": 6523652,
+    "models": 6972504,
     "textures": 720622,
     "audio": 402789,
-    "total": 7647063
+    "total": 8095915
   }
 }

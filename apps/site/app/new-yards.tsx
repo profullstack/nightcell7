@@ -14,14 +14,14 @@ export const NEW_YARDS = [
     name: "Saffron Freight",
     shot: "saffron-overview",
     description:
-      "Amber freight stacks break the yard into staggered crosscuts. Slip through the cargo lanes or take the long flank.",
+      "Climb the cargo loading roofs, flank the tank farm, or fight through the helicopter service bay and supply convoy.",
   },
   {
     id: "nacre_relay",
     name: "Nacre Relay",
     shot: "nacre-overview",
     description:
-      "Ivory relay houses surround an exposed central plaza. Work around the perimeter or risk the direct crossing.",
+      "Take the relay roof stairs, cross the helicopter plaza, or weave between patrol jeeps, field shelters and storage tanks.",
   },
 ] as const;
 

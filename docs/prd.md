@@ -271,3 +271,13 @@ The chosen yard persists across mode, difficulty, operator and time-of-day
 changes, and is directly addressable with `?yard=saffron_freight` or
 `?yard=nacre_relay`. Bot combat, movement, projectiles and respawns use that same
 map. The competitive online map remains Ardavan Yard.
+
+### Yard environment expansion (2026-09-27)
+
+All three yards include parked utility helicopters and patrol jeeps as static
+cover, and four walkable stair flights each. Saffron Freight mixes cargo loading
+roofs, a tank farm, convoy cover and an aircraft service bay. Nacre Relay mixes
+two relay rooftops with field shelters, a bunker and an aircraft plaza. Both use
+the existing environment asset kit, with the largest industrial structures as
+perimeter landmarks. Vehicle driving and flight controls are outside this change.
+Shared collision is authoritative for vehicles, aircraft tails, steps and decks.

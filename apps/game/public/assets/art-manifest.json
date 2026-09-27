@@ -559,6 +559,44 @@
       "triangles": 4088,
       "animations": [],
       "materials": ["ir_chitin", "ir_chitin_dark", "ir_chitin_pale", "ir_membrane", "ir_white"]
+    },
+    "m3_jeep": {
+      "name": "m3_jeep",
+      "origin": "Original NIGHTCELL 7 fictional vehicle geometry; authored in Blender; no imported meshes",
+      "bytes": 323076,
+      "sha256": "270c673455e6ffc86cef63b0ab16b1888db183f2b89fa3243c8a84d2df13a65b",
+      "triangles": 13172,
+      "animations": [],
+      "materials": [
+        "ir_canvas",
+        "ir_glass",
+        "ir_light",
+        "ir_orange",
+        "ir_rubber",
+        "ir_steel",
+        "ir_white"
+      ],
+      "generator": "tools/art/iron-rain/vehicles.py",
+      "date": "2026-09-27"
+    },
+    "m3_helicopter": {
+      "name": "m3_helicopter",
+      "origin": "Original NIGHTCELL 7 fictional vehicle geometry; authored in Blender; no imported meshes",
+      "bytes": 125776,
+      "sha256": "68c640b3e548ea9e99566b1574ab6fa6c31066916bc45e41ed1d58931328ec89",
+      "triangles": 5212,
+      "animations": [],
+      "materials": [
+        "ir_blue",
+        "ir_glass",
+        "ir_mark",
+        "ir_plaster",
+        "ir_rubber",
+        "ir_steel",
+        "ir_white"
+      ],
+      "generator": "tools/art/iron-rain/vehicles.py",
+      "date": "2026-09-27"
     }
   },
   "optimization": "glTF Transform 4.5.0: dedup, weld, 16-bit positions/weights, 12-bit normals; UVs retain full precision outside 0-1; KHR_mesh_quantization",

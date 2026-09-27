@@ -68,6 +68,8 @@ export const MODELS = [
   "m3_operator_directorate",
   "m3_operator_nightcell",
   "m3_patrol_vehicle",
+  "m3_jeep",
+  "m3_helicopter",
   "m3_utility_vehicle",
   "m3_fuel_drum",
   "m3_drum_pallet",

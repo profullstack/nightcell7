@@ -15,7 +15,10 @@ import { ARDAVAN_YARD, mapChecksum, type MapVolume } from "./map";
  * invariants that make that safe.
  */
 
-const props = ARDAVAN_YARD.boxes.filter((b): b is MapVolume & { tag: string } => Boolean(b.tag));
+const props = ARDAVAN_YARD.boxes.filter(
+  (b): b is MapVolume & { tag: string } =>
+    Boolean(b.tag) && !["stair_tread", "walkway", "helicopter_tail"].includes(b.tag!),
+);
 
 function overlaps(a: MapVolume, b: MapVolume): boolean {
   return (
@@ -41,6 +44,8 @@ describe("tagged prop volumes", () => {
       "barrel_stack",
       "tent",
       "guard_tower",
+      "vehicle_jeep",
+      "helicopter",
     ]);
     expect(props.length).toBeGreaterThan(0);
     for (const p of props) {

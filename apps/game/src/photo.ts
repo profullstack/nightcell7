@@ -47,7 +47,7 @@ export const VANTAGES: readonly Vantage[] = [
     name: "tank-row",
     caption:
       "The east lane, running between the storage tanks and the perimeter with the gantry deck overhead.",
-    position: [34, 1.7, 14],
+    position: [36.5, 1.7, 14],
     yaw: Math.PI,
     pitch: 0.03,
     fovDegrees: 78,
@@ -112,8 +112,7 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "saffron-overview",
-    caption:
-      "Saffron Freight: amber cargo islands and staggered crosscuts, seen from above the south flank.",
+    caption: "Saffron Freight: cargo roofs, tank farm, patrol vehicles and aircraft service bay.",
     yard: "saffron_freight",
     time: "day",
     position: [32, 11, 38],
@@ -133,13 +132,12 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "saffron-detail",
-    caption:
-      "Saffron freight module: corrugated amber panels, rivets, hazard stripes and sector markings.",
+    caption: "Parked utility helicopter in Saffron Freight, with a separate tail collision hull.",
     yard: "saffron_freight",
     time: "day",
-    position: [1, 2.2, 28],
-    yaw: -1.8,
-    pitch: 0.02,
+    position: [24, 3.8, -10],
+    yaw: -0.64,
+    pitch: 0.08,
     fovDegrees: 60,
   },
   {
@@ -154,8 +152,7 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "nacre-overview",
-    caption:
-      "Nacre Relay: four relay houses frame an open central plaza and connected outer lanes.",
+    caption: "Nacre Relay: relay rooftops, field shelters, tanks and the helicopter plaza.",
     yard: "nacre_relay",
     time: "day",
     position: [32, 11, 38],
@@ -175,13 +172,12 @@ export const VANTAGES: readonly Vantage[] = [
   },
   {
     name: "nacre-detail",
-    caption:
-      "Nacre relay house: ceramic panels, jade signal bands, ventilation and NR identification plates.",
+    caption: "Patrol jeep at Nacre Relay, with the relay roof access stairs beyond.",
     yard: "nacre_relay",
     time: "day",
-    position: [7, 2.2, 29],
-    yaw: 2.1,
-    pitch: 0.01,
+    position: [32, 2.5, -13],
+    yaw: -0.68,
+    pitch: 0.08,
     fovDegrees: 60,
   },
   {

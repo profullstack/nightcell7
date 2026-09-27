@@ -45,14 +45,52 @@ export type VolumeTag =
   | "tent"
   | "guard_tower"
   | "freight_module"
-  | "relay_block";
+  | "relay_block"
+  | "vehicle_jeep"
+  | "helicopter"
+  | "helicopter_tail"
+  | "cargo"
+  | "fuel_reservoir"
+  | "pipe_plant"
+  | "command_bunker"
+  | "walkway"
+  | "stair_tread";
 
 /** A collision volume, optionally naming what the client should draw for it. */
 export interface MapVolume extends Aabb {
   readonly tag?: VolumeTag;
 }
 
+export interface StairFlight {
+  readonly x: number;
+  /** Low end and high end, in world Z. */
+  readonly startZ: number;
+  readonly endZ: number;
+  readonly height: number;
+  readonly width: number;
+}
+
+/** Ten treads per asset segment, exactly matching m3_access_stair. */
+export function stairVolumes(flight: StairFlight): MapVolume[] {
+  const count = Math.ceil(flight.height / 1.5) * 10;
+  const dz = (flight.endZ - flight.startZ) / count;
+  return Array.from({ length: count }, (_, i) => {
+    const a = flight.startZ + i * dz;
+    const b = a + dz;
+    return prop(
+      "stair_tread",
+      flight.x - flight.width / 2,
+      0,
+      Math.min(a, b),
+      flight.x + flight.width / 2,
+      (flight.height * (i + 1)) / count,
+      Math.max(a, b),
+    );
+  });
+}
+
 export interface CollisionMap {
+  readonly stairs?: readonly StairFlight[];
   readonly id: string;
   readonly displayName: string;
   /** Solid, axis-aligned volumes. Floors are boxes too. */
@@ -107,7 +145,23 @@ function prop(
  *
  * Scale: one unit is one metre (CLAUDE.md).
  */
+const ARDAVAN_STAIRS: StairFlight[] = [
+  { x: -23, startZ: 35, endZ: 18, height: 6.4, width: 2 },
+  { x: -23, startZ: -35, endZ: -18, height: 6.4, width: 2 },
+  { x: 34, startZ: -17, endZ: 0, height: 6.4, width: 2 },
+  { x: 34, startZ: 19, endZ: 2, height: 6.4, width: 2 },
+];
+
+/** Parked aircraft: fuselage and tail are separate solids, leaving rotor clearance open. */
+function helicopter(x: number, z: number): MapVolume[] {
+  return [
+    prop("helicopter", x - 1.35, 0, z - 2.7, x + 1.35, 2.8, z + 2.7),
+    prop("helicopter_tail", x - 0.32, 1.65, z + 2.7, x + 0.32, 2.3, z + 7),
+  ];
+}
+
 export const ARDAVAN_YARD: CollisionMap = {
+  stairs: ARDAVAN_STAIRS,
   id: MULTIPLAYER_MAP.ARDAVAN_YARD,
   displayName: "Ardavan Yard",
   bounds: box(-40, -5, -60, 40, 30, 60),
@@ -189,7 +243,7 @@ export const ARDAVAN_YARD: CollisionMap = {
     // Under the east gantry, which starts at y=6 — no vertical overlap.
     prop("barrel_stack", 24.2, 0, 8.2, 25.8, 1.3, 9.8),
 
-    prop("water_tank", -24.1, 0, -20.2, -21.9, 3.6, -17.8),
+    prop("water_tank", -20.1, 0, -20.2, -17.9, 3.6, -17.8),
     prop("water_tank", 20.9, 0, 16.8, 23.1, 3.6, 19.2),
 
     // --- the walk out of spawn ----------------------------------------------
@@ -224,17 +278,12 @@ export const ARDAVAN_YARD: CollisionMap = {
     prop("barrier", -6.86, 0, 32.65, -5.14, 3.2, 33.35),
     prop("barrier", 5.14, 0, 32.65, 6.86, 3.2, 33.35),
 
-    // --- stairs / ramps: the "no one-way geometry" guarantee ----------------
-    // West catwalk access ramp (stepped boxes, climbable by step height).
-    box(-24, 0, 30, -22, 1.5, 34),
-    box(-24, 1.5, 26, -22, 3, 30),
-    box(-24, 3, 22, -22, 4.5, 26),
-    box(-24, 4.5, 18, -22, 6, 22),
-    // East gantry access ramp.
-    box(22, 0, -34, 24, 1.5, -30),
-    box(22, 1.5, -30, 24, 3, -26),
-    box(22, 3, -26, 24, 4.5, -22),
-    box(22, 4.5, -22, 24, 6, -18),
+    // Aircraft service bay and jeep checkpoints remain clear of all spawn exits.
+    ...helicopter(-12, 22),
+    prop("vehicle_jeep", 10.85, 0, -28.2, 13.15, 1.9, -23.8),
+    prop("vehicle_jeep", -13.15, 0, 32.8, -10.85, 1.9, 37.2),
+    ...ARDAVAN_STAIRS.flatMap(stairVolumes),
+    prop("walkway", 32, 6, 0, 35, 6.4, 2),
   ],
   spawns: [
     // Nightcell side (south), multiple exits into all three lanes.
@@ -275,42 +324,106 @@ export const ARDAVAN_YARD: CollisionMap = {
   ],
 };
 
-/** Additional free-play yards. Shared bounds keep spawn exits familiar; interiors
- * are independently authored. All new architectural art fits these solids. */
+/** Cargo handling yard: loading roofs, a tank farm and a helicopter service bay. */
+const SAFFRON_STAIRS: StairFlight[] = [
+  { x: -24, startZ: 22, endZ: 7, height: 6, width: 2.4 },
+  { x: -24, startZ: -22, endZ: -7, height: 6, width: 2.4 },
+  { x: 10, startZ: -38, endZ: -29, height: 3.6, width: 2.4 },
+  { x: 10, startZ: -14, endZ: -23, height: 3.6, width: 2.4 },
+];
 export const SAFFRON_FREIGHT: CollisionMap = {
   ...ARDAVAN_YARD,
   id: "saffron_freight",
   displayName: "Saffron Freight",
+  stairs: SAFFRON_STAIRS,
   boxes: [
     ...ARDAVAN_YARD.boxes.slice(0, 5),
-    // Alternating freight islands: narrow crosscuts and two broad outer flanks.
-    ...[-26, -10, 10, 26].flatMap((z, row) =>
-      (row % 2 === 0 ? [-22, 10] : [-10, 22]).map((x) =>
-        prop("freight_module", x - 5, 0, z - 3, x + 5, 3.6, z + 3),
-      ),
-    ),
-    prop("freight_module", -26, 0, -4, -18, 6, 4),
-    prop("freight_module", 18, 0, -4, 26, 6, 4),
-    prop("freight_module", -5, 0, -35, 5, 3.6, -31),
-    prop("freight_module", -5, 0, 31, 5, 3.6, 35),
+    prop("freight_module", -26, 0, -7, -18, 5.6, 7),
+    prop("walkway", -26, 5.6, -7, -18, 6, 7),
+    prop("freight_module", 5, 0, -29, 15, 3.6, -23),
+    ...[-1, 1].flatMap((side) => [
+      prop("cargo", -11.45, 0, side * 20 - 3, -8.55, 3, side * 20 + 3),
+      prop("cargo", -7.45, 0, side * 20 - 3, -4.55, 3, side * 20 + 3),
+      prop("tent", side * 19 - 2.45, 0, 31, side * 19 + 2.45, 3, 35.9),
+      prop("guard_tower", side * 34 - 1.45, 0, -34.95, side * 34 + 1.45, 8.8, -31.05),
+      prop("barrier", side * 6 - 0.86, 0, 34, side * 6 + 0.86, 3.2, 34.7),
+      prop("concrete_cover", side * 10 - 1.2, 0, 9.61, side * 10 + 1.2, 1.04, 10.39),
+    ]),
+    prop("fuel_reservoir", 21, 0, -32, 29, 8, -20),
+    prop("pipe_plant", 25, 0, 8, 29, 4, 13),
+    prop("command_bunker", -6, 0, -4, 6, 2.6, 4),
+    prop("vehicle_armored_car", -17.3, 0, -13.4, -14.7, 1.9, -8.6),
+    prop("vehicle_technical", 12.7, 0, 9, 15.3, 1.9, 15),
+    prop("vehicle_jeep", -13.15, 0, 30.8, -10.85, 1.9, 35.2),
+    prop("vehicle_jeep", 30.85, 0, 17.8, 33.15, 1.9, 22.2),
+    ...helicopter(16, 0),
+    prop("water_tank", -33.1, 0, 10.8, -30.9, 3.6, 13.2),
+    prop("barrel_stack", 6.2, 0, 21.2, 7.8, 1.3, 22.8),
+    prop("barrel_stack", -16.8, 0, 5.2, -15.2, 1.3, 6.8),
+    ...SAFFRON_STAIRS.flatMap(stairVolumes),
   ],
 };
 
+const NACRE_STAIRS: StairFlight[] = [
+  { x: -16, startZ: -36, endZ: -23, height: 5, width: 2.4 },
+  { x: -16, startZ: 6, endZ: -7, height: 5, width: 2.4 },
+  { x: 16, startZ: 36, endZ: 23, height: 5, width: 2.4 },
+  { x: 16, startZ: -6, endZ: 7, height: 5, width: 2.4 },
+];
+/** Relay compound: two roof routes, a medical camp and an aircraft plaza. */
 export const NACRE_RELAY: CollisionMap = {
   ...ARDAVAN_YARD,
   id: "nacre_relay",
   displayName: "Nacre Relay",
+  stairs: NACRE_STAIRS,
   boxes: [
     ...ARDAVAN_YARD.boxes.slice(0, 5),
-    // Four relay houses frame a cross-shaped plaza; perimeter lanes connect
-    // around both ends of every house. Centre remains open for a risky shortcut.
-    ...[-1, 1].flatMap((x) =>
-      [-1, 1].map((z) => prop("relay_block", x * 16 - 5, 0, z * 15 - 8, x * 16 + 5, 5, z * 15 + 8)),
-    ),
+    prop("relay_block", -21, 0, -23, -11, 5, -7),
+    prop("walkway", -25, 4.6, -12, -21, 5, -8),
+    prop("relay_block", 11, 0, 7, 21, 5, 23),
+    prop("fuel_reservoir", 23, 0, 14, 31, 8, 26),
+    prop("command_bunker", 10, 0, -23, 22, 2.6, -15),
+    prop("tent", -20.45, 0, 17.55, -15.55, 3, 22.45),
+    prop("tent", -29.45, 0, 22.55, -24.55, 3, 27.45),
+    prop("pipe_plant", -32, 0, -20.5, -28, 4, -15.5),
+    prop("cargo", 27.55, 0, -33, 30.45, 3, -27),
     ...[-1, 1].flatMap((side) => [
-      prop("relay_block", -5, 0, side * 33 - 2, 5, 3, side * 33 + 2),
-      prop("relay_block", side * 29 - 2, 0, -4, side * 29 + 2, 7, 4),
+      prop(
+        "guard_tower",
+        side * 34 - 1.45,
+        0,
+        side * 32 - 1.95,
+        side * 34 + 1.45,
+        8.8,
+        side * 32 + 1.95,
+      ),
+      prop("barrier", side * 7 - 0.86, 0, side * 30 - 0.35, side * 7 + 0.86, 3.2, side * 30 + 0.35),
+      prop(
+        "concrete_cover",
+        side * 8 - 1.2,
+        0,
+        side * 10 - 0.39,
+        side * 8 + 1.2,
+        1.04,
+        side * 10 + 0.39,
+      ),
+      prop("water_tank", side * 29 - 1.1, 0, -1.2, side * 29 + 1.1, 3.6, 1.2),
+      prop(
+        "barrel_stack",
+        side * 8 - 0.8,
+        0,
+        side * 22 - 0.8,
+        side * 8 + 0.8,
+        1.3,
+        side * 22 + 0.8,
+      ),
     ]),
+    prop("vehicle_armored_car", -9.3, 0, -35.4, -6.7, 1.9, -30.6),
+    prop("vehicle_technical", -31.3, 0, 7, -28.7, 1.9, 13),
+    prop("vehicle_jeep", 25.85, 0, -9.2, 28.15, 1.9, -4.8),
+    prop("vehicle_jeep", -8.15, 0, 31.8, -5.85, 1.9, 36.2),
+    ...helicopter(0, -5),
+    ...NACRE_STAIRS.flatMap(stairVolumes),
   ],
 };
 

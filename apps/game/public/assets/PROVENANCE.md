@@ -230,3 +230,15 @@ Deploy-gate thumbnails of the cast portraits: the same images as the site's
 `media/characters/`, derived at 320 px tall from the refined masters by
 `tools/art/characters/refine.mjs`. Blender 3D characters refined with OpenAI
 `gpt-image-2`; full record in `docs/art/characters/README.md`.
+
+## Yard vehicle expansion — 2026-09-27
+
+`m3_jeep.glb` and `m3_helicopter.glb` are original fictional geometry authored in
+`tools/art/iron-rain/vehicles.py`, exported through the IRON RAIN generator and
+optimized with glTF Transform. They use the existing shared IRON RAIN materials
+and atlas. No imported vehicle meshes or external vehicle textures were used.
+The aircraft is parked scenery with separate fuselage and tail collision solids;
+the rotor and small fittings are cosmetic. Both vehicles are static cover.
+Per-model hashes, triangle counts and source paths are in `art-manifest.json`.
+Rebuild with `generate.py --out build/yard-vehicles --only jeep,helicopter`, then
+`node tools/art/full-set/optimize.mjs build/yard-vehicles apps/game/public/assets/models`.

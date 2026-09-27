@@ -1,3 +1,4 @@
+import { stairPlacements, HELICOPTER_ROTATION } from "./yard-placements";
 import { createYardArchitecture } from "./yard-art";
 import { surfaceTexture } from "./iron-rain-materials";
 import {
@@ -235,6 +236,13 @@ function tileAlong(
  * the volume it was measured against.
  */
 const PROP_MODELS = {
+  vehicle_jeep: { name: "m3_jeep" as const, rotationY: 0 },
+  helicopter: { name: "m3_helicopter" as const, rotationY: HELICOPTER_ROTATION },
+  cargo: { name: "m3_cargo_module" as const, rotationY: 0 },
+  fuel_reservoir: { name: "m3_fuel_reservoir" as const, rotationY: 0 },
+  pipe_plant: { name: "m3_pipe_plant" as const, rotationY: 0 },
+  command_bunker: { name: "m3_command_bunker" as const, rotationY: 0 },
+  walkway: { name: "m3_catwalk" as const, rotationY: 0 },
   vehicle_armored_car: { name: "m3_patrol_vehicle" as const, rotationY: 0 },
   vehicle_technical: { name: "m3_utility_vehicle" as const, rotationY: 0 },
   barrier: { name: "m3_blast_wall" as const, rotationY: 0 },
@@ -355,6 +363,8 @@ export async function buildWorld(
 
   const architecture = createYardArchitecture(scene);
   map.boxes.forEach((box, index) => {
+    // The complete stair flight and aircraft model draw these subordinate solids.
+    if (box.tag === "stair_tread" || box.tag === "helicopter_tail") return;
     if (box.tag === "freight_module" || box.tag === "relay_block") {
       casters.push(...architecture(box, index));
       return;
@@ -474,6 +484,9 @@ export async function buildWorld(
           {
             position: new Vector3(v.centre.x, v.box.min.y, v.centre.z),
             rotationY: model.rotationY,
+            ...(box.tag === "walkway"
+              ? { scaling: new Vector3(v.size.x / 8, v.size.y / 0.4, v.size.z / 4) }
+              : {}),
           },
         ]);
         break;
@@ -512,24 +525,63 @@ export async function buildWorld(
     }
   });
 
+  for (const [index, flight] of (map.stairs ?? []).entries()) {
+    const placements = stairPlacements(flight);
+    put("m3_access_stair", `access-flight_${index}`, placements);
+    // The stair GLB is a single short flight. Fill below elevated segments so
+    // the rendered concrete matches the ground-to-tread shared solids.
+    for (const [segment, placement] of placements.entries()) {
+      if (segment === 0) continue;
+      const height = placement.position.y;
+      const support = MeshBuilder.CreateBox(
+        `stair-foundation_${index}_${segment}`,
+        {
+          width: flight.width,
+          height,
+          depth: Math.abs(flight.endZ - flight.startZ) / placements.length,
+        },
+        scene,
+      );
+      support.position.set(flight.x, height / 2, placement.position.z);
+      support.material =
+        model("m3_access_stair").materials.find((material) => material.name === "ir_plaster") ??
+        null;
+      support.isPickable = false;
+      support.freezeWorldMatrix();
+      casters.push(support);
+    }
+  }
+
   // --------------------------------------------------------- sodium lamps
 
   // Lamp masts along the three lanes. Each is the generated mast model plus a
   // real point light at the head, so the fitting and the pool of light it
   // casts cannot drift apart.
-  const lampSpots: Array<[number, number]> = [
-    [-28, -24],
-    [-28, 8],
-    [-28, 34],
-    [0, -30],
-    [0, 0],
-    [0, 30],
-    [28, -12],
-    [28, 16],
-    [28, 40],
-    [-14, -44],
-    [14, 44],
-  ];
+  const lampSpots: Array<[number, number]> =
+    map.id !== ARDAVAN_YARD.id
+      ? [
+          [-35, -42],
+          [35, -42],
+          [-35, 12],
+          [35, 12],
+          [-28, 42],
+          [28, 42],
+          [0, -37],
+          [0, 37],
+        ]
+      : [
+          [-28, -24],
+          [-28, 8],
+          [-28, 34],
+          [0, -30],
+          [0, 0],
+          [0, 30],
+          [28, -12],
+          [28, 16],
+          [28, 40],
+          [-14, -44],
+          [14, 44],
+        ];
 
   put(
     "m3_floodlight",

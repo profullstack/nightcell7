@@ -1,0 +1,19 @@
+{
+  "source": "Original model studio renders; tools/art/iron-rain/preview.py with --pack build/yard-vehicles --only m3_jeep,m3_helicopter",
+  "commit": "da93cf61b4fa254815fbf27e6cd10647d2b449e4",
+  "date": "2026-09-27",
+  "width": 640,
+  "height": 480,
+  "shots": [
+    {
+      "name": "m3_helicopter",
+      "caption": "Utility helicopter \u2014 parked aircraft with landing skids, cabin doors and a four-blade rotor.",
+      "file": "m3_helicopter-3e2b9bf9e2.webp"
+    },
+    {
+      "name": "m3_jeep",
+      "caption": "Patrol jeep \u2014 original four-wheel utility vehicle, used as cover in all three yards.",
+      "file": "m3_jeep-693a753f22.webp"
+    }
+  ]
+}
