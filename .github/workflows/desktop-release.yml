@@ -22,15 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
+      # Bun installs and runs the workspace (version from packageManager).
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      # Node only for the Node-based tools: vitest in the gate, electron-builder for packaging.
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
+      - run: bun install --frozen-lockfile
+      - run: bun run check
       - name: Release load gate
-        run: pnpm loadtest -- --rooms 20 --matches 50
+        run: bun run loadtest --rooms 20 --matches 50
 
       - name: Determine tag
         id: tag
@@ -82,13 +85,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
+      # Bun installs and runs the workspace (version from packageManager).
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      # Node only for the Node-based tools: vitest in the gate, electron-builder for packaging.
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - run: bun install --frozen-lockfile
 
       - name: Linux packaging tools
         if: matrix.platform == 'linux'
@@ -98,7 +104,7 @@ jobs:
 
       - name: Build
         shell: bash
-        run: pnpm --filter @nightcell7/desktop build
+        run: bun run --filter @nightcell7/desktop build
 
       - name: Package
         shell: bash
