@@ -44,9 +44,9 @@ function log(service, message) {
   );
 }
 
-function start(name, command, args, env) {
+function start(name, command, args, env, cwd = ROOT) {
   const child = spawn(command, args, {
-    cwd: ROOT,
+    cwd,
     env: { ...process.env, ...env },
     stdio: ["ignore", "inherit", "inherit"],
   });
@@ -98,10 +98,15 @@ start("multiplayer", process.execPath, ["services/multiplayer/dist/index.js"], {
 start("worker", process.execPath, ["services/worker/dist/index.js"], {
   WORKER_PORT: String(PORTS.worker),
 });
-// `bun --bun`: Next runs on Bun rather than whatever `node` is on PATH.
-start("site", process.execPath, ["--bun", "run", "--cwd", "apps/site", "start"], {
-  PORT: String(PORTS.site),
-});
+// Next's CLI started directly with `bun --bun`, so Next runs on Bun (and shows as
+// bun in `docker top`) instead of going through a `bun run` wrapper process.
+start(
+  "site",
+  process.execPath,
+  ["--bun", "node_modules/next/dist/bin/next", "start", "-p", String(PORTS.site)],
+  { PORT: String(PORTS.site) },
+  path.join(ROOT, "apps/site"),
+);
 
 // The gateway binds the public port and is what Railway health-checks.
 start("gateway", process.execPath, ["services/gateway/dist/index.js"], {
