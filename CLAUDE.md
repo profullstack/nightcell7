@@ -4,7 +4,7 @@
 
 - TypeScript strict mode.
 - This is one repository. Never create a separate marketing, game, API, multiplayer, worker, or infrastructure repository.
-- Use pnpm workspaces and shared packages for cross-project contracts.
+- Use Bun workspaces and shared packages for cross-project contracts.
 - No Git submodules. No copied cross-repository build artifacts.
 - One commit must be able to update the site, game, server protocol, daemons, and Railway deployment together.
 

@@ -20,6 +20,9 @@ import path from "node:path";
 import process from "node:process";
 import { createGameServer } from "./game-static.mjs";
 
+// Every child runs on the same runtime as this supervisor (Bun in the image),
+// via process.execPath, rather than whatever `node`/`pnpm` happen to be on PATH.
+
 const ROOT = process.cwd();
 const PUBLIC_PORT = Number(process.env.PORT ?? 8080);
 
@@ -41,9 +44,9 @@ function log(service, message) {
   );
 }
 
-function start(name, command, args, env) {
+function start(name, command, args, env, cwd = ROOT) {
   const child = spawn(command, args, {
-    cwd: ROOT,
+    cwd,
     env: { ...process.env, ...env },
     stdio: ["ignore", "inherit", "inherit"],
   });
@@ -88,15 +91,25 @@ process.on("SIGINT", () => shutdown(0));
 
 startGameStatic();
 
-start("api", "node", ["services/api/dist/index.js"], { API_PORT: String(PORTS.api) });
-start("multiplayer", "node", ["services/multiplayer/dist/index.js"], {
+start("api", process.execPath, ["services/api/dist/index.js"], { API_PORT: String(PORTS.api) });
+start("multiplayer", process.execPath, ["services/multiplayer/dist/index.js"], {
   MULTIPLAYER_PORT: String(PORTS.multiplayer),
 });
-start("worker", "node", ["services/worker/dist/index.js"], { WORKER_PORT: String(PORTS.worker) });
-start("site", "pnpm", ["--filter", "@nightcell7/site", "start"], { PORT: String(PORTS.site) });
+start("worker", process.execPath, ["services/worker/dist/index.js"], {
+  WORKER_PORT: String(PORTS.worker),
+});
+// Next's CLI started directly with `bun --bun`, so Next runs on Bun (and shows as
+// bun in `docker top`) instead of going through a `bun run` wrapper process.
+start(
+  "site",
+  process.execPath,
+  ["--bun", "node_modules/next/dist/bin/next", "start", "-p", String(PORTS.site)],
+  { PORT: String(PORTS.site) },
+  path.join(ROOT, "apps/site"),
+);
 
 // The gateway binds the public port and is what Railway health-checks.
-start("gateway", "node", ["services/gateway/dist/index.js"], {
+start("gateway", process.execPath, ["services/gateway/dist/index.js"], {
   GATEWAY_PORT: String(PUBLIC_PORT),
   SITE_UPSTREAM: `http://127.0.0.1:${PORTS.site}`,
   GAME_UPSTREAM: `http://127.0.0.1:${PORTS.game}`,

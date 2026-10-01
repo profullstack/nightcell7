@@ -16,28 +16,30 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v6
-
+      # Bun installs and runs the workspace (version from packageManager).
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      # Node only for the Node-based dev tools (vitest, which breaks under `bun --bun`; eslint; prettier).
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - run: bun install --frozen-lockfile
 
       - name: Format check
-        run: pnpm format:check
+        run: bun run format:check
 
       - name: Lint
-        run: pnpm lint
+        run: bun run lint
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: bun run typecheck
 
       # A protocol change updates client, server and tests in one commit
       # (PRD §17.2), so a single test run covers cross-side compatibility.
       - name: Test
-        run: pnpm test
+        run: bun run test
 
       # PowerShell runs on Linux, so the Windows installer is checkable here
       # rather than trusted on inspection.
@@ -88,26 +90,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
+      # Bun installs and runs the workspace (version from packageManager).
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      # Node only for the Node-based dev tools (vitest, which breaks under `bun --bun`; eslint; prettier).
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
 
   loadtest:
     name: Multiplayer simulation load gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
+      # Bun installs and runs the workspace (version from packageManager).
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      # Node only for the Node-based dev tools (vitest, which breaks under `bun --bun`; eslint; prettier).
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: bun install --frozen-lockfile
       # Smaller than the release gate, but enough to catch a tick-budget or
       # memory-growth regression on every pull request (PRD §34.3).
       - name: Simulation load and soak
-        run: pnpm loadtest -- --rooms 8 --matches 8 --ticks 2500
+        run: bun run loadtest --rooms 8 --matches 8 --ticks 2500

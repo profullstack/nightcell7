@@ -97,10 +97,10 @@ docs/           Architecture, multiplayer, CoinPay, PRD traceability
 ## Getting started
 
 ```bash
-pnpm install
+bun install
 cp .env.example .env        # fill in secrets; services refuse to boot without them
-pnpm dev:deps               # Redis via Docker Compose
-pnpm dev                    # every service, behind the gateway on :8080
+bun run dev:deps            # Redis via Docker Compose
+bun run dev                # every service, behind the gateway on :8080
 ```
 
 Local URLs mirror production paths through the gateway, so WebSocket upgrades,
@@ -115,14 +115,14 @@ ws://localhost:8080/api/v1/multiplayer/sync/{region}/{shard}/{roomId}
 
 ### Commands
 
-| Command                                | What it does                                               |
-| -------------------------------------- | ---------------------------------------------------------- |
-| `pnpm check`                           | format + lint + typecheck + test — run this before pushing |
-| `pnpm test`                            | one Vitest run across every workspace                      |
-| `pnpm build`                           | packages, then services, then apps                         |
-| `pnpm typecheck`                       | strict TypeScript across all workspaces                    |
-| `pnpm loadtest`                        | simulation load + soak gate (PRD §34.3)                    |
-| `pnpm db:generate` / `pnpm db:migrate` | Drizzle migrations                                         |
+| Command                              | What it does                                               |
+| ------------------------------------ | ---------------------------------------------------------- |
+| `bun run check`                      | format + lint + typecheck + test — run this before pushing |
+| `bun run test`                       | one Vitest run across every workspace                      |
+| `bun run build`                      | packages, then services, then apps                         |
+| `bun run typecheck`                  | strict TypeScript across all workspaces                    |
+| `bun run loadtest`                   | simulation load + soak gate (PRD §34.3)                    |
+| `bun run db:generate` / `db:migrate` | Drizzle migrations                                         |
 
 ---
 

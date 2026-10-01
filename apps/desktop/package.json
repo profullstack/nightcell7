@@ -6,12 +6,12 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit false --outDir dist",
-    "start": "pnpm build && electron dist/main.js",
-    "package": "pnpm build && electron-builder --dir",
-    "dist": "pnpm build && electron-builder",
-    "dist:mac": "pnpm build && electron-builder --mac",
-    "dist:win": "pnpm build && electron-builder --win",
-    "dist:linux": "pnpm build && electron-builder --linux",
+    "start": "bun run build && electron dist/main.js",
+    "package": "bun run build && electron-builder --dir",
+    "dist": "bun run build && electron-builder",
+    "dist:mac": "bun run build && electron-builder --mac",
+    "dist:win": "bun run build && electron-builder --win",
+    "dist:linux": "bun run build && electron-builder --linux",
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
