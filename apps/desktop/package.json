@@ -1,6 +1,6 @@
 {
   "name": "@nightcell7/desktop",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "private": true,
   "description": "NIGHTCELL 7: FALSE DAWN \u2014 premium episodic first-person shooter.",
   "main": "dist/main.js",
