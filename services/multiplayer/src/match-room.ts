@@ -152,7 +152,10 @@ export class MatchRoom extends Room<MatchState> {
     }
 
     if (this.sim.phase === "ended") throw new JoinRejectedError(JOIN_REJECTION.ROOM_ENDED);
-    if (this.sim.players.size >= TDM_RULES.maxPlayers) {
+    // Bots hold seats only until a human arrives (`releaseBotSeat` in onJoin),
+    // so they must not count here, or bot fill makes every room "full" after
+    // the first human joins.
+    if (this.sim.players.size - this.bots.size >= TDM_RULES.maxPlayers) {
       throw new JoinRejectedError(JOIN_REJECTION.ROOM_FULL);
     }
 
