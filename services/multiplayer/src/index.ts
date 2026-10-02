@@ -25,8 +25,11 @@ import { loadEnv } from "./env";
  * the V1 shape. Redis carries presence and the room directory so additional
  * shards can be added at the gateway without any client change (PRD §18.8).
  *
- * The public path is `wss://nightcell7.com/api/v1/multiplayer/sync/...`; this
- * process only ever sees the proxied request from the gateway.
+ * The public path is `https://nightcell7.com/api/v1/multiplayer/sync/...`: the
+ * gateway sends both Colyseus's matchmaking HTTP (`.../sync/matchmake/...`)
+ * and the room socket (`.../sync/<processId>/<roomId>`) here, and Colyseus
+ * matches both with the prefix in place. This process only ever sees the
+ * proxied request from the gateway.
  */
 
 const env = loadEnv();
@@ -87,7 +90,7 @@ gameServer
     matchResultSecret: env.MATCH_RESULT_SECRET,
     botFill: env.BOT_FILL,
   })
-  .filterBy(["region", "shard"]);
+  .filterBy(["region", "shard", "lobby"]);
 
 void gameServer.listen(env.MULTIPLAYER_PORT).then(() => {
   health.setReady(true, {

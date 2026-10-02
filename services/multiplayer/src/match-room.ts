@@ -52,6 +52,13 @@ interface RoomOptions {
   ticketSecret: string;
   matchResultSecret: string;
   botFill: boolean;
+  /**
+   * Lobby filter from the creating client's join options (`quick` or
+   * `private_<code>`); every joiner's ticket must name the same lobby.
+   */
+  lobby?: string;
+  /** The creating client's ticket (client options are merged in on create). */
+  ticket?: unknown;
 }
 
 export class MatchRoom extends Room<MatchState> {
@@ -71,6 +78,24 @@ export class MatchRoom extends Room<MatchState> {
   private draining = false;
 
   override onCreate(options: RoomOptions): void {
+    // Rooms are created on demand by `joinOrCreate`, so refuse to create one
+    // for a caller without a valid, unexpired ticket for this region, shard and
+    // lobby. Matchmaking HTTP is public; this keeps it from spawning rooms for
+    // anyone. (The ticket is only consumed in `onAuth`, on the socket.)
+    const verification = verifyTicket(
+      typeof options.ticket === "string" ? options.ticket : "",
+      options.ticketSecret,
+      Math.floor(Date.now() / 1000),
+    );
+    if (
+      !verification.ok ||
+      verification.claims.roomId !== options.lobby ||
+      verification.claims.region !== options.region ||
+      verification.claims.shard !== options.shard
+    ) {
+      throw new JoinRejectedError(JOIN_REJECTION.TICKET_INVALID);
+    }
+
     this.opts = options;
     this.services = options.services;
     this.logger = options.logger.child({ roomId: this.roomId });
@@ -139,6 +164,16 @@ export class MatchRoom extends Room<MatchState> {
     }
 
     const claims = verification.claims;
+
+    // The ticket admits to one lobby on one shard; `joinById` must not be a way
+    // to use a quick-match ticket on someone's private room.
+    if (
+      claims.roomId !== this.opts.lobby ||
+      claims.region !== this.opts.region ||
+      claims.shard !== this.opts.shard
+    ) {
+      throw new JoinRejectedError(JOIN_REJECTION.TICKET_INVALID);
+    }
 
     // Single-use consumption. The Redis DEL-if-present is the replay guard:
     // a second connection with the same ticket loses the race and is rejected.

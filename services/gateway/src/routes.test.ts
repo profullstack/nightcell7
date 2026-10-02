@@ -16,6 +16,15 @@ describe("gateway route precedence", () => {
     expect(route.websocket).toBe(true);
   });
 
+  it("routes Colyseus matchmaking and room sockets under the sync prefix", () => {
+    for (const path of [
+      "/api/v1/multiplayer/sync/matchmake/joinOrCreate/tdm",
+      "/api/v1/multiplayer/sync/AbCd123/xYz789",
+    ]) {
+      expect(resolveRoute(normalizePath(path)).upstream).toBe(UPSTREAM.MULTIPLAYER);
+    }
+  });
+
   it("still routes other multiplayer API paths to the API service", () => {
     for (const path of [
       "/api/v1/multiplayer/status",

@@ -4,7 +4,9 @@
  * Precedence is the whole point of this file, and it is pure so it can be
  * tested without a socket:
  *
- *   /api/v1/multiplayer/sync/*  -> multiplayer   (evaluated FIRST)
+ *   /api/v1/multiplayer/sync/*  -> multiplayer   (evaluated FIRST; carries both
+ *                                  Colyseus matchmaking HTTP `.../matchmake/*`
+ *                                  and the room socket upgrade)
  *   /api/v1/*                   -> api
  *   /play/*                     -> game-web
  *   /*                          -> site

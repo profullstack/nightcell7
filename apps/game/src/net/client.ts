@@ -4,6 +4,7 @@ import {
   CLIENT_MESSAGE,
   CONTENT_VERSION,
   MAX_INPUT_BATCH,
+  MULTIPLAYER_SYNC_PATH,
   PROTOCOL_VERSION,
   SERVER_MESSAGE,
   type AckPayload,
@@ -15,6 +16,7 @@ import {
   type RejectedPayload,
   type WelcomePayload,
 } from "@nightcell7/multiplayer-protocol";
+import { TDM_RULES } from "@nightcell7/game-core";
 import { ARDAVAN_YARD, TICK_MS, type CollisionMap } from "@nightcell7/multiplayer-sim";
 import { PredictedPlayer, RemotePlayerInterpolator } from "./prediction";
 
@@ -63,9 +65,19 @@ export class NetClient {
     // cannot end up in a console log or an error report (PRD §33.3).
     url.searchParams.delete("ticket");
 
-    const client = new Client(`${url.protocol}//${url.host}`);
+    // The sync path is /api/v1/multiplayer/sync/{region}/{shard}/{lobby}. The
+    // Colyseus client is rooted at the sync prefix so its matchmaking POST
+    // (`<prefix>/matchmake/...`) and the room socket both go through the
+    // gateway's multiplayer route; rooted at the bare origin they hit the site.
+    const { endpoint, region, shard, lobby } = parseSyncUrl(url);
+    const client = new Client(endpoint);
 
-    this.room = await client.joinById<MatchState>(this.roomIdFromPath(url.pathname), {
+    // Join-or-create filtered by region/shard/lobby: the ticket names a lobby,
+    // not a room, so the first player creates the room and the rest share it.
+    this.room = await client.joinOrCreate<MatchState>(TDM_RULES.mode, {
+      region,
+      shard,
+      lobby,
       ticket,
       buildVersion: request.buildVersion,
       protocolVersion: PROTOCOL_VERSION,
@@ -74,14 +86,6 @@ export class NetClient {
     });
 
     this.bind(this.room);
-  }
-
-  private roomIdFromPath(pathname: string): string {
-    // /api/v1/multiplayer/sync/{region}/{shard}/{roomId}
-    const parts = pathname.split("/").filter(Boolean);
-    const roomId = parts[parts.length - 1];
-    if (!roomId) throw new Error("malformed sync path");
-    return roomId;
   }
 
   private bind(room: Room<MatchState>): void {
@@ -217,6 +221,36 @@ export class NetClient {
     this.remotes.clear();
     this.inputQueue = [];
   }
+}
+
+/**
+ * Split the ticket's `websocketUrl` into the Colyseus endpoint (origin + sync
+ * prefix, http(s) scheme) and the region/shard/lobby room filter.
+ */
+export function parseSyncUrl(url: URL): {
+  endpoint: string;
+  region: string;
+  shard: string;
+  lobby: string;
+} {
+  const prefixAt = url.pathname.indexOf(MULTIPLAYER_SYNC_PATH);
+  const rest =
+    prefixAt === -1
+      ? []
+      : url.pathname
+          .slice(prefixAt + MULTIPLAYER_SYNC_PATH.length)
+          .split("/")
+          .filter(Boolean)
+          .map(decodeURIComponent);
+  const [region, shard, lobby] = rest;
+  if (!region || !shard || !lobby || rest.length !== 3) throw new Error("malformed sync path");
+  const scheme = url.protocol === "wss:" || url.protocol === "https:" ? "https:" : "http:";
+  return {
+    endpoint: `${scheme}//${url.host}${url.pathname.slice(0, prefixAt)}${MULTIPLAYER_SYNC_PATH}`,
+    region,
+    shard,
+    lobby,
+  };
 }
 
 export interface InputIntent {

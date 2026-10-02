@@ -9,10 +9,9 @@
  * whitelisted in `images.localPatterns`, and that matches `search` exactly —
  * a value that changes on every capture cannot be whitelisted, and the site
  * build fails outright. Staleness is handled in `next.config.ts` instead:
- * `minimumCacheTTL: 0` makes the optimiser emit `max-age=0, must-revalidate`
- * rather than its four-hour default, and an explicit header does the same for
- * the raw files. With the ETag Next already sends, an unchanged image costs a
- * 304 instead of a re-download.
+ * images are served unoptimised, straight from `/media`, with an explicit
+ * `max-age=0, must-revalidate` header. With the ETag Next already sends, an
+ * unchanged image costs a 304 instead of a re-download.
  */
 /**
  * `dir` is the subdirectory of `/media`, and it travels on the shot rather than

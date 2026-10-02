@@ -244,6 +244,20 @@ export interface ServerMessageMap {
 // Handshake
 // --------------------------------------------------------------------------
 
+/**
+ * Public path the gateway routes to the multiplayer service. The Colyseus
+ * client uses it as its endpoint, so matchmaking HTTP lands on
+ * `<path>/matchmake/...` and the room socket on `<path>/<processId>/<roomId>`.
+ */
+export const MULTIPLAYER_SYNC_PATH = "/api/v1/multiplayer/sync";
+
+/** Lobby every quick-match ticket admits to; private codes get `private_<code>`. */
+export const QUICK_MATCH_LOBBY = "quick";
+
+/**
+ * Options the client sends to `joinOrCreate`. `region`, `shard` and `lobby`
+ * are the room filter; they must match the ticket's claims.
+ */
 export const joinOptionsSchema = z.object({
   ticket: z.string().min(16).max(2048),
   buildVersion: z.string().min(1).max(64),
