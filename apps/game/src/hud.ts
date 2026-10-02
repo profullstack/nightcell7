@@ -645,7 +645,10 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   if (options.sandboxPickers === false) {
     for (const section of [modes, tiers, times, armory]) section.hidden = true;
   }
-  if (options.extra) gate.append(options.extra);
+  // In multiplayer the lobby is the point of the gate, so it leads; in the
+  // sandbox "Play online" sits by the deploy button as a second way in.
+  if (options.extra && options.sandboxPickers === false) gate.insertBefore(options.extra, briefing);
+  else if (options.extra) gate.append(options.extra);
 
   const button = el("button", "gate__button", options.startLabel ?? `Deploy to ${options.mapName}`);
   button.type = "button";
