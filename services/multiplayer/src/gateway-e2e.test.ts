@@ -14,6 +14,7 @@ import type { Repositories } from "../../api/src/repository";
 import type { ApiEnv } from "../../api/src/env";
 import { createGatewayServer } from "../../gateway/src/server";
 import { NetClient } from "../../../apps/game/src/net/client";
+import { OnlineSession, type OnlineStatus } from "../../../apps/game/src/net/session";
 
 /**
  * The real public path, end to end, with two players:
@@ -223,5 +224,96 @@ describe("client -> ticket -> gateway -> match", () => {
     );
     expect(res.status).toBe(200);
     expect(((await res.json()) as { code: string }).code).toBe("ticket_invalid");
+  });
+});
+
+/**
+ * The game's Quick match / Private match buttons drive `OnlineSession`; this
+ * runs that same flow through the real API, gateway and match server, so the
+ * button path cannot drift from the transport path above.
+ */
+function sessionFor(userId: string, seen: OnlineStatus["kind"][]): OnlineSession {
+  const session = new OnlineSession({
+    apiBase: gatewayOrigin,
+    buildVersion: "test",
+    platform: "web",
+    // A browser sends the cookie itself; node's fetch needs it spelled out.
+    fetch: (input, init) =>
+      fetch(input, {
+        ...init,
+        headers: { ...(init?.headers as Record<string, string>), cookie: `session=${userId}` },
+      }),
+  });
+  session.onStatus((status) => seen.push(status.kind));
+  return session;
+}
+
+async function until(check: () => boolean, ms = 5000): Promise<void> {
+  const deadline = Date.now() + ms;
+  while (!check()) {
+    if (Date.now() > deadline) throw new Error("timed out");
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
+describe("quick match from the game's online session", () => {
+  it("takes two players from the button to the same room, with bots filling seats", async () => {
+    const seenA: OnlineStatus["kind"][] = [];
+    const seenB: OnlineStatus["kind"][] = [];
+    const a = sessionFor("u_charlie", seenA);
+    const b = sessionFor("u_delta", seenB);
+
+    await a.quickMatch();
+    await b.quickMatch();
+    await until(() => {
+      a.refresh();
+      b.refresh();
+      const humans = (s: OnlineSession) =>
+        s.status.kind === "waiting" || s.status.kind === "live" ? s.status.humans : 0;
+      return humans(a) === 2 && humans(b) === 2;
+    });
+
+    expect(seenA.slice(0, 3)).toEqual(["ticket", "connecting", "waiting"]);
+    expect(a.status).toMatchObject({ kind: "waiting", lobby: "quick", humans: 2 });
+    // Bots hold the remaining seats of the 6v6 until humans take them.
+    if (a.status.kind === "waiting") expect(a.status.bots).toBe(TDM_RULES.maxPlayers - 2);
+    expect(a.net!.state!.players.get(b.sessionId)).toBeDefined();
+    expect(b.net!.state!.players.get(a.sessionId)).toBeDefined();
+
+    await a.leave();
+    await b.leave();
+    expect(a.status.kind).toBe("idle");
+  }, 20_000);
+
+  it("puts a private host and a guest with the code in their own room", async () => {
+    const host = sessionFor("u_echo", []);
+    const guest = sessionFor("u_foxtrot", []);
+    const stranger = sessionFor("u_golf", []);
+
+    // The memory API mints a code like the real one; the guest types it.
+    const code = await host.createPrivate();
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+    await guest.joinPrivate(code!.toLowerCase());
+    await stranger.quickMatch();
+    await until(() => {
+      host.refresh();
+      return host.status.kind === "waiting" && host.status.humans === 2;
+    });
+
+    expect(host.status).toMatchObject({ lobby: `private_${code}` });
+    expect(host.net!.state!.players.get(guest.sessionId)).toBeDefined();
+    expect(host.net!.state!.players.get(stranger.sessionId)).toBeUndefined();
+
+    await Promise.all([host.leave(), guest.leave(), stranger.leave()]);
+  }, 20_000);
+
+  it("reports a signed-out ticket request as a sign-in prompt", async () => {
+    const session = new OnlineSession({
+      apiBase: gatewayOrigin,
+      buildVersion: "test",
+      platform: "web",
+    });
+    await session.quickMatch();
+    expect(session.status).toMatchObject({ kind: "error", code: "unauthorized", signIn: true });
   });
 });

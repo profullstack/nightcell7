@@ -9,11 +9,13 @@ import {
   SERVER_MESSAGE,
   type AckPayload,
   type ClientPlatform,
+  type HitPayload,
   type InputFrame,
   type KillPayload,
   type MatchEndPayload,
   type MatchState,
   type RejectedPayload,
+  type RespawnPayload,
   type WelcomePayload,
 } from "@nightcell7/multiplayer-protocol";
 import { TDM_RULES } from "@nightcell7/game-core";
@@ -31,6 +33,8 @@ import { PredictedPlayer, RemotePlayerInterpolator } from "./prediction";
 export interface NetClientEvents {
   onWelcome?(payload: WelcomePayload): void;
   onKill?(payload: KillPayload): void;
+  onHit?(payload: HitPayload): void;
+  onRespawn?(payload: RespawnPayload): void;
   onMatchEnd?(payload: MatchEndPayload): void;
   onRejected?(payload: RejectedPayload): void;
   onDisconnected?(code: number): void;
@@ -121,6 +125,21 @@ export class NetClient {
     });
 
     room.onMessage(SERVER_MESSAGE.KILL, (payload: KillPayload) => this.events.onKill?.(payload));
+    room.onMessage(SERVER_MESSAGE.HIT, (payload: HitPayload) => this.events.onHit?.(payload));
+    room.onMessage(SERVER_MESSAGE.RESPAWN, (payload: RespawnPayload) =>
+      this.events.onRespawn?.(payload),
+    );
+    // Everything else the room broadcasts is cosmetic for now; registering a
+    // no-op keeps colyseus.js from warning on every grenade and quick message.
+    for (const type of [
+      SERVER_MESSAGE.MATCH_START,
+      SERVER_MESSAGE.GRENADE_THROWN,
+      SERVER_MESSAGE.GRENADE_EXPLODED,
+      SERVER_MESSAGE.PING_MARK,
+      SERVER_MESSAGE.QUICK_MESSAGE,
+    ]) {
+      room.onMessage(type, () => undefined);
+    }
     room.onMessage(SERVER_MESSAGE.MATCH_END, (payload: MatchEndPayload) =>
       this.events.onMatchEnd?.(payload),
     );

@@ -9,3 +9,8 @@ declare module "virtual:soundtrack" {
   const files: string[];
   export default files;
 }
+
+interface ImportMetaEnv {
+  /** The game package version, defined in `vite.config.ts`. */
+  readonly VITE_NC7_VERSION?: string;
+}

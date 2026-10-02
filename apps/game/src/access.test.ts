@@ -132,3 +132,19 @@ describe("viewer lookup", () => {
     expect(viewer).toEqual(ANONYMOUS);
   });
 });
+
+describe("sign-in return path", () => {
+  it("sends a signed-out multiplayer player to sign in and back to the same match", () => {
+    const decision = decideAccess(
+      PLAY_MODE.MULTIPLAYER,
+      ANONYMOUS,
+      undefined,
+      "/play/?mode=multiplayer&match=quick",
+    );
+    expect(decision.allowed).toBe(false);
+    if (decision.allowed) return;
+    expect(decision.actions[0]?.href).toBe(
+      "/login?next=%2Fplay%2F%3Fmode%3Dmultiplayer%26match%3Dquick",
+    );
+  });
+});

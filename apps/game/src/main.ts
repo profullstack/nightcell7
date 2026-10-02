@@ -30,6 +30,7 @@ import { buildWorld } from "./world";
 import { NightInsects } from "./insects";
 import { LIGHTING, preferredTimeOfDay, rememberTimeOfDay } from "./time-of-day";
 import { Coach, briefingFor, hasOnboarded, markOnboarded } from "./onboarding";
+import { bootOnline, playOnlineLinks } from "./online";
 import { CommsDirector, captionFor, linesFor } from "./comms";
 import "./style.css";
 
@@ -71,7 +72,12 @@ async function boot(): Promise<void> {
   // downloaded or booted, and the demo stays open to everyone (PRD §23.1).
   const mode = parseMode(window.location.search);
   const viewer = await loadViewer();
-  const access = decideAccess(mode, viewer);
+  const access = decideAccess(
+    mode,
+    viewer,
+    undefined,
+    window.location.pathname + window.location.search,
+  );
 
   if (!access.allowed) {
     canvas.style.display = "none";
@@ -81,6 +87,12 @@ async function boot(): Promise<void> {
   }
 
   console.info(JSON.stringify({ msg: "starting", mode: modeLabel(mode) }));
+
+  // Online play draws the yard from the match server, not the local bots.
+  if (mode === "multiplayer") {
+    await bootOnline(canvas, ui, import.meta.env.VITE_NC7_VERSION ?? "web");
+    return;
+  }
 
   const { engine, kind } = await createRenderer(canvas);
 
@@ -266,7 +278,7 @@ async function boot(): Promise<void> {
     renderer: kind,
     mapName: map.displayName,
     yard: map.id,
-    ...(mode !== "multiplayer" ? { onYardChange: (yard: string) => reloadWith({ yard }) } : {}),
+    onYardChange: (yard: string) => reloadWith({ yard }),
     mapChecksum: checksum,
     mode: gameMode,
     // Remembered immediately rather than on start, so a player who picks a mode
@@ -321,6 +333,8 @@ async function boot(): Promise<void> {
       hud.notify(`${item.name} · −${item.price} cr`);
       return true;
     },
+    // The way into online play from the free sandbox and demo.
+    extra: playOnlineLinks(viewer),
     onStart: () => player.requestLock(),
   });
 

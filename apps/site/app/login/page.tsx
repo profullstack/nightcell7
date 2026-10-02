@@ -11,6 +11,7 @@ export default function LoginPage() {
         endpoint="/api/v1/auth/sign-in/email"
         submitLabel="Sign in"
         redirectTo="/account"
+        honorNext
         fields={[
           { name: "email", label: "Email", type: "email", autoComplete: "email" },
           {
