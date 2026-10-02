@@ -66,6 +66,18 @@ export interface HudOptions {
   readonly mapName: string;
   readonly mapChecksum: string;
   onStart: () => void;
+  /** Label for the start button; the sandbox says "Deploy to <yard>". */
+  startLabel?: string;
+  /**
+   * A panel placed on the gate above the start button: the "Play online"
+   * links in the sandbox, the match lobby in multiplayer.
+   */
+  extra?: HTMLElement;
+  /**
+   * False in multiplayer: mode, difficulty, time of day and the armory are
+   * single-player choices the server does not take, so they are not offered.
+   */
+  sandboxPickers?: boolean;
 }
 
 export interface Hud {
@@ -90,6 +102,8 @@ export interface Hud {
   setCredits(credits: number): void;
   /** The coach's current step, or null to hide it. */
   setCoach(state: CoachState | null): void;
+  /** Show or hide the start button (multiplayer shows it once a room is joined). */
+  setStartVisible(visible: boolean): void;
   dispose(): void;
 }
 
@@ -628,7 +642,12 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
   };
   refreshArmory();
 
-  const button = el("button", "gate__button", `Deploy to ${options.mapName}`);
+  if (options.sandboxPickers === false) {
+    for (const section of [modes, tiers, times, armory]) section.hidden = true;
+  }
+  if (options.extra) gate.append(options.extra);
+
+  const button = el("button", "gate__button", options.startLabel ?? `Deploy to ${options.mapName}`);
   button.type = "button";
   button.addEventListener("click", () => options.onStart());
   gate.append(button);
@@ -930,6 +949,10 @@ export function createHud(root: HTMLElement, options: HudOptions): Hud {
     setLocked(locked: boolean): void {
       hud.dataset.active = String(locked);
       gate.hidden = locked;
+    },
+
+    setStartVisible(visible: boolean): void {
+      button.hidden = !visible;
     },
 
     setCredits(next: number): void {

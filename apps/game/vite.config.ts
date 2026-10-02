@@ -1,7 +1,15 @@
 import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { readFileSync } from "node:fs";
 import { soundtrack } from "./vite-plugin-soundtrack";
+
+/** Sent with every match ticket so the server can refuse a stale client. */
+const GAME_VERSION = (
+  JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as {
+    version: string;
+  }
+).version;
 
 /**
  * Game build (PRD §17.1, §27).
@@ -11,6 +19,7 @@ import { soundtrack } from "./vite-plugin-soundtrack";
  */
 export default defineConfig({
   base: "/play/",
+  define: { "import.meta.env.VITE_NC7_VERSION": JSON.stringify(GAME_VERSION) },
   plugins: [
     soundtrack(),
     preact(),

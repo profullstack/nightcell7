@@ -65,6 +65,8 @@ export function decideAccess(
   mode: PlayMode,
   viewer: Viewer,
   episodeId: string = EPISODE.FALSE_DAWN,
+  /** Where sign-in sends the player back to: the page they were on. */
+  returnTo?: string,
 ): AccessDecision {
   // Free and anonymous by design. Requiring an account here would be the one
   // change most likely to stop someone ever trying the game.
@@ -80,7 +82,11 @@ export function decideAccess(
           ? "Multiplayer is free, but it needs a verified account so bans, reports and match records mean something."
           : "Sign in to play the campaign you own.",
       actions: [
-        { label: "Sign in", href: "/login", primary: true },
+        {
+          label: "Sign in",
+          href: returnTo ? `/login?next=${encodeURIComponent(returnTo)}` : "/login",
+          primary: true,
+        },
         { label: "Create a free account", href: "/register" },
         { label: "Play the demo instead", href: "/play?mode=demo" },
       ],

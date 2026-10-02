@@ -1620,3 +1620,113 @@ body {
     height: 65px;
   }
 }
+
+/* ------------------------------------------------------------ online play */
+
+/* The gate's sections set their own `display`, which beats the UA `[hidden]`. */
+.gate [hidden] {
+  display: none !important;
+}
+
+.online {
+  align-items: center;
+}
+
+.online__status {
+  width: 100%;
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  line-height: 1.7;
+  color: var(--bone-100);
+}
+
+.online__actions,
+.online__share,
+.online__code {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.online__button {
+  display: inline-block;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 40%, transparent);
+  border-radius: 2px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--bone-100);
+  cursor: pointer;
+}
+
+.online__button:hover {
+  border-color: var(--bone-100);
+}
+
+.online__button--primary {
+  color: var(--ink-950);
+  background: var(--bone-100);
+  border-color: var(--bone-100);
+}
+
+.online__button:focus-visible,
+.online__input:focus-visible {
+  outline: 2px solid var(--signal-cyan);
+  outline-offset: 3px;
+}
+
+.online__input {
+  width: 8.5rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--bone-300) 40%, transparent);
+  border-radius: 2px;
+  background: rgba(7, 9, 12, 0.7);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--bone-100);
+  pointer-events: auto;
+}
+
+.online__input--link {
+  width: min(22rem, 70vw);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.online__code-value {
+  width: 100%;
+  margin: 0.2rem 0 0;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.3em;
+  color: var(--dust-gold);
+}
+
+.online-banner {
+  position: absolute;
+  top: 0.9rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.3rem 0.8rem;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--bone-100);
+  background: rgba(7, 9, 12, 0.55);
+  pointer-events: none;
+}
+
+.online-banner[hidden] {
+  display: none;
+}

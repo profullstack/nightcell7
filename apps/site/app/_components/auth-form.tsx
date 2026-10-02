@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
+import { safeNext } from "./safe-next";
 
 /**
  * Shared client-side form for the auth pages.
@@ -29,6 +30,11 @@ interface Props {
   submitLabel: string;
   /** Where to send the browser on success. */
   redirectTo?: string;
+  /**
+   * Prefer a same-origin `?next=` path over `redirectTo`, so the game can send
+   * a signed-out player here and get them back to the match they asked for.
+   */
+  honorNext?: boolean;
   /** Shown instead of redirecting, for flows that end in "check your email". */
   successMessage?: ReactNode;
   /** Extra values posted alongside the fields. */
@@ -50,6 +56,7 @@ export function AuthForm({
   fields,
   submitLabel,
   redirectTo,
+  honorNext,
   successMessage,
   extra,
   children,
@@ -93,8 +100,9 @@ export function AuthForm({
         return;
       }
 
-      if (redirectTo) {
-        window.location.assign(redirectTo);
+      const next = honorNext ? safeNext(window.location.search) : null;
+      if (next || redirectTo) {
+        window.location.assign(next ?? redirectTo!);
         return;
       }
       setDone(true);
