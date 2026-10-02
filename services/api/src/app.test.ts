@@ -361,7 +361,7 @@ describe("multiplayer tickets", () => {
 
     // The URL is the public origin — never an internal Railway host.
     expect(body.websocketUrl).toMatch(
-      /^wss:\/\/nightcell7\.com\/api\/v1\/multiplayer\/sync\/us-west\/1\/room_/,
+      /^wss:\/\/nightcell7\.com\/api\/v1\/multiplayer\/sync\/us-west\/1\/quick\?ticket=/,
     );
     expect(body.websocketUrl).not.toMatch(/railway|internal|\.up\./);
 

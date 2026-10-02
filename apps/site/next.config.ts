@@ -6,18 +6,18 @@ const config: NextConfig = {
   // Workspace packages ship TypeScript source (PRD §17.2 single-repo rule).
   transpilePackages: ["@nightcell7/ui", "@nightcell7/game-core", "@nightcell7/entitlements"],
   images: {
-    formats: ["image/avif", "image/webp"],
-    // Never serve a stale capture.
+    // Serve the shipped WebP files as they are; no on-the-fly optimisation.
     //
-    // Next's optimiser defaults to `Cache-Control: public, max-age=14400` on
-    // /_next/image responses. The capture filenames are stable by design, so a
-    // returning visitor kept the previous build's screenshots for four hours
-    // after a re-capture even though the server had the new ones.
-    //
-    // 0 does not mean "do not store" — it means revalidate every time. With the
-    // ETag Next already sends, an unchanged image costs a 304 rather than a
-    // re-download, so this removes staleness without removing efficiency.
-    minimumCacheTTL: 0,
+    // The optimiser (sharp, under Bun, encoding AVIF at up to 3840w) took the
+    // Next process from ~130 MB to ~1.5 GB RSS after one pass over the home
+    // page's 200 image variants, and that memory is never handed back. In the
+    // single 1.5 GB container that runs site + api + multiplayer + worker +
+    // gateway, the kernel OOM-killed Next at 02:24 UTC on 2026-10-02 (1.35 GB
+    // anon RSS). The sources are already WebP, at most 1920 px wide and
+    // 150-350 KB, so the optimiser bought almost nothing for that cost.
+    // Freshness is unchanged: /media/* is still revalidated on every request
+    // by the headers below.
+    unoptimized: true,
   },
   async headers() {
     return [
@@ -30,9 +30,7 @@ const config: NextConfig = {
       },
       {
         // The in-engine captures are regenerated whenever the renderer changes
-        // and keep their filenames, so they must always be revalidated. Paired
-        // with `minimumCacheTTL: 0` above, which covers the optimised variants
-        // actually served to the page.
+        // and keep their filenames, so they must always be revalidated.
         source: "/media/yard/:path*",
         headers: [{ key: "cache-control", value: "public, max-age=0, must-revalidate" }],
       },

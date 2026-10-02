@@ -30,7 +30,9 @@ import {
   CLIENT_PLATFORMS,
   CONTENT_VERSION,
   MIN_SUPPORTED_PROTOCOL_VERSION,
+  MULTIPLAYER_SYNC_PATH,
   PROTOCOL_VERSION,
+  QUICK_MATCH_LOBBY,
   QUICK_MESSAGES,
 } from "@nightcell7/multiplayer-protocol";
 import { createTicketId, signTicket } from "@nightcell7/multiplayer-protocol/server";
@@ -618,7 +620,11 @@ export function createApp(deps: Dependencies) {
     const region = deps.env.MULTIPLAYER_REGION;
     const shard = deps.env.MULTIPLAYER_SHARD;
     const matchId = `match_${randomUUID()}`;
-    const roomId = body.privateCode ? `room_private_${body.privateCode}` : `room_${randomUUID()}`;
+    // `roomId` is the LOBBY the ticket admits to, not a Colyseus room id: the
+    // client joins-or-creates a room filtered by region/shard/lobby, so quick
+    // match players share rooms and a private code maps to exactly one lobby.
+    // (A random id here pointed every ticket at a room that never existed.)
+    const roomId = body.privateCode ? `private_${body.privateCode}` : QUICK_MATCH_LOBBY;
     const issuedAt = Math.floor(now().getTime() / 1000);
     const expiresAt = issuedAt + deps.env.TICKET_TTL_SECONDS;
     const ticketId = createTicketId();
@@ -805,7 +811,7 @@ export function buildSyncUrl(
 ): string {
   const origin = new URL(publicOrigin);
   const scheme = origin.protocol === "https:" ? "wss:" : "ws:";
-  const path = `/api/v1/multiplayer/sync/${encodeURIComponent(region)}/${encodeURIComponent(shard)}/${encodeURIComponent(roomId)}`;
+  const path = `${MULTIPLAYER_SYNC_PATH}/${encodeURIComponent(region)}/${encodeURIComponent(shard)}/${encodeURIComponent(roomId)}`;
   return `${scheme}//${origin.host}${path}?ticket=${encodeURIComponent(ticket)}`;
 }
 

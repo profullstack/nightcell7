@@ -30,7 +30,7 @@ let gameServer: Server;
 let endpoint: string;
 const tickets = new Set<string>();
 
-function mintTicket(roomId: string, sub: string, team: number): string {
+function mintTicket(lobby: string, sub: string, team: number): string {
   const jti = createTicketId();
   tickets.add(jti);
   const now = Math.floor(Date.now() / 1000);
@@ -39,8 +39,8 @@ function mintTicket(roomId: string, sub: string, team: number): string {
       jti,
       sub,
       displayName: sub,
-      matchId: roomId,
-      roomId,
+      matchId: `match_${sub}`,
+      roomId: lobby,
       region: REGION,
       shard: SHARD,
       mode: TDM_RULES.mode,
@@ -54,15 +54,25 @@ function mintTicket(roomId: string, sub: string, team: number): string {
   );
 }
 
-async function join(roomId: string, sub: string, team: number): Promise<Room<MatchState>> {
-  const client = new Client(endpoint);
-  const room = await client.joinById<MatchState>(roomId, {
-    ticket: mintTicket(roomId, sub, team),
+function joinOptions(lobby: string, ticket: string) {
+  return {
+    region: REGION,
+    shard: SHARD,
+    lobby,
+    ticket,
     buildVersion: "test",
     protocolVersion: PROTOCOL_VERSION,
     contentVersion: CONTENT_VERSION,
     platform: "web",
-  });
+  };
+}
+
+async function join(lobby: string, sub: string, team: number): Promise<Room<MatchState>> {
+  const client = new Client(endpoint);
+  const room = await client.joinOrCreate<MatchState>(
+    TDM_RULES.mode,
+    joinOptions(lobby, mintTicket(lobby, sub, team)),
+  );
   // Swallow the server's welcome; the assertion is on synced state.
   room.onMessage(SERVER_MESSAGE.WELCOME, () => {});
   room.onMessage("*", () => {});
@@ -104,10 +114,11 @@ afterAll(async () => {
 
 describe("MatchRoom join", () => {
   it("lets two players join a match and receive synced state", async () => {
-    const listing = await matchMaker.createRoom(TDM_RULES.mode, { region: REGION, shard: SHARD });
-
-    const a = await join(listing.roomId, "player-a", 0);
-    const b = await join(listing.roomId, "player-b", 1);
+    // No pre-created room: the first ticket holder creates it, the second
+    // finds it through the region/shard/lobby filter.
+    const a = await join("quick", "player-a", 0);
+    const b = await join("quick", "player-b", 1);
+    expect(b.roomId).toBe(a.roomId);
 
     // Let several ticks and patches go out to both clients.
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -119,7 +130,25 @@ describe("MatchRoom join", () => {
       expect(room.connection.isOpen).toBe(true);
     }
 
+    // A ticket for another lobby cannot be used to enter this room by id.
+    await expect(
+      new Client(endpoint).joinById(
+        a.roomId,
+        joinOptions("quick", mintTicket("private_ABCD", "player-c", 0)),
+      ),
+    ).rejects.toThrow(/ticket_invalid/);
+
     await a.leave(true);
     await b.leave(true);
   }, 20_000);
+
+  it("refuses to create a room without a valid ticket", async () => {
+    await expect(
+      new Client(endpoint).joinOrCreate(
+        TDM_RULES.mode,
+        joinOptions("private_NOPE", "x".repeat(32)),
+      ),
+    ).rejects.toThrow(/ticket_invalid/);
+    expect(await matchMaker.query({ lobby: "private_NOPE" })).toHaveLength(0);
+  });
 });
