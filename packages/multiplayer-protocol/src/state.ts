@@ -10,6 +10,14 @@ import { ArraySchema, MapSchema, Schema, defineTypes } from "@colyseus/schema";
  * `defineTypes` is used rather than decorators so the package compiles under
  * plain `moduleResolution: bundler` in the browser, Node and Bun without
  * per-consumer TypeScript configuration.
+ *
+ * Fields are `declare`d and assigned in the constructor, never written as class
+ * field initialisers. `Schema`'s constructor installs change-tracking accessors
+ * on the instance; an ES2022 class field (define semantics, the default for
+ * this target) then replaces each accessor with a plain data property. Nothing
+ * is tracked, the MapSchema/ArraySchema children never learn their item type,
+ * and the encoder throws `type[Symbol.metadata]` on the first join, which
+ * killed the multiplayer process.
  */
 
 export const TEAM = {
@@ -30,50 +38,86 @@ export const PLAYER_STATE = {
 } as const;
 
 export class PlayerState extends Schema {
-  sessionId = "";
-  userId = "";
-  displayName = "";
-  team: number = TEAM.NIGHTCELL;
-  isBot = false;
+  declare sessionId: string;
+  declare userId: string;
+  declare displayName: string;
+  declare team: number;
+  declare isBot: boolean;
 
   // --- transform (server-owned) --------------------------------------------
-  x = 0;
-  y = 0;
-  z = 0;
-  vx = 0;
-  vy = 0;
-  vz = 0;
-  yaw = 0;
-  pitch = 0;
-  crouching = false;
-  grounded = true;
+  declare x: number;
+  declare y: number;
+  declare z: number;
+  declare vx: number;
+  declare vy: number;
+  declare vz: number;
+  declare yaw: number;
+  declare pitch: number;
+  declare crouching: boolean;
+  declare grounded: boolean;
 
   // --- combat (server-owned) -----------------------------------------------
-  health = 100;
-  armor = 0;
-  weaponSlot = 0;
-  ammoInMagazine = 0;
-  ammoReserve = 0;
+  declare health: number;
+  declare armor: number;
+  declare weaponSlot: number;
+  declare ammoInMagazine: number;
+  declare ammoReserve: number;
   /** Grenades left this life — HUD only; the server owns the count. */
-  grenades = 0;
+  declare grenades: number;
   /** Match-clock milliseconds; 0 when not reloading. */
-  reloadingUntilMs = 0;
+  declare reloadingUntilMs: number;
   /** Earliest match-clock time this player may fire again. */
-  nextFireAtMs = 0;
-  lifeState: number = PLAYER_STATE.ALIVE;
-  respawnAtMs = 0;
+  declare nextFireAtMs: number;
+  declare lifeState: number;
+  declare respawnAtMs: number;
 
   // --- scoring --------------------------------------------------------------
-  kills = 0;
-  deaths = 0;
-  assists = 0;
-  score = 0;
+  declare kills: number;
+  declare deaths: number;
+  declare assists: number;
+  declare score: number;
 
   // --- diagnostics ----------------------------------------------------------
   /** Last input sequence the server simulated for this player. */
-  lastAckedSeq = 0;
-  pingMs = 0;
-  reconnectCount = 0;
+  declare lastAckedSeq: number;
+  declare pingMs: number;
+  declare reconnectCount: number;
+
+  constructor() {
+    super();
+    this.sessionId = "";
+    this.userId = "";
+    this.displayName = "";
+    this.team = TEAM.NIGHTCELL;
+    this.isBot = false;
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+    this.vx = 0;
+    this.vy = 0;
+    this.vz = 0;
+    this.yaw = 0;
+    this.pitch = 0;
+    this.crouching = false;
+    this.grounded = true;
+    this.health = 100;
+    this.armor = 0;
+    this.weaponSlot = 0;
+    this.ammoInMagazine = 0;
+    this.ammoReserve = 0;
+    this.grenades = 0;
+    this.reloadingUntilMs = 0;
+    this.nextFireAtMs = 0;
+    this.lifeState = PLAYER_STATE.ALIVE;
+    this.respawnAtMs = 0;
+    this.kills = 0;
+    this.deaths = 0;
+    this.assists = 0;
+    this.score = 0;
+    this.lastAckedSeq = 0;
+    this.pingMs = 0;
+    this.reconnectCount = 0;
+  }
 }
 
 defineTypes(PlayerState, {
@@ -116,9 +160,16 @@ defineTypes(PlayerState, {
 });
 
 export class TeamState extends Schema {
-  id = 0;
-  score = 0;
-  playerCount = 0;
+  declare id: number;
+  declare score: number;
+  declare playerCount: number;
+
+  constructor() {
+    super();
+    this.id = 0;
+    this.score = 0;
+    this.playerCount = 0;
+  }
 }
 
 defineTypes(TeamState, {
@@ -136,19 +187,34 @@ export const MATCH_PHASE = {
 } as const;
 
 export class MatchState extends Schema {
-  matchId = "";
-  mapId = "";
-  mode = "tdm";
-  phase: number = MATCH_PHASE.WARMUP;
+  declare matchId: string;
+  declare mapId: string;
+  declare mode: string;
+  declare phase: number;
   /** Server tick counter — the canonical clock for everything else. */
-  tick = 0;
-  tickRate = 30;
+  declare tick: number;
+  declare tickRate: number;
   /** Milliseconds remaining in the match, mirrored for HUD convenience. */
-  timeRemainingMs = 0;
-  scoreLimit = 75;
-  winningTeam = -1;
-  players = new MapSchema<PlayerState>();
-  teams = new ArraySchema<TeamState>();
+  declare timeRemainingMs: number;
+  declare scoreLimit: number;
+  declare winningTeam: number;
+  declare players: MapSchema<PlayerState>;
+  declare teams: ArraySchema<TeamState>;
+
+  constructor() {
+    super();
+    this.matchId = "";
+    this.mapId = "";
+    this.mode = "tdm";
+    this.phase = MATCH_PHASE.WARMUP;
+    this.tick = 0;
+    this.tickRate = 30;
+    this.timeRemainingMs = 0;
+    this.scoreLimit = 75;
+    this.winningTeam = -1;
+    this.players = new MapSchema<PlayerState>();
+    this.teams = new ArraySchema<TeamState>();
+  }
 }
 
 defineTypes(MatchState, {
