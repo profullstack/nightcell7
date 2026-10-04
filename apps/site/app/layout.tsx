@@ -252,6 +252,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Photosensitivity notice: this game contains flashing lights and can be played with flash
             reduction enabled. Payments are processed by CoinPayPortal.
           </p>
+          <nav className="webring" aria-label="Profullstack webring">
+            <a
+              href="https://rssamplifier.com/ring/profullstack/previous?from=https%3A%2F%2Fnightcell7.com%2F"
+              rel="prev"
+            >
+              {"<<"}
+            </a>{" "}
+            <a href="https://rssamplifier.com/ring/profullstack">Profullstack</a>{" "}
+            <a
+              href="https://rssamplifier.com/ring/profullstack/next?from=https%3A%2F%2Fnightcell7.com%2F"
+              rel="next"
+            >
+              {">>"}
+            </a>
+          </nav>
         </footer>
         <Script
           data-site="af9ab953-caa6-4a2b-a306-42fb4eac4630"
