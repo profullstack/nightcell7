@@ -34,6 +34,13 @@ const ORIGIN = process.env.PUBLIC_ORIGIN ?? "https://nightcell7.com";
  */
 const shareVideo = `${ORIGIN}/media/trailer/${trailer.file}`;
 
+/*
+ * Re-render pages at most hourly (ISR), so the @profullstack/footer below picks
+ * up a new release of its @latest template without a redeploy. Routes that set
+ * their own (smaller) value or are dynamic keep it.
+ */
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   metadataBase: new URL(ORIGIN),
   title: {
