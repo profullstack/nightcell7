@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
+import { Footer } from "@profullstack/footer/react";
 import captures from "../public/media/yard/manifest.json";
 import trailer from "../public/media/trailer/manifest.json";
 
@@ -252,31 +253,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Photosensitivity notice: this game contains flashing lights and can be played with flash
             reduction enabled. Payments are processed by CoinPayPortal.
           </p>
-          <nav className="webring" aria-label="Profullstack webring">
-            <a
-              href="https://rssamplifier.com/ring/profullstack/previous?from=https%3A%2F%2Fnightcell7.com%2F"
-              rel="prev"
-              title="Previous site"
-            >
-              {"<<"}
-            </a>{" "}
-            <a href="https://rssamplifier.com/ring/profullstack">Profullstack</a>{" "}
-            <a
-              href="https://rssamplifier.com/ring/profullstack/next?from=https%3A%2F%2Fnightcell7.com%2F"
-              rel="next"
-              title="Next site"
-            >
-              {">>"}
-            </a>{" "}
-            <a
-              href="https://rssamplifier.com/ring/profullstack/random?from=https%3A%2F%2Fnightcell7.com%2F"
-              title="Random site"
-              aria-label="Random site"
-            >
-              {"⚄"}
-            </a>
-          </nav>
         </footer>
+        {/* Copyright and the Profullstack webring, from @profullstack/footer. */}
+        <Footer site="https://nightcell7.com/" />
         <Script
           data-site="af9ab953-caa6-4a2b-a306-42fb4eac4630"
           src="https://crawlproof.com/stats.js"
