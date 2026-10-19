@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
-import { Footer } from "@profullstack/footer/react";
 import { AdUnit } from "./_components/ad-unit";
+import { PitFooter } from "./_components/pit-footer";
 import captures from "../public/media/yard/manifest.json";
 import trailer from "../public/media/trailer/manifest.json";
 
@@ -36,8 +36,8 @@ const ORIGIN = process.env.PUBLIC_ORIGIN ?? "https://nightcell7.com";
 const shareVideo = `${ORIGIN}/media/trailer/${trailer.file}`;
 
 /*
- * Re-render pages at most hourly (ISR), so the @profullstack/footer below picks
- * up a new release of its @latest template without a redeploy. Routes that set
+ * Re-render pages at most hourly (ISR), so the pit.world global footer below
+ * picks up a new version of its snippet without a redeploy. Routes that set
  * their own (smaller) value or are dynamic keep it.
  */
 export const revalidate = 3600;
@@ -130,149 +130,35 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <footer className="footer">
-          <div className="footer__columns">
-            <div>
-              <h3>Game</h3>
-              <ul>
-                <li>
-                  <a href="/episodes/false-dawn">Episode 1 &mdash; False Dawn</a>
-                </li>
-                <li>
-                  <a href="/multiplayer">Multiplayer Alpha</a>
-                </li>
-                <li>
-                  <a href="/characters/rook">Rook</a>
-                </li>
-                <li>
-                  <a href="/characters/leila">Leila</a>
-                </li>
-                <li>
-                  <a href="/characters">Full cast</a>
-                </li>
-                <li>
-                  <a href="/play">Play in browser</a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3>Install</h3>
-              <ul>
-                <li>
-                  <a href="/downloads">All downloads</a>
-                </li>
-                <li>
-                  <a href="/downloads#homebrew">Homebrew (macOS)</a>
-                </li>
-                <li>
-                  <a href="/downloads#scoop">Scoop (Windows)</a>
-                </li>
-                <li>
-                  <a href="/downloads#winget">WinGet (Windows)</a>
-                </li>
-                <li>
-                  <a href="/downloads#aur">AUR (Arch)</a>
-                </li>
-                <li>
-                  <a href="/downloads#deb">APT / .deb</a>
-                </li>
-                <li>
-                  <a href="/downloads#rpm">RPM (Fedora)</a>
-                </li>
-                <li>
-                  <a href="/downloads#nix">Nix</a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3>Resources</h3>
-              <ul>
-                <li>
-                  <a href="/system-requirements">System Requirements</a>
-                </li>
-                <li>
-                  <a href="/faq">FAQ</a>
-                </li>
-                <li>
-                  <a href="/support">Support</a>
-                </li>
-                <li>
-                  <a href="/yards">Yards</a>
-                  <a href="/gallery">Gallery</a>
-                  <a href="/news">News</a>
-                </li>
-                <li>
-                  <a href="/status">Service Status</a>
-                </li>
-                <li>
-                  <a href="/press">Press Kit</a>
-                </li>
-                <li>
-                  <a
-                    href="https://github.com/profullstack/nightcell7"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Source on GitHub
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3>Legal</h3>
-              <ul>
-                <li>
-                  <a href="/privacy">Privacy</a>
-                </li>
-                <li>
-                  <a href="/terms">Terms</a>
-                </li>
-                <li>
-                  <a href="/refunds">Refunds</a>
-                </li>
-                <li>
-                  <a href="/licenses">Licenses</a>
-                </li>
-                <li>
-                  <a href="/community-guidelines">Community Guidelines</a>
-                </li>
-                <li>
-                  <a href="/credits">Credits</a>
-                </li>
-                <li>
-                  <a href="/careers">Careers</a>
-                </li>
-                <li>
-                  <a href="https://profullstack.com" target="_blank" rel="noopener noreferrer">
-                    Profullstack, Inc.
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Required fiction disclaimer (PRD §32). */}
+          <nav aria-label="Footer">
+            <a href="/downloads">Downloads</a>
+            <a href="/faq">FAQ</a>
+            <a href="/support">Support</a>
+            <a href="/status">Status</a>
+            <a href="/press">Press</a>
+            <a href="https://github.com/profullstack/nightcell7">Source</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
+            <a href="/refunds">Refunds</a>
+            <a href="/licenses">Licenses</a>
+            <a href="/community-guidelines">Guidelines</a>
+          </nav>
+          {/* Required fiction disclaimer (PRD §32), with the photosensitivity notice. */}
           <p className="disclaimer">
-            NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its
-            organizations, facilities, operations, and characters are fictional. The game does not
-            depict or endorse any real government, military operation, political movement, or
-            current event.
-          </p>
-          <p className="disclaimer">
-            Photosensitivity notice: this game contains flashing lights and can be played with flash
-            reduction enabled. Payments are processed by CoinPayPortal.
+            &copy; {new Date().getFullYear()} <a href="https://profullstack.com">Profullstack, Inc.</a>{" "}
+            NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its organizations,
+            facilities, operations, and characters are fictional. The game does not depict or endorse
+            any real government, military operation, political movement, or current event. It contains
+            flashing lights and can be played with flash reduction enabled.
           </p>
         </footer>
-        {/* Copyright and the Profullstack webring, from @profullstack/footer. */}
-        <Footer site="https://nightcell7.com/" />
         <Script
           data-site="af9ab953-caa6-4a2b-a306-42fb4eac4630"
           src="https://crawlproof.com/stats.js"
           strategy="afterInteractive"
         />
         <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
+        <PitFooter />
       </body>
     </html>
   );
