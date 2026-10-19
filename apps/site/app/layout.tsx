@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
+import { Footer } from "@profullstack/footer/react";
 import { AdUnit } from "./_components/ad-unit";
 import { PitFooter } from "./_components/pit-footer";
 import captures from "../public/media/yard/manifest.json";
@@ -36,8 +37,8 @@ const ORIGIN = process.env.PUBLIC_ORIGIN ?? "https://nightcell7.com";
 const shareVideo = `${ORIGIN}/media/trailer/${trailer.file}`;
 
 /*
- * Re-render pages at most hourly (ISR), so the pit.world global footer below
- * picks up a new version of its snippet without a redeploy. Routes that set
+ * Re-render pages at most hourly (ISR), so @profullstack/footer and the
+ * pit.world global footer below pick up new releases without a redeploy. Routes that set
  * their own (smaller) value or are dynamic keep it.
  */
 export const revalidate = 3600;
@@ -145,13 +146,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
           {/* Required fiction disclaimer (PRD §32), with the photosensitivity notice. */}
           <p className="disclaimer">
-            &copy; {new Date().getFullYear()} <a href="https://profullstack.com">Profullstack, Inc.</a>{" "}
             NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its organizations,
             facilities, operations, and characters are fictional. The game does not depict or endorse
             any real government, military operation, political movement, or current event. It contains
             flashing lights and can be played with flash reduction enabled.
           </p>
         </footer>
+        {/* Copyright and the Profullstack webring, from @profullstack/footer. */}
+        <Footer site="https://nightcell7.com/" />
         <Script
           data-site="af9ab953-caa6-4a2b-a306-42fb4eac4630"
           src="https://crawlproof.com/stats.js"
