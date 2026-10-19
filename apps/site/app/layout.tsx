@@ -125,8 +125,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <a href="/account">Account</a>
           </nav>
         </header>
-        <main id="main">{children}</main>
-        <AdUnit />
+        <main id="main">
+          <AdUnit />
+          {children}
+        </main>
         <footer className="footer">
           <div className="footer__columns">
             <div>
