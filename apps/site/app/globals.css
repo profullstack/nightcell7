@@ -1426,6 +1426,14 @@ a {
   text-transform: uppercase;
 }
 
+.footer__badges {
+  margin: 1rem 0 0;
+}
+
+.footer__badges img {
+  display: block;
+}
+
 .disclaimer {
   max-width: 80ch;
   color: color-mix(in srgb, var(--bone-300) 75%, transparent);

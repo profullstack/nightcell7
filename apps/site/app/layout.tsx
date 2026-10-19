@@ -151,6 +151,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             any real government, military operation, political movement, or current event. It contains
             flashing lights and can be played with flash reduction enabled.
           </p>
+          <p className="footer__badges">
+            <a href="https://built.indie.pit.world/p/nightcell-7?ref=badge">
+              <img
+                src="https://built.indie.pit.world/badge/nightcell-7.svg"
+                alt="NIGHTCELL 7 on built.indie"
+                width="200"
+                height="44"
+              />
+            </a>
+          </p>
         </footer>
         {/* Copyright and the Profullstack webring, from @profullstack/footer. */}
         <Footer site="https://nightcell7.com/" />
