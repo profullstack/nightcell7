@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
 import { Footer } from "@profullstack/footer/react";
+import { AdUnit } from "./_components/ad-unit";
 import captures from "../public/media/yard/manifest.json";
 import trailer from "../public/media/trailer/manifest.json";
 
@@ -125,6 +126,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
         </header>
         <main id="main">{children}</main>
+        <AdUnit />
         <footer className="footer">
           <div className="footer__columns">
             <div>
@@ -268,6 +270,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           src="https://crawlproof.com/stats.js"
           strategy="afterInteractive"
         />
+        <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
       </body>
     </html>
   );
