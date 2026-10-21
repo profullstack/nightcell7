@@ -146,10 +146,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
           {/* Required fiction disclaimer (PRD §32), with the photosensitivity notice. */}
           <p className="disclaimer">
-            NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its organizations,
-            facilities, operations, and characters are fictional. The game does not depict or endorse
-            any real government, military operation, political movement, or current event. It contains
-            flashing lights and can be played with flash reduction enabled.
+            NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its
+            organizations, facilities, operations, and characters are fictional. The game does not
+            depict or endorse any real government, military operation, political movement, or
+            current event. It contains flashing lights and can be played with flash reduction
+            enabled.
           </p>
           <p className="footer__badges">
             <a href="https://built.indie.pit.world/p/nightcell-7?ref=badge">
