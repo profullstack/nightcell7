@@ -11,6 +11,7 @@ import {
   securityHeaders,
   type UpstreamName,
 } from "./routes";
+import { answerWith, needsBody, readBody, requestFor, type CrawlGate } from "./crawl";
 
 export interface GatewayOptions {
   upstreams: Record<UpstreamName, URL>;
@@ -18,6 +19,8 @@ export interface GatewayOptions {
   maintenance: boolean;
   logger: Logger;
   health: HealthReporter;
+  /** The crawl door (crawl.ts): 402 for training crawlers, the /crawl shop. */
+  crawlGate?: CrawlGate | null;
 }
 
 /**
@@ -26,7 +29,7 @@ export interface GatewayOptions {
  * be exercised end to end in a test.
  */
 export function createGatewayServer(options: GatewayOptions): http.Server {
-  const { upstreams, isProduction, maintenance, logger, health } = options;
+  const { upstreams, isProduction, maintenance, logger, health, crawlGate } = options;
 
   const server = http.createServer((req, res) => {
     const correlationId = (req.headers[CORRELATION_HEADER] as string) || newCorrelationId();
@@ -47,6 +50,47 @@ export function createGatewayServer(options: GatewayOptions): http.Server {
       return;
     }
 
+    if (crawlGate) {
+      void sellOrProxy(req, res, pathname, correlationId);
+      return;
+    }
+
+    route_(req, res, pathname, correlationId);
+  });
+
+  async function sellOrProxy(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    pathname: string,
+    correlationId: string,
+  ): Promise<void> {
+    try {
+      const body = needsBody(req.method, pathname) ? await readBody(req) : undefined;
+      const answer = await crawlGate!.handle(requestFor(req, body));
+      if (answer) {
+        await answerWith(res, answer);
+        return;
+      }
+      if (body) {
+        // Nothing upstream serves /crawl POSTs; the gateway always answers those.
+        res.writeHead(404, { "content-type": "application/json", "cache-control": "no-store" });
+        res.end(JSON.stringify({ error: "not_found" }));
+        return;
+      }
+    } catch (error) {
+      // A failing crawl door must never take the site down: fall through.
+      logger.warn("crawl gate failed", { correlationId, error: (error as Error).message });
+      if (res.headersSent || res.writableEnded) return;
+    }
+    route_(req, res, pathname, correlationId);
+  }
+
+  function route_(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    pathname: string,
+    correlationId: string,
+  ): void {
     const route = resolveRoute(pathname);
 
     // Maintenance mode still serves the marketing site so players see a real
@@ -60,7 +104,7 @@ export function createGatewayServer(options: GatewayOptions): http.Server {
     if (!route.cacheable) res.setHeader("cache-control", "no-store");
 
     proxyHttp(req, res, route.upstream, correlationId);
-  });
+  }
 
   function proxyHttp(
     req: http.IncomingMessage,
