@@ -20,7 +20,7 @@ const envSchema = baseEnvSchema.extend({
   REDIS_URL: z.string().min(1),
   /** postgres:// connection string; the database package rejects anything else. */
   DATABASE_URL: z.string().min(1),
-  COINPAY_API_BASE: z.string().url(),
+  COINPAY_API_BASE: z.string().url().default("https://coinpayportal.com"),
   COINPAY_API_KEY: z.string().min(1),
   /** Orders older than this with no terminal status get reconciled. */
   RECONCILE_AFTER_MINUTES: z.coerce.number().int().positive().default(20),
@@ -55,7 +55,6 @@ async function reconcilePayments(): Promise<void> {
     apiKey: env.COINPAY_API_KEY,
     returnUrl: `${env.PUBLIC_ORIGIN}/checkout/success`,
     cancelUrl: `${env.PUBLIC_ORIGIN}/checkout/cancel`,
-    webhookUrl: `${env.PUBLIC_ORIGIN}/api/v1/webhooks/coinpay`,
   });
 
   const cutoff = new Date(Date.now() - env.RECONCILE_AFTER_MINUTES * 60_000).toISOString();
@@ -75,8 +74,11 @@ async function reconcilePayments(): Promise<void> {
     checked += 1;
 
     try {
-      const invoice = await coinpay.getInvoice(order.invoiceId);
-      const mapped = mapProviderStatus(invoice.status);
+      // Only crypto payments have a status read; PayPal and hosted sessions
+      // settle through their webhooks.
+      const providerStatus = await coinpay.getPaymentStatus(order.invoiceId);
+      if (!providerStatus) continue;
+      const mapped = mapProviderStatus(providerStatus);
       if (mapped === order.status) continue;
 
       drift += 1;

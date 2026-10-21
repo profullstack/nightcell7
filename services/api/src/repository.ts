@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@nightcell7/database";
 import {
   devices,
@@ -37,7 +37,11 @@ export interface Repositories {
   ): Promise<{ episodeId: string; status: string; grantedAt: string }[]>;
   findEntitlement(userId: string, episodeId: string): Promise<{ status: string } | null>;
 
-  findOrderByIdempotencyKey(key: string): Promise<{ id: string; status: string } | null>;
+  findOrderByIdempotencyKey(
+    key: string,
+  ): Promise<{ id: string; status: string; coinpayRef: string | null } | null>;
+  /** Resolve a CoinPay webhook to our order id: stored refs first, then metadata. */
+  findOrderIdForCoinpay(input: { refs: string[]; orderId?: string }): Promise<string | null>;
   createOrder(input: CreateOrderInput): Promise<void>;
   attachCoinpayInvoice(orderId: string, invoiceId: string): Promise<void>;
   listOrders(userId: string): Promise<OrderSummary[]>;
@@ -231,11 +235,31 @@ export function createRepositories(db: Database): Repositories {
 
     async findOrderByIdempotencyKey(key) {
       const rows = await db
-        .select({ id: orders.id, status: orders.status })
+        .select({ id: orders.id, status: orders.status, coinpayRef: orders.coinpayOrderId })
         .from(orders)
         .where(eq(orders.idempotencyKey, key))
         .limit(1);
       return rows[0] ?? null;
+    },
+
+    async findOrderIdForCoinpay({ refs, orderId }) {
+      if (refs.length > 0) {
+        const rows = await db
+          .select({ id: orders.id })
+          .from(orders)
+          .where(inArray(orders.coinpayOrderId, refs))
+          .limit(1);
+        if (rows[0]) return rows[0].id;
+      }
+      if (orderId) {
+        const rows = await db
+          .select({ id: orders.id })
+          .from(orders)
+          .where(eq(orders.id, orderId))
+          .limit(1);
+        if (rows[0]) return rows[0].id;
+      }
+      return null;
     },
 
     async createOrder(input) {

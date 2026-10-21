@@ -21,8 +21,11 @@ import { signManifest, type ContentManifest, type ObjectSigner } from "@nightcel
 import {
   COINPAY_SIGNATURE_HEADER,
   COINPAY_TIMESTAMP_HEADER,
-  mapProviderStatus,
+  CoinpayError,
+  mapEventStatus,
+  paymentUrlForRef,
   redactEventForLog,
+  refsForCoinpayId,
   verifyWebhook,
   type CoinpayClient,
 } from "@nightcell7/coinpay";
@@ -251,6 +254,22 @@ export function createApp(deps: Dependencies) {
     episodeId: z.string().min(1).max(64),
     email: z.string().email().optional(),
     idempotencyKey: z.string().min(8).max(128),
+    /** A CoinPay coin (`USDC_POL`) or `paypal`; unused when CoinPay hosts the picker. */
+    method: z.string().min(2).max(32).optional(),
+  });
+
+  /**
+   * What the checkout page offers: every coin the CoinPay business holds a
+   * wallet for, plus PayPal. `hosted` means CoinPay shows that picker itself
+   * (checkout sessions), so the page needs only one button.
+   */
+  v1.get("/checkout/coinpay/methods", async (c) => {
+    try {
+      return c.json(await deps.coinpay.listMethods());
+    } catch (error) {
+      deps.logger.error("coinpay methods lookup failed", { error: String(error) });
+      throw new ApiError(502, "payments_unavailable", "Payments are unavailable right now.");
+    }
   });
 
   v1.post("/checkout/coinpay", async (c) => {
@@ -258,7 +277,7 @@ export function createApp(deps: Dependencies) {
     const body = checkoutSchema.parse(await c.req.json());
     await limit("checkout", account?.userId ?? clientKey(c));
 
-    // The server catalog is the price authority — note the absence of any
+    // The server catalog is the price authority; note the absence of any
     // client-supplied amount (PRD §24.1).
     const price = resolvePrice(body.episodeId);
     if (!price.ok) throw badRequest(price.reason, "That episode cannot be purchased right now.");
@@ -272,7 +291,12 @@ export function createApp(deps: Dependencies) {
 
     const existing = await deps.repos.findOrderByIdempotencyKey(body.idempotencyKey);
     if (existing) {
-      return c.json({ orderId: existing.id, status: existing.status, replayed: true });
+      return c.json({
+        orderId: existing.id,
+        status: existing.status,
+        replayed: true,
+        paymentUrl: paymentUrlForRef(existing.coinpayRef, deps.env.COINPAY_API_BASE) ?? undefined,
+      });
     }
 
     const orderId = `ord_${randomUUID()}`;
@@ -286,27 +310,57 @@ export function createApp(deps: Dependencies) {
       idempotencyKey: body.idempotencyKey,
     });
 
-    const invoice = await deps.coinpay.createInvoice({
-      orderId,
-      episodeId: body.episodeId,
-      email: body.email,
-      idempotencyKey: body.idempotencyKey,
-    });
-    await deps.repos.attachCoinpayInvoice(orderId, invoice.invoiceId);
+    let checkout;
+    try {
+      checkout = await deps.coinpay.createCheckout({
+        orderId,
+        episodeId: body.episodeId,
+        email: body.email,
+        accountId: account?.userId ?? null,
+        method: body.method,
+        idempotencyKey: body.idempotencyKey,
+      });
+    } catch (error) {
+      deps.logger.warn("coinpay checkout refused", {
+        correlationId: c.get("correlationId"),
+        orderId,
+        method: body.method,
+        error: String(error),
+      });
+      if (error instanceof CoinpayError && error.status && error.status < 500) {
+        const code =
+          error.code === "method_required" || error.code === "unsupported_method"
+            ? error.code
+            : "payment_refused";
+        throw new ApiError(
+          400,
+          code,
+          error.message.replace(/^coinpay request failed \(\d+\): ?/, "") ||
+            "That payment method is unavailable.",
+        );
+      }
+      throw new ApiError(502, "payments_unavailable", "Payments are unavailable right now.");
+    }
+    // The CoinPay reference is stored because not every webhook echoes our
+    // metadata back: a crypto confirmation and a PayPal capture carry only
+    // their payment id.
+    await deps.repos.attachCoinpayInvoice(orderId, checkout.ref);
 
     deps.logger.info("checkout created", {
       correlationId: c.get("correlationId"),
       orderId,
       episodeId: body.episodeId,
+      rail: checkout.rail,
     });
 
     return c.json({
       orderId,
       // The buyer goes to CoinPay. The return page shows *pending* only; the
       // webhook is the sole fulfilment trigger (PRD §24.2).
-      paymentUrl: invoice.paymentUrl,
+      paymentUrl: checkout.paymentUrl,
+      rail: checkout.rail,
       status: "pending",
-      expiresAt: invoice.expiresAt,
+      expiresAt: checkout.expiresAt,
     });
   });
 
@@ -361,13 +415,23 @@ export function createApp(deps: Dependencies) {
 
     const event = verification.event;
 
+    // Map the event to our order: by the CoinPay reference stored at checkout
+    // first (every rail sends its payment id), then by metadata.order_id.
+    const orderId = await deps.repos.findOrderIdForCoinpay({
+      refs: [
+        ...refsForCoinpayId(event.data.paymentId),
+        ...refsForCoinpayId(event.data.checkoutSessionId),
+      ],
+      orderId: event.data.referenceId,
+    });
+
     // Durably record the event BEFORE acknowledging, under a unique constraint
     // on the provider event id. A replay is a no-op, not a second fulfilment.
     const recorded = await deps.repos.recordPaymentEvent({
       id: `pe_${randomUUID()}`,
       providerEventId: event.id,
       eventType: event.type,
-      orderId: event.data.referenceId,
+      orderId,
       payloadHash: createHash("sha256").update(rawBody).digest("hex"),
       receivedAt: now().toISOString(),
     });
@@ -377,11 +441,18 @@ export function createApp(deps: Dependencies) {
       return c.json({ received: true, duplicate: true });
     }
 
+    if (!orderId) {
+      // Not ours (another property on the same business, or a test event):
+      // acknowledge so CoinPay stops retrying, and leave a trace.
+      deps.logger.warn("coinpay webhook for unknown order", redactEventForLog(event));
+      return c.json({ received: true, unknownOrder: true });
+    }
+
     // Heavy work is queued so the acknowledgement stays fast (PRD §30.5).
     await deps.enqueue("payments", "coinpay-event", {
       providerEventId: event.id,
-      orderId: event.data.referenceId,
-      mappedStatus: mapProviderStatus(event.data.status),
+      orderId,
+      mappedStatus: mapEventStatus(event),
       paymentId: event.data.paymentId,
       correlationId: c.get("correlationId"),
     });

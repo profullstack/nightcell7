@@ -1,11 +1,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { HealthReporter, createLogger } from "@nightcell7/observability";
 import { SESSION_COOKIE_NAME } from "@nightcell7/auth";
-import {
-  COINPAY_SIGNATURE_HEADER,
-  COINPAY_TIMESTAMP_HEADER,
-  signWebhookPayload,
-} from "@nightcell7/coinpay";
+import { COINPAY_SIGNATURE_HEADER, signWebhookPayload } from "@nightcell7/coinpay";
 import { CONTENT_VERSION, PROTOCOL_VERSION } from "@nightcell7/multiplayer-protocol";
 import { verifyTicket } from "@nightcell7/multiplayer-protocol/server";
 import { createApp, buildSyncUrl, generatePrivateCode, readCookie } from "./app";
@@ -31,6 +27,7 @@ const env: ApiEnv = {
   REDIS_URL: "redis://localhost:6379",
   DATABASE_URL: "postgres://localhost:5432/nightcell7_test",
   COINPAY_API_BASE: "https://api.coinpayportal.test",
+  COINPAY_CHECKOUT_SESSIONS: "off",
   COINPAY_API_KEY: "key",
   COINPAY_WEBHOOK_SECRET: WEBHOOK_SECRET,
   R2_BUCKET: "nightcell7-content-test",
@@ -64,6 +61,10 @@ function fakeRepos(overrides: Partial<Repositories> = {}): Repositories {
     },
     async findOrderByIdempotencyKey() {
       return null;
+    },
+    async findOrderIdForCoinpay({ refs, orderId }) {
+      if (refs.includes("crypto:pay_1")) return "ord_1";
+      return orderId === "ord_meta" ? "ord_meta" : null;
     },
     async createOrder() {},
     async attachCoinpayInvoice() {},
@@ -114,6 +115,7 @@ interface Harness {
   app: ReturnType<typeof createApp>;
   enqueued: { queue: string; name: string; payload: unknown }[];
   invoices: number;
+  lastMethod?: string;
   tickets: string[];
 }
 
@@ -123,19 +125,26 @@ function harness(
 ): Harness {
   const enqueued: Harness["enqueued"] = [];
   const tickets: string[] = [];
-  const state = { invoices: 0 };
+  const state: { invoices: number; lastMethod?: string } = { invoices: 0 };
 
   const coinpay = {
-    createInvoice: async () => {
+    createCheckout: async (input: { method?: string }) => {
       state.invoices += 1;
+      state.lastMethod = input.method;
       return {
-        invoiceId: `inv_${state.invoices}`,
-        paymentUrl: "https://pay.coinpayportal.test/inv_1",
-        status: "pending",
+        rail: "crypto",
+        ref: `crypto:pay_${state.invoices}`,
+        paymentUrl: `https://coinpayportal.com/pay/pay_${state.invoices}`,
       };
     },
-    getInvoice: async () => ({ status: "pending" }),
-    refund: async () => ({ status: "refunded" }),
+    listMethods: async () => ({
+      hosted: false,
+      methods: [
+        { id: "BTC", label: "Bitcoin", rail: "crypto" },
+        { id: "paypal", label: "PayPal", rail: "paypal" },
+      ],
+    }),
+    getPaymentStatus: async () => "pending",
   } as unknown as Dependencies["coinpay"];
 
   const app = createApp({
@@ -176,6 +185,9 @@ function harness(
     tickets,
     get invoices() {
       return state.invoices;
+    },
+    get lastMethod() {
+      return state.lastMethod;
     },
   };
 }
@@ -257,10 +269,29 @@ describe("checkout", () => {
     expect(h.invoices).toBe(1);
   });
 
+  it("passes the chosen coin or PayPal through to CoinPay", async () => {
+    const res = await h.app.request(
+      "/api/v1/checkout/coinpay",
+      jsonPost(
+        { episodeId: "false-dawn", idempotencyKey: "idem-key-9", method: "paypal" },
+        "verified",
+      ),
+    );
+    expect(res.status).toBe(200);
+    expect(h.lastMethod).toBe("paypal");
+  });
+
+  it("lists every coin the business takes plus PayPal", async () => {
+    const res = await h.app.request("/api/v1/checkout/coinpay/methods");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { hosted: boolean; methods: { id: string }[] };
+    expect(body.methods.map((m) => m.id)).toEqual(["BTC", "paypal"]);
+  });
+
   it("replays an existing order for a repeated idempotency key", async () => {
     const replayHarness = harness({
       async findOrderByIdempotencyKey() {
-        return { id: "ord_existing", status: "pending" };
+        return { id: "ord_existing", status: "pending", coinpayRef: null };
       },
     });
     const res = await replayHarness.app.request(
@@ -300,18 +331,21 @@ describe("coinpay webhook", () => {
     eventId: string,
     secret = WEBHOOK_SECRET,
     at = Math.floor(Date.now() / 1000),
+    paymentId = "pay_1",
   ) {
+    // CoinPay's real shape: nested `data`, top-level id is the EVENT, and a
+    // crypto confirmation carries no metadata, only the payment id.
     const body = JSON.stringify({
       id: eventId,
-      type: "payment.completed",
-      createdAt: new Date(at * 1000).toISOString(),
-      data: { referenceId: "ord_1", paymentId: "pay_1", status: "paid" },
+      type: "payment.confirmed",
+      data: { payment_id: paymentId, status: "confirmed", amount: 9.99 },
+      created_at: new Date(at * 1000).toISOString(),
+      business_id: "biz_1",
     });
     return new Request("https://nightcell7.com/api/v1/webhooks/coinpay", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        [COINPAY_TIMESTAMP_HEADER]: String(at),
         [COINPAY_SIGNATURE_HEADER]: signWebhookPayload(body, at, secret),
       },
       body,
@@ -325,7 +359,21 @@ describe("coinpay webhook", () => {
 
     const job = h.enqueued.find((e) => e.queue === "payments");
     expect(job).toBeDefined();
-    expect(job?.payload).toMatchObject({ providerEventId: "evt_a", mappedStatus: "paid" });
+    expect(job?.payload).toMatchObject({
+      providerEventId: "evt_a",
+      orderId: "ord_1",
+      mappedStatus: "paid",
+      paymentId: "pay_1",
+    });
+  });
+
+  it("acknowledges an event for an order that is not ours without queueing", async () => {
+    const res = await h.app.fetch(
+      webhookRequest("evt_d", WEBHOOK_SECRET, Math.floor(Date.now() / 1000), "pay_other"),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ received: true, unknownOrder: true });
+    expect(h.enqueued).toHaveLength(0);
   });
 
   it("treats a replayed provider event as a no-op", async () => {

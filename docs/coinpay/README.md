@@ -9,7 +9,7 @@ contract.
 
 1. **The server catalog is the price authority.** `resolvePrice()` in
    `packages/entitlements/src/catalog.ts` is the only source of an amount, and
-   `CoinpayClient.createInvoice()` has no amount parameter at all.
+   `CoinpayClient.createCheckout()` has no amount parameter at all.
 2. **The browser return URL proves nothing.** `/checkout/success` shows a
    pending state. Only a verified webhook moves an order forward.
 3. **`paid` is not `fulfilled`.** They are separate states so a failed grant can
@@ -34,19 +34,40 @@ listed is rejected — an unknown provider event must never walk an order into a
 arbitrary state. An unrecognised provider status maps to `manual_review`, never
 to `paid`.
 
+## Rails
+
+`CoinpayClient.createCheckout()` picks the rail:
+
+- **Hosted checkout session** (`POST /api/checkout/sessions`) whenever CoinPay
+  has it. Feature-detected (a 404 means not yet; rechecked every 10 minutes),
+  or forced with `COINPAY_CHECKOUT_SESSIONS=on|off`. CoinPay shows every coin
+  and PayPal on its own page.
+- Otherwise the checkout page shows a picker: every coin the business holds a
+  wallet for (`GET /api/supported-coins`) plus PayPal. A coin goes to
+  `POST /api/payments/create`, PayPal to `POST /api/paypal/payments/create`.
+
+Every rail sends `metadata: { property, account_id, email, order_id }`. The
+CoinPay id is stored on the order as `<rail>:<id>` (`orders.coinpay_order_id`),
+because a crypto `payment.confirmed` and every PayPal event carry only the
+payment id, not the metadata.
+
 ## Webhook verification
 
 ```
-POST /api/v1/webhooks/coinpay
-x-coinpay-timestamp: <unix seconds>
-x-coinpay-signature: hex(hmac-sha256(secret, "<timestamp>.<raw body>"))
+POST /api/v1/webhooks/coinpay   (and the singular /webhook/coinpay)
+X-CoinPay-Signature: t=<unix seconds>,v1=hex(hmac-sha256(secret, "<t>.<raw body>"))
+{ "id": "evt_<payment>_<ts>", "type": "payment.confirmed",
+  "data": { "payment_id", "status", "amount", "metadata"? }, "created_at", "business_id" }
 ```
 
 The signature covers the **raw body**, verified before any JSON parsing. The
 timestamp is bound into the signed payload so an old body cannot be replayed
-with a fresh header; events outside a 300 s window are rejected.
+with a fresh header; events outside a 300 s window are rejected. The top-level
+`id` is the event; the payment id is `data.payment_id`. The order is found by
+the stored ref first, then `metadata.order_id`; an event for no order of ours
+is acknowledged with `{ received: true, unknownOrder: true }`.
 
-Verification failures return **400**, not 500 — the provider should not retry an
+Verification failures return **400**, not 500: the provider should not retry an
 event we can never accept.
 
 ## Fulfilment path

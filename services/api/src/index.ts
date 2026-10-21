@@ -51,7 +51,8 @@ const coinpay = new CoinpayClient({
   apiKey: env.COINPAY_API_KEY,
   returnUrl: `${env.PUBLIC_ORIGIN}/checkout/success`,
   cancelUrl: `${env.PUBLIC_ORIGIN}/checkout/cancel`,
-  webhookUrl: `${env.PUBLIC_ORIGIN}/api/v1/webhooks/coinpay`,
+  businessId: env.COINPAY_BUSINESS_ID ?? env.COINPAY_MERCHANT_ID,
+  sessions: env.COINPAY_CHECKOUT_SESSIONS,
 });
 
 /** R2 is optional: unset credentials degrade to an obvious placeholder. */
