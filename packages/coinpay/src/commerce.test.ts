@@ -17,8 +17,11 @@ import {
 } from "@nightcell7/entitlements";
 import { EPISODE } from "@nightcell7/game-core";
 import {
+  CoinpayClient,
   WEBHOOK_TOLERANCE_SECONDS,
+  mapEventStatus,
   mapProviderStatus,
+  normaliseApiOrigin,
   redactEventForLog,
   signWebhookPayload,
   verifyWebhook,
@@ -27,22 +30,24 @@ import {
 const SECRET = "whsec_test_0123456789abcdef";
 
 function makeWebhook(overrides: Record<string, unknown> = {}, atSeconds = 1_700_000_000) {
+  // CoinPay's wire shape (coinpayportal src/lib/webhooks/service.ts).
   const body = JSON.stringify({
-    id: "evt_1",
-    type: "payment.completed",
-    createdAt: new Date(atSeconds * 1000).toISOString(),
+    id: "evt_pay_1_1700000000",
+    type: "payment.forwarded",
     data: {
-      referenceId: "ord_1",
-      paymentId: "pay_1",
-      status: "paid",
-      currency: "USD",
-      amount: 999,
+      payment_id: "pay_1",
+      status: "forwarded",
+      currency: "USDC_POL",
+      amount: 9.99,
+      amount_usd: 9.99,
+      metadata: { order_id: "ord_1", property: "nightcell7.com", account_id: "u1" },
     },
+    created_at: new Date(atSeconds * 1000).toISOString(),
+    business_id: "biz_1",
     ...overrides,
   });
   return {
     rawBody: body,
-    timestamp: String(atSeconds),
     signature: signWebhookPayload(body, atSeconds, SECRET),
     secret: SECRET,
     nowSeconds: atSeconds,
@@ -202,13 +207,15 @@ describe("coinpay webhooks", () => {
     const result = verifyWebhook(makeWebhook());
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.event.id).toBe("evt_1");
+    expect(result.event.id).toBe("evt_pay_1_1700000000");
+    expect(result.event.data.paymentId).toBe("pay_1");
     expect(result.event.data.referenceId).toBe("ord_1");
+    expect(result.event.data.property).toBe("nightcell7.com");
   });
 
   it("rejects a tampered body even with a valid-looking signature", () => {
     const input = makeWebhook();
-    const tampered = { ...input, rawBody: input.rawBody.replace('"amount":999', '"amount":1') };
+    const tampered = { ...input, rawBody: input.rawBody.replace('"amount":9.99', '"amount":1') };
     expect(verifyWebhook(tampered)).toEqual({ ok: false, reason: "bad_signature" });
   });
 
@@ -225,7 +232,8 @@ describe("coinpay webhooks", () => {
       ok: false,
       reason: "missing_signature",
     });
-    expect(verifyWebhook({ ...input, timestamp: null })).toEqual({
+    const noTimestamp = input.signature.replace(/^t=\d+,/, "");
+    expect(verifyWebhook({ ...input, signature: noTimestamp })).toEqual({
       ok: false,
       reason: "missing_timestamp",
     });
@@ -254,10 +262,10 @@ describe("coinpay webhooks", () => {
     const verified = verifyWebhook(
       makeWebhook({
         data: {
-          referenceId: "ord_1",
-          paymentId: "pay_1",
-          status: "paid",
-          payerEmail: "buyer@example.com",
+          payment_id: "pay_1",
+          status: "completed",
+          payer_email: "buyer@example.com",
+          metadata: { order_id: "ord_1", email: "buyer@example.com" },
         },
       }),
     );
@@ -268,11 +276,207 @@ describe("coinpay webhooks", () => {
     expect(logged).toContain("ord_1");
   });
 
+  it("reads the payment id from data, never the top-level event id", () => {
+    const verified = verifyWebhook(
+      makeWebhook({
+        type: "payment.confirmed",
+        data: { payment_id: "pay_9", status: "confirmed" },
+      }),
+    );
+    if (!verified.ok) throw new Error("expected a verified event");
+    expect(verified.event.data.paymentId).toBe("pay_9");
+    expect(verified.event.data.referenceId).toBeUndefined();
+    expect(mapEventStatus(verified.event)).toBe(ORDER_STATUS.PAID);
+  });
+
+  it("maps CoinPay event types, keeping under- and overpayment", () => {
+    const base = { id: "e", createdAt: "", data: { paymentId: "p", status: "" } };
+    expect(mapEventStatus({ ...base, type: "payment.expired" })).toBe(ORDER_STATUS.EXPIRED);
+    expect(mapEventStatus({ ...base, type: "payment.disputed" })).toBe(ORDER_STATUS.DISPUTED);
+    expect(
+      mapEventStatus({
+        ...base,
+        type: "payment.confirmed",
+        data: { paymentId: "p", status: "underpaid" },
+      }),
+    ).toBe(ORDER_STATUS.UNDERPAID);
+  });
+});
+
+describe("coinpay client", () => {
+  type Call = { url: string; init: RequestInit };
+  function fakeFetch(routes: Record<string, (body: unknown) => [number, unknown]>, calls: Call[]) {
+    return (async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      const path = new URL(url).pathname;
+      const handler = routes[path];
+      const [status, json] = handler
+        ? handler(init.body ? JSON.parse(String(init.body)) : null)
+        : [404, {}];
+      return new Response(JSON.stringify(json), { status });
+    }) as unknown as typeof fetch;
+  }
+  const coins = (): [number, unknown] => [
+    200,
+    {
+      business_id: "biz_1",
+      coins: [
+        { symbol: "BTC", is_active: true },
+        { symbol: "USDC_POL", is_active: true },
+      ],
+    },
+  ];
+
+  it("folds the dead api.coinpayportal.com host and an /api suffix onto the origin", () => {
+    expect(normaliseApiOrigin("https://api.coinpayportal.com")).toBe("https://coinpayportal.com");
+    expect(normaliseApiOrigin("https://coinpayportal.com/api")).toBe("https://coinpayportal.com");
+  });
+
+  it("falls back to a coin picker plus PayPal while hosted sessions 404", async () => {
+    const calls: Call[] = [];
+    const client = new CoinpayClient({
+      apiKey: "cp_live_test",
+      returnUrl: "https://nightcell7.com/checkout/success",
+      cancelUrl: "https://nightcell7.com/checkout/cancel",
+      fetchImpl: fakeFetch({ "/api/supported-coins": coins }, calls),
+    });
+    const listed = await client.listMethods();
+    expect(listed.hosted).toBe(false);
+    expect(listed.methods.map((m) => m.id)).toEqual(["BTC", "USDC_POL", "paypal"]);
+  });
+
+  it("creates a crypto payment with property, account and email metadata", async () => {
+    const calls: Call[] = [];
+    let sent: Record<string, unknown> = {};
+    const client = new CoinpayClient({
+      apiBase: "https://api.coinpayportal.com",
+      apiKey: "cp_live_test",
+      returnUrl: "https://nightcell7.com/checkout/success",
+      cancelUrl: "https://nightcell7.com/checkout/cancel",
+      fetchImpl: fakeFetch(
+        {
+          "/api/supported-coins": coins,
+          "/api/payments/create": (body) => {
+            sent = body as Record<string, unknown>;
+            return [201, { success: true, payment: { id: "pay_1" } }];
+          },
+        },
+        calls,
+      ),
+    });
+    const result = await client.createCheckout({
+      orderId: "ord_1",
+      episodeId: EPISODE.FALSE_DAWN,
+      email: "buyer@example.com",
+      accountId: "u1",
+      method: "usdc_pol",
+      idempotencyKey: "idem-1",
+    });
+    expect(result).toMatchObject({
+      rail: "crypto",
+      ref: "crypto:pay_1",
+      paymentUrl: "https://coinpayportal.com/pay/pay_1",
+    });
+    expect(sent).toMatchObject({ amount: 9.99, blockchain: "USDC_POL", currency: "USD" });
+    expect(sent.metadata).toMatchObject({
+      property: "nightcell7.com",
+      account_id: "u1",
+      email: "buyer@example.com",
+      order_id: "ord_1",
+    });
+    expect(calls.every((c) => c.url.startsWith("https://coinpayportal.com/"))).toBe(true);
+  });
+
+  it("refuses a coin the business has no wallet for before CoinPay does", async () => {
+    const client = new CoinpayClient({
+      apiKey: "cp_live_test",
+      returnUrl: "r",
+      cancelUrl: "c",
+      fetchImpl: fakeFetch({ "/api/supported-coins": coins }, []),
+    });
+    await expect(
+      client.createCheckout({
+        orderId: "o",
+        episodeId: EPISODE.FALSE_DAWN,
+        method: "BASE",
+        idempotencyKey: "idem-2",
+      }),
+    ).rejects.toMatchObject({ code: "unsupported_method" });
+  });
+
+  it("opens a PayPal order on the business", async () => {
+    let sent: Record<string, unknown> = {};
+    const client = new CoinpayClient({
+      apiKey: "cp_live_test",
+      returnUrl: "r",
+      cancelUrl: "c",
+      fetchImpl: fakeFetch(
+        {
+          "/api/supported-coins": coins,
+          "/api/paypal/payments/create": (body) => {
+            sent = body as Record<string, unknown>;
+            return [
+              200,
+              { transaction_id: "tx_1", checkout_url: "https://coinpayportal.com/pay/paypal/tx_1" },
+            ];
+          },
+        },
+        [],
+      ),
+    });
+    const result = await client.createCheckout({
+      orderId: "o",
+      episodeId: EPISODE.FALSE_DAWN,
+      method: "paypal",
+      idempotencyKey: "idem-3",
+    });
+    expect(result).toMatchObject({ rail: "paypal", ref: "paypal:tx_1" });
+    expect(sent).toMatchObject({ business_id: "biz_1", amount: 9.99 });
+  });
+
+  it("uses a hosted checkout session once CoinPay has one", async () => {
+    let sent: Record<string, unknown> = {};
+    const client = new CoinpayClient({
+      apiKey: "cp_live_test",
+      returnUrl: "r",
+      cancelUrl: "c",
+      fetchImpl: fakeFetch(
+        {
+          "/api/checkout/sessions": (body) => {
+            if (!body || Object.keys(body as object).length === 0)
+              return [400, { error: "amount is required" }];
+            sent = body as Record<string, unknown>;
+            return [201, { id: "cs_1", url: "https://coinpayportal.com/checkout/cs_1" }];
+          },
+        },
+        [],
+      ),
+    });
+    const result = await client.createCheckout({
+      orderId: "o",
+      episodeId: EPISODE.FALSE_DAWN,
+      accountId: "u1",
+      idempotencyKey: "idem-4",
+    });
+    expect(result).toMatchObject({
+      rail: "session",
+      ref: "session:cs_1",
+      paymentUrl: "https://coinpayportal.com/checkout/cs_1",
+    });
+    expect(sent).toMatchObject({
+      amount: 9.99,
+      currency: "USD",
+      account_id: "u1",
+      property: "nightcell7.com",
+      expires_in_minutes: 60,
+    });
+  });
+
   it("drives a full webhook -> order -> entitlement flow exactly once", () => {
     const verified = verifyWebhook(makeWebhook());
     if (!verified.ok) throw new Error("expected a verified event");
 
-    const mapped = mapProviderStatus(verified.event.data.status);
+    const mapped = mapEventStatus(verified.event);
     const toPaid = transition(ORDER_STATUS.PENDING, mapped);
     expect(toPaid).toEqual({ ok: true, status: ORDER_STATUS.PAID, changed: true });
 
@@ -285,7 +489,7 @@ describe("coinpay webhooks", () => {
     const grant = applyOrderToEntitlement({
       userId: "u1",
       episodeId: EPISODE.FALSE_DAWN,
-      orderId: verified.event.data.referenceId,
+      orderId: verified.event.data.referenceId ?? "ord_1",
       orderStatus: ORDER_STATUS.FULFILLED,
       now: "2026-07-25T00:00:00.000Z",
     });

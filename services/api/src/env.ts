@@ -19,9 +19,13 @@ export const apiEnvSchema = baseEnvSchema.extend({
   /** postgres:// connection string; the database package rejects anything else. */
   DATABASE_URL: z.string().min(1),
 
-  COINPAY_API_BASE: z.string().url(),
+  /** CoinPay origin; `/api` suffix and the old api.coinpayportal.com are normalised. */
+  COINPAY_API_BASE: z.string().url().default("https://coinpayportal.com"),
   COINPAY_API_KEY: z.string().min(1),
   COINPAY_MERCHANT_ID: z.string().optional(),
+  COINPAY_BUSINESS_ID: z.string().optional(),
+  /** Hosted checkout sessions: auto feature-detects, on/off force it. */
+  COINPAY_CHECKOUT_SESSIONS: z.enum(["auto", "on", "off"]).default("auto"),
   COINPAY_WEBHOOK_SECRET: z.string().min(16),
 
   // R2 is optional at boot so local development and CI do not need object

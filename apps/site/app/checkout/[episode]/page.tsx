@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CATALOG, formatPrice } from "@nightcell7/entitlements";
-import { PageShell, DraftNotice } from "../../_components/page-shell";
+import { PageShell } from "../../_components/page-shell";
+import { CheckoutForm } from "../../_components/checkout-form";
 
 export const metadata: Metadata = { title: "Checkout" };
 
@@ -32,28 +33,18 @@ export default async function CheckoutPage({ params }: { params: Promise<{ episo
         <li>Offline single-player access</li>
       </ul>
 
-      <DraftNotice>
-        <strong>Purchasing is not open yet.</strong> Checkout opens with the episode; until then no
-        order can be completed, and you will not be charged.
-      </DraftNotice>
+      <CheckoutForm episodeId={entry.episodeId} />
 
       <p>
-        In the meantime the demo and the multiplayer alpha are free and need no payment details:
-      </p>
-      <p className="cta-row">
-        <a className="button button--primary" href="/play?mode=demo">
-          Play the free demo
-        </a>
-        <a className="button button--ghost" href="/multiplayer">
-          Multiplayer Alpha
-        </a>
+        Not sure yet? The demo and the multiplayer alpha are free and need no payment details:{" "}
+        <a href="/play?mode=demo">play the free demo</a>.
       </p>
 
-      <h3>How it will work</h3>
+      <h3>How it works</h3>
       <ol>
-        <li>You are sent to CoinPayPortal to pay.</li>
+        <li>You pay on CoinPayPortal, in crypto or with PayPal.</li>
         <li>
-          You come back to a page that says <em>pending</em> — that page never grants access by
+          You come back to a page that says <em>pending</em>. That page never grants access by
           itself.
         </li>
         <li>Your unlock happens only when the payment is confirmed by a verified webhook.</li>
