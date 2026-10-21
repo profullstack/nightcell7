@@ -18,6 +18,10 @@ export interface RateLimitRule {
 export const RATE_LIMITS = {
   checkout: { limit: 10, windowSeconds: 60 },
   claim: { limit: 10, windowSeconds: 600 },
+  /** The claim page polls this while the worker attaches a purchase. */
+  claimStatus: { limit: 120, windowSeconds: 600 },
+  /** Per IP and per email; every request may send mail. */
+  claimResend: { limit: 5, windowSeconds: 3600 },
   ticket: { limit: 20, windowSeconds: 60 },
   matchmaking: { limit: 30, windowSeconds: 60 },
   privateMatch: { limit: 10, windowSeconds: 300 },

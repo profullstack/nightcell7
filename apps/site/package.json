@@ -10,13 +10,15 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@better-auth/passkey": "1.6.25",
+    "@nightcell7/entitlements": "workspace:*",
+    "@nightcell7/game-core": "workspace:*",
+    "@nightcell7/ui": "workspace:*",
     "@profullstack/footer": "latest",
+    "better-auth": "1.6.25",
     "next": "16.3.8",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@nightcell7/ui": "workspace:*",
-    "@nightcell7/game-core": "workspace:*",
-    "@nightcell7/entitlements": "workspace:*"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.2",

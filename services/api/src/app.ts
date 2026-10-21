@@ -16,7 +16,13 @@ import {
   hasAccess,
   resolvePrice,
 } from "@nightcell7/entitlements";
-import { createOfflineLicense } from "@nightcell7/entitlements/server";
+import {
+  createClaimToken,
+  createOfflineLicense,
+  describeClaim,
+  readClaimTokenIgnoringExpiry,
+  type ClaimStatus,
+} from "@nightcell7/entitlements/server";
 import { signManifest, type ContentManifest, type ObjectSigner } from "@nightcell7/content-schema";
 import {
   COINPAY_SIGNATURE_HEADER,
@@ -364,19 +370,143 @@ export function createApp(deps: Dependencies) {
     });
   });
 
+  // ------------------------------------------------------------ guest claim
+
+  /**
+   * Guest purchase claim (PRD §23.4). A guest pays, the worker emails a
+   * one-time `/claim/<token>` link, and the page behind it uses these routes.
+   * The token travels in a POST body, never a URL path, so it stays out of
+   * access logs.
+   */
+  const claimTokenSchema = z.object({ token: z.string().min(16).max(1024) });
+
+  async function claimStatusFor(token: string, viewerUserId: string | null) {
+    const read = readClaimTokenIgnoringExpiry(token, deps.env.AUTH_SECRET);
+    const order = read.ok ? await deps.repos.findOrderForClaim(read.claims.orderId) : null;
+    const status: ClaimStatus = describeClaim(
+      token,
+      deps.env.AUTH_SECRET,
+      Math.floor(now().getTime() / 1000),
+      { order, viewerUserId },
+    );
+    const episodeId = order?.episodeIds[0] ?? null;
+    const entry = episodeId ? CATALOG.find((e) => e.episodeId === episodeId) : undefined;
+    return { status, order, episodeId, episodeTitle: entry?.title ?? null };
+  }
+
+  function playUrl(episodeId: string | null): string {
+    return episodeId ? `/play?mode=campaign&episode=${encodeURIComponent(episodeId)}` : "/library";
+  }
+
+  /** Mint a fresh link for a paid, unclaimed guest order and mail it. */
+  async function sendClaimEmail(order: { id: string; email: string | null; episodeIds: string[] }) {
+    if (!order.email) return;
+    const claim = createClaimToken(
+      { orderId: order.id, email: order.email },
+      deps.env.AUTH_SECRET,
+      Math.floor(now().getTime() / 1000),
+    );
+    const entry = CATALOG.find((e) => e.episodeId === order.episodeIds[0]);
+    await deps.enqueue("email", "purchase-claim", {
+      kind: "purchase-claim",
+      to: order.email,
+      claimUrl: `${deps.env.PUBLIC_ORIGIN}/claim/${claim.token}`,
+      episodeTitle: entry?.title ?? "NIGHTCELL 7",
+    });
+  }
+
+  /** What a claim link is, for the page to explain before anyone signs in. */
+  v1.post("/checkout/claim/status", async (c) => {
+    await limit("claimStatus", clientKey(c));
+    const body = claimTokenSchema.parse(await c.req.json());
+    const account = c.get("account");
+    const { status, episodeId, episodeTitle } = await claimStatusFor(
+      body.token,
+      account?.userId ?? null,
+    );
+    return c.json({
+      state: status.state,
+      // The token already carries the payment email in its readable payload,
+      // so returning it reveals nothing the holder does not have.
+      email: status.email ?? null,
+      episodeId,
+      episodeTitle,
+      playUrl: status.state === "claimed_by_you" ? playUrl(episodeId) : null,
+    });
+  });
+
   v1.post("/checkout/claim", async (c) => {
-    const body = z.object({ token: z.string().min(16).max(512) }).parse(await c.req.json());
+    const body = claimTokenSchema.parse(await c.req.json());
     const account = requireAccount(c);
     await limit("claim", account.userId!);
 
+    // Refuse what can never succeed here, with a reason the page can show,
+    // rather than queueing it and leaving the buyer polling.
+    const { status, episodeId } = await claimStatusFor(body.token, account.userId!);
+    switch (status.state) {
+      case "claimed_by_you":
+        return c.json({ status: "claimed", playUrl: playUrl(episodeId) });
+      case "claimable":
+        break;
+      case "claimed":
+        throw new ApiError(409, "already_claimed", "This purchase is already on another account.");
+      case "expired":
+        throw new ApiError(410, "claim_expired", "This claim link has expired.");
+      case "pending":
+        throw new ApiError(409, "claim_pending", "This payment has not finished confirming yet.");
+      case "unavailable":
+        throw new ApiError(409, "claim_unavailable", "This order can no longer be claimed.");
+      default:
+        throw badRequest("invalid_claim", "This claim link is not valid.");
+    }
+
     // Claim resolution is durable work with an audit trail, so it is queued
-    // rather than performed inline.
+    // rather than performed inline. The worker re-checks everything.
     await deps.enqueue("entitlements", "claim", {
       token: body.token,
       userId: account.userId,
       correlationId: c.get("correlationId"),
     });
     return c.json({ status: "processing" }, 202);
+  });
+
+  /**
+   * Email a fresh claim link. Takes the old (even expired) link, or the
+   * payment email. Always answers the same way, so it cannot be used to learn
+   * whether an address bought anything; the link only ever goes to the
+   * address that paid.
+   */
+  v1.post("/checkout/claim/resend", async (c) => {
+    await limit("claimResend", clientKey(c));
+    const body = z
+      .object({
+        token: z.string().min(16).max(1024).optional(),
+        email: z.string().email().max(320).optional(),
+      })
+      .refine((value) => value.token || value.email, "token or email is required")
+      .parse(await c.req.json());
+
+    const orders: { id: string; email: string | null; episodeIds: string[] }[] = [];
+    if (body.token) {
+      const read = readClaimTokenIgnoringExpiry(body.token, deps.env.AUTH_SECRET);
+      if (read.ok) {
+        const order = await deps.repos.findOrderForClaim(read.claims.orderId);
+        if (order && !order.userId && order.status === "fulfilled") orders.push(order);
+      }
+    }
+    if (body.email) {
+      await limit("claimResend", `email:${body.email.toLowerCase()}`);
+      for (const order of await deps.repos.listUnclaimedGuestOrders(body.email)) {
+        if (!orders.some((o) => o.id === order.id)) orders.push(order);
+      }
+    }
+
+    for (const order of orders) await sendClaimEmail(order);
+    deps.logger.info("claim link resend", {
+      correlationId: c.get("correlationId"),
+      orders: orders.length,
+    });
+    return c.json({ sent: true }, 202);
   });
 
   // ------------------------------------------------------- coinpay webhook

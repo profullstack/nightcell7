@@ -15,6 +15,7 @@ import type { Logger } from "@nightcell7/observability";
 export type EmailJob =
   | { kind: "verify-email"; to: string; verifyUrl: string }
   | { kind: "password-reset"; to: string; resetUrl: string }
+  | { kind: "magic-link"; to: string; signInUrl: string }
   | { kind: "purchase-claim"; to: string; claimUrl: string; episodeTitle: string }
   | { kind: "purchase-receipt"; to: string; episodeTitle: string; orderId: string; total: string }
   | { kind: "entitlement-revoked"; to: string; episodeTitle: string; reason: string };
@@ -176,19 +177,36 @@ export function renderEmail(job: EmailJob): { subject: string; text: string; htm
         }),
       };
 
+    case "magic-link":
+      return {
+        subject: "Sign in to NIGHTCELL 7",
+        text: `Sign in to NIGHTCELL 7:\n\n${job.signInUrl}\n\nThis link works once and expires in 15 minutes. No account yet? The same link creates one. If you did not ask for it, ignore this message.`,
+        html: layout({
+          heading: "Sign in",
+          body: [
+            "Use the button below to sign in. No password needed.",
+            "No account yet? The same link creates one for this address.",
+          ],
+          action: { label: "Sign in", url: job.signInUrl },
+          footnote:
+            "This link works once and expires in 15 minutes. If you did not ask for it, ignore it and nothing happens.",
+        }),
+      };
+
     case "purchase-claim":
       return {
         subject: `Claim ${job.episodeTitle}`,
-        text: `Thank you for buying ${job.episodeTitle}.\n\nClaim it to your account:\n\n${job.claimUrl}\n\nThis link works once. Your purchase includes both campaigns, the Complete Truth epilogue, and every supported platform.`,
+        text: `Thank you for buying ${job.episodeTitle}.\n\nClaim it to your account:\n\n${job.claimUrl}\n\nThis link works once and expires in 7 days. Lost it or let it expire? Request a fresh one at the same page. Your purchase includes both campaigns, the Complete Truth epilogue, and every supported platform.`,
         html: layout({
           heading: `Claim ${job.episodeTitle}`,
           body: [
             "Thank you for your purchase. Claim it to an account and it is yours on every supported platform.",
+            "No account yet? The claim page signs you up with a one-click email link.",
             "Your purchase includes both campaigns and the Complete Truth epilogue.",
           ],
           action: { label: "Claim your episode", url: job.claimUrl },
           footnote:
-            "This link works once. Keep it private — anyone with it can claim the purchase.",
+            "This link works once and expires in 7 days. Keep it private: anyone with it can claim the purchase.",
         }),
       };
 

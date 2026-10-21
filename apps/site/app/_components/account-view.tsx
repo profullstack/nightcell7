@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ResendVerification } from "./resend-verification";
+import { AddPasskey } from "./passkey-button";
 
 /**
  * Client-side account and library views.
@@ -148,6 +149,10 @@ export function AccountView() {
         </>
       )}
 
+      <h3>Passkeys</h3>
+      <p>Sign in with your fingerprint, face or device PIN instead of an email link.</p>
+      <AddPasskey />
+
       <h3>Devices</h3>
       <p>
         Devices are remembered so you can play offline. There is no hardware fingerprinting; revoke
@@ -268,7 +273,15 @@ export function LibraryView() {
               {item.status}
             </td>
             <td>{item.grantedAt?.slice(0, 10)}</td>
-            <td>{item.active ? <a href="/play">Play</a> : <a href="/support">Support</a>}</td>
+            <td>
+              {item.active ? (
+                <a href={`/play?mode=campaign&episode=${encodeURIComponent(item.episodeId)}`}>
+                  Play
+                </a>
+              ) : (
+                <a href="/support">Support</a>
+              )}
+            </td>
           </tr>
         ))}
       </tbody>

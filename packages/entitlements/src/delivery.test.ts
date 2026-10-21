@@ -12,7 +12,9 @@ import {
   CLAIM_TOKEN_TTL_SECONDS,
   createClaimToken,
   createOfflineLicense,
+  describeClaim,
   evaluateClaim,
+  readClaimTokenIgnoringExpiry,
   isOfflineLicenseUsable,
   verifyClaimToken,
   verifyOfflineLicense,
@@ -312,5 +314,70 @@ describe("content delivery", () => {
     expect(compareSemver("0.10.0", "0.9.0")).toBe(1);
     expect(compareSemver("1.0.0", "1.0.0")).toBe(0);
     expect(compareSemver("0.2.0-beta.1", "0.2.0")).toBe(0);
+  });
+});
+
+describe("claim link status (the /claim page)", () => {
+  const token = createClaimToken(
+    { orderId: "ord_1", email: "buyer@example.com" },
+    SECRET,
+    NOW,
+  ).token;
+  const order = { id: "ord_1", status: "fulfilled", userId: null as string | null };
+
+  it("is claimable when paid, unowned and in date", () => {
+    expect(describeClaim(token, SECRET, NOW, { order })).toEqual({
+      state: "claimable",
+      orderId: "ord_1",
+      email: "buyer@example.com",
+    });
+  });
+
+  it("tells the owner it is theirs, even after the link expired", () => {
+    const owned = { ...order, userId: "u_me" };
+    const later = NOW + CLAIM_TOKEN_TTL_SECONDS + 10;
+    expect(describeClaim(token, SECRET, later, { order: owned, viewerUserId: "u_me" }).state).toBe(
+      "claimed_by_you",
+    );
+    expect(describeClaim(token, SECRET, NOW, { order: owned, viewerUserId: "u_other" }).state).toBe(
+      "claimed",
+    );
+    expect(describeClaim(token, SECRET, NOW, { order: owned }).state).toBe("claimed");
+  });
+
+  it("reports an expired link with the order it names", () => {
+    const status = describeClaim(token, SECRET, NOW + CLAIM_TOKEN_TTL_SECONDS, { order });
+    expect(status).toEqual({ state: "expired", orderId: "ord_1", email: "buyer@example.com" });
+  });
+
+  it("separates in-flight payments from dead orders", () => {
+    for (const status of ["created", "pending", "confirming", "paid"]) {
+      expect(describeClaim(token, SECRET, NOW, { order: { ...order, status } }).state).toBe(
+        "pending",
+      );
+    }
+    for (const status of ["refunded", "reversed", "disputed", "canceled", "expired"]) {
+      expect(describeClaim(token, SECRET, NOW, { order: { ...order, status } }).state).toBe(
+        "unavailable",
+      );
+    }
+  });
+
+  it("is invalid for a forged, tampered or orphaned link", () => {
+    expect(describeClaim(token, "another-secret-entirely-000000000", NOW, { order }).state).toBe(
+      "invalid",
+    );
+    expect(describeClaim(`${token}x`, SECRET, NOW, { order }).state).toBe("invalid");
+    expect(describeClaim("not-a-token", SECRET, NOW, { order }).state).toBe("invalid");
+    expect(describeClaim(token, SECRET, NOW, { order: null }).state).toBe("invalid");
+    expect(describeClaim(token, SECRET, NOW, { order: { ...order, id: "ord_other" } }).state).toBe(
+      "invalid",
+    );
+  });
+
+  it("reads an expired token for a resend but still rejects a forged one", () => {
+    const read = readClaimTokenIgnoringExpiry(token, SECRET);
+    expect(read.ok && read.claims.orderId).toBe("ord_1");
+    expect(readClaimTokenIgnoringExpiry(token, "another-secret-entirely-000000000").ok).toBe(false);
   });
 });
