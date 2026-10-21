@@ -7,6 +7,7 @@ import {
   parseEnv,
 } from "@nightcell7/observability";
 import { UPSTREAM } from "./routes";
+import { createCrawlGate } from "./crawl";
 import { createGatewayServer } from "./server";
 
 /**
@@ -60,6 +61,7 @@ const server = createGatewayServer({
   maintenance: env.MAINTENANCE_MODE,
   logger,
   health,
+  crawlGate: createCrawlGate(process.env),
 });
 
 server.listen(env.GATEWAY_PORT, () => {

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@nightcell7/observability": "workspace:*",
+    "@profullstack/x402-gateway": "^0.11.0",
     "zod": "^4.1.13"
   }
 }
