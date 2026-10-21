@@ -1,4 +1,4 @@
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import Redis from "ioredis";
 import { baseEnvSchema, createLogger, parseEnv } from "@nightcell7/observability";
@@ -36,6 +36,19 @@ const logger = createLogger({
 });
 const db = getDatabase({ url: env.DATABASE_URL });
 
+/**
+ * `column < cutoff` for an application timestamp stored as text.
+ *
+ * Those columns hold two spellings of a UTC instant: the column default writes
+ * `YYYY-MM-DD HH:MM:SS` and the services write ISO-8601 (`...T...Z`). Compared
+ * as text, `' '` sorts before `'T'`, so a row from later the same day looked
+ * older than an ISO cutoff and was expired or reconciled early. Both spellings
+ * parse as a timestamp; read them as UTC and compare instants instead.
+ */
+function olderThan(column: AnyColumn, cutoffIso: string): SQL {
+  return sql`(${column}::timestamp at time zone 'utc') < ${cutoffIso}::timestamptz`;
+}
+
 const COMMANDS = {
   RECONCILE_PAYMENTS: "reconcile-payments",
   EXPIRE_ORDERS: "expire-orders",
@@ -61,7 +74,7 @@ async function reconcilePayments(): Promise<void> {
   const candidates = await db
     .select({ id: orders.id, status: orders.status, invoiceId: orders.coinpayOrderId })
     .from(orders)
-    .where(lt(orders.updatedAt, cutoff))
+    .where(olderThan(orders.updatedAt, cutoff))
     .limit(200);
 
   let checked = 0;
@@ -117,7 +130,7 @@ async function expireOrders(): Promise<void> {
   const stale = await db
     .select({ id: orders.id, status: orders.status })
     .from(orders)
-    .where(and(lt(orders.createdAt, cutoff), eq(orders.status, ORDER_STATUS.CREATED)))
+    .where(and(olderThan(orders.createdAt, cutoff), eq(orders.status, ORDER_STATUS.CREATED)))
     .limit(500);
 
   let expired = 0;
