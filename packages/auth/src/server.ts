@@ -1,7 +1,9 @@
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { magicLink } from "better-auth/plugins/magic-link";
+import { passkey } from "@better-auth/passkey";
 import type { Database } from "@nightcell7/database";
-import { accounts, sessions, users, verifications } from "@nightcell7/database";
+import { accounts, passkeys, sessions, users, verifications } from "@nightcell7/database";
 import { DISPLAY_NAME_MAX, DISPLAY_NAME_MIN } from "./index.js";
 
 /**
@@ -32,7 +34,27 @@ export interface AuthConfig {
 
 export type AuthEmail =
   | { kind: "verify-email"; to: string; verifyUrl: string }
-  | { kind: "password-reset"; to: string; resetUrl: string };
+  | { kind: "password-reset"; to: string; resetUrl: string }
+  | { kind: "magic-link"; to: string; signInUrl: string };
+
+/** How long an emailed sign-in link works. */
+export const MAGIC_LINK_TTL_SECONDS = 15 * 60;
+
+/**
+ * A display name for an account created by a magic link or passkey, where no
+ * signup form asked for one. Derived from the email's local part so it reads
+ * like the person, with a random suffix because display names are unique.
+ * Always satisfies `displayNameSchema`; the player can change it later.
+ */
+export function defaultDisplayName(email: string, random: () => number = Math.random): string {
+  const local = (email.split("@")[0] ?? "")
+    .replace(/[^A-Za-z0-9_.-]/g, "")
+    .replace(/^[^A-Za-z0-9]+/, "");
+  const base = (local || "player").slice(0, DISPLAY_NAME_MAX - 5);
+  const suffix = String(Math.floor(random() * 10_000)).padStart(4, "0");
+  const name = `${base}-${suffix}`;
+  return name.length >= DISPLAY_NAME_MIN ? name : `player-${suffix}`;
+}
 
 export function createAuth(config: AuthConfig) {
   const options = {
@@ -50,8 +72,23 @@ export function createAuth(config: AuthConfig) {
         session: sessions,
         account: accounts,
         verification: verifications,
+        passkey: passkeys,
       },
     }),
+
+    databaseHooks: {
+      user: {
+        create: {
+          // The email+password signup form asks for a display name; a magic
+          // link or passkey signup does not, and the column is NOT NULL.
+          before: async (user) => {
+            const record = user as typeof user & { displayName?: string | null };
+            if (record.displayName) return { data: record };
+            return { data: { ...record, displayName: defaultDisplayName(record.email) } };
+          },
+        },
+      },
+    },
 
     emailAndPassword: {
       enabled: true,
@@ -116,6 +153,22 @@ export function createAuth(config: AuthConfig) {
       window: 60,
       max: 20,
     },
+
+    plugins: [
+      // The house sign-in: the link proves the address, and the address is
+      // the account, so the same link signs a new buyer up.
+      magicLink({
+        expiresIn: MAGIC_LINK_TTL_SECONDS,
+        sendMagicLink: async ({ email, url }) => {
+          await config.sendEmail({ kind: "magic-link", to: email, signInUrl: url });
+        },
+      }),
+      passkey({
+        rpID: new URL(config.publicOrigin).hostname,
+        rpName: "NIGHTCELL 7",
+        origin: config.publicOrigin,
+      }),
+    ],
   } satisfies BetterAuthOptions;
 
   return betterAuth(options);

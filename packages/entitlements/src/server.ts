@@ -107,6 +107,81 @@ export function verifyClaimToken(
   return decode(token, secret, claimClaimsSchema, nowSeconds);
 }
 
+/**
+ * Read a claim token whose signature is valid, even if it has expired.
+ *
+ * Only for deciding what to tell the holder (and where to send a fresh link):
+ * an expired token still names its order, and that order's buyer is who a
+ * replacement goes to. Never use this to attach a purchase.
+ */
+export function readClaimTokenIgnoringExpiry(
+  token: string,
+  secret: string,
+):
+  | { ok: true; claims: ClaimClaims }
+  | { ok: false; reason: "malformed" | "bad_signature" | "invalid_claims" } {
+  // `decode` rejects only `exp <= now`; at now = -1 nothing has expired.
+  const decoded = decode(token, secret, claimClaimsSchema, -1);
+  if (decoded.ok) return decoded;
+  return { ok: false, reason: decoded.reason === "expired" ? "invalid_claims" : decoded.reason };
+}
+
+/** What the claim page tells the person holding a link. */
+export type ClaimState =
+  /** Paid, unowned, link in date: sign in and it is yours. */
+  | "claimable"
+  /** Already attached to the account looking at it. */
+  | "claimed_by_you"
+  /** Already attached to some other account. */
+  | "claimed"
+  /** The link is out of date; a fresh one can be emailed. */
+  | "expired"
+  /** Paid but fulfilment has not finished; try again in a minute. */
+  | "pending"
+  /** Refunded, reversed, disputed or otherwise not claimable. */
+  | "unavailable"
+  /** Not a link we issued, or its order no longer exists. */
+  | "invalid";
+
+const PENDING_ORDER_STATUSES = new Set(["created", "pending", "confirming", "paid"]);
+
+export interface ClaimStatus {
+  state: ClaimState;
+  orderId?: string;
+  /** The payment email the token was issued to. */
+  email?: string;
+}
+
+/**
+ * Classify a claim link for display. Pure; the API loads the order and the
+ * viewer and this decides. Ownership is checked before expiry so a buyer who
+ * already claimed is sent to the episode rather than told the link expired.
+ */
+export function describeClaim(
+  token: string,
+  secret: string,
+  nowSeconds: number,
+  context: {
+    order: { id: string; status: string; userId: string | null } | null;
+    viewerUserId?: string | null;
+  },
+): ClaimStatus {
+  const read = readClaimTokenIgnoringExpiry(token, secret);
+  if (!read.ok) return { state: "invalid" };
+  const { orderId, email, exp } = read.claims;
+  const order = context.order;
+  if (!order || order.id !== orderId) return { state: "invalid" };
+
+  if (order.userId) {
+    const mine = Boolean(context.viewerUserId) && order.userId === context.viewerUserId;
+    return { state: mine ? "claimed_by_you" : "claimed", orderId, email };
+  }
+  if (exp <= nowSeconds) return { state: "expired", orderId, email };
+  if (order.status === "fulfilled") return { state: "claimable", orderId, email };
+  if (PENDING_ORDER_STATUSES.has(order.status)) return { state: "pending", orderId, email };
+  return { state: "unavailable", orderId, email };
+}
+
 export type ClaimOutcome =
   | { ok: true; orderId: string; email: string }
   | {

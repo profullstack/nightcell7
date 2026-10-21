@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "@nightcell7/database";
 import {
   devices,
@@ -46,6 +46,10 @@ export interface Repositories {
   createOrder(input: CreateOrderInput): Promise<void>;
   attachCoinpayInvoice(orderId: string, invoiceId: string): Promise<void>;
   listOrders(userId: string): Promise<OrderSummary[]>;
+  /** The order a claim link names, with the episodes it bought. */
+  findOrderForClaim(orderId: string): Promise<ClaimOrderRow | null>;
+  /** Paid guest orders for an email that nobody has claimed yet. */
+  listUnclaimedGuestOrders(email: string): Promise<ClaimOrderRow[]>;
 
   recordPaymentEvent(input: RecordPaymentEventInput): Promise<{ duplicate: boolean }>;
 
@@ -68,6 +72,14 @@ export interface Repositories {
 
   subscribeNewsletter(email: string, source: string): Promise<void>;
   createFeedback(input: CreateFeedbackInput): Promise<void>;
+}
+
+export interface ClaimOrderRow {
+  id: string;
+  status: string;
+  userId: string | null;
+  email: string | null;
+  episodeIds: string[];
 }
 
 export interface CreateOrderInput {
@@ -324,6 +336,60 @@ export function createRepositories(db: Database): Repositories {
         .from(orders)
         .where(eq(orders.userId, userId))
         .orderBy(desc(orders.createdAt));
+    },
+
+    async findOrderForClaim(orderId) {
+      const rows = await db
+        .select({
+          id: orders.id,
+          status: orders.status,
+          userId: orders.userId,
+          email: orders.email,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      const order = rows[0];
+      if (!order) return null;
+      const items = await db
+        .select({ episodeId: orderItems.episodeId })
+        .from(orderItems)
+        .where(eq(orderItems.orderId, orderId));
+      return { ...order, episodeIds: items.map((item) => item.episodeId) };
+    },
+
+    async listUnclaimedGuestOrders(email) {
+      const rows = await db
+        .select({
+          id: orders.id,
+          status: orders.status,
+          userId: orders.userId,
+          email: orders.email,
+        })
+        .from(orders)
+        .where(
+          and(
+            isNull(orders.userId),
+            eq(orders.status, "fulfilled"),
+            sql`lower(${orders.email}) = ${email.toLowerCase()}`,
+          ),
+        )
+        .orderBy(desc(orders.createdAt))
+        .limit(10);
+      if (rows.length === 0) return [];
+      const items = await db
+        .select({ orderId: orderItems.orderId, episodeId: orderItems.episodeId })
+        .from(orderItems)
+        .where(
+          inArray(
+            orderItems.orderId,
+            rows.map((row) => row.id),
+          ),
+        );
+      return rows.map((row) => ({
+        ...row,
+        episodeIds: items.filter((item) => item.orderId === row.id).map((item) => item.episodeId),
+      }));
     },
 
     async recordPaymentEvent(input) {

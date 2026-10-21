@@ -14,8 +14,10 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@better-auth/passkey": "1.6.25",
+    "@nightcell7/database": "workspace:*",
+    "@simplewebauthn/server": "13.3.3",
     "better-auth": "^1.6.25",
-    "zod": "^4.1.13",
-    "@nightcell7/database": "workspace:*"
+    "zod": "^4.1.13"
   }
 }

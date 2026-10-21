@@ -4,6 +4,7 @@ import { SESSION_COOKIE_NAME } from "@nightcell7/auth";
 import { COINPAY_SIGNATURE_HEADER, signWebhookPayload } from "@nightcell7/coinpay";
 import { CONTENT_VERSION, PROTOCOL_VERSION } from "@nightcell7/multiplayer-protocol";
 import { verifyTicket } from "@nightcell7/multiplayer-protocol/server";
+import { CLAIM_TOKEN_TTL_SECONDS, createClaimToken } from "@nightcell7/entitlements/server";
 import { createApp, buildSyncUrl, generatePrivateCode, readCookie } from "./app";
 import type { Dependencies } from "./app";
 import { MemoryRateLimiter } from "./rate-limit";
@@ -69,6 +70,12 @@ function fakeRepos(overrides: Partial<Repositories> = {}): Repositories {
     async createOrder() {},
     async attachCoinpayInvoice() {},
     async listOrders() {
+      return [];
+    },
+    async findOrderForClaim() {
+      return null;
+    },
+    async listUnclaimedGuestOrders() {
       return [];
     },
     async recordPaymentEvent(input) {
@@ -594,5 +601,186 @@ describe("helpers", () => {
       // No 0/O/1/I confusion when a player reads a code aloud.
       expect(code).not.toMatch(/[01OI]/);
     }
+  });
+});
+
+describe("guest claim", () => {
+  const nowSeconds = () => Math.floor(Date.now() / 1000);
+  const tokenFor = (orderId = "ord_guest", at = nowSeconds()) =>
+    createClaimToken({ orderId, email: "buyer@example.com" }, env.AUTH_SECRET, at).token;
+
+  function guestOrder(overrides: { status?: string; userId?: string | null } = {}) {
+    return {
+      id: "ord_guest",
+      status: overrides.status ?? "fulfilled",
+      userId: overrides.userId ?? null,
+      email: "buyer@example.com",
+      episodeIds: ["false-dawn"],
+    };
+  }
+
+  function withOrder(order: ReturnType<typeof guestOrder> | null) {
+    return harness({
+      findOrderForClaim: async (id) => (order && order.id === id ? order : null),
+      listUnclaimedGuestOrders: async (email) =>
+        order && !order.userId && email.toLowerCase() === order.email ? [order] : [],
+    });
+  }
+
+  async function status(app: Harness["app"], token: string, session?: string) {
+    const res = await app.request("/api/v1/checkout/claim/status", jsonPost({ token }, session));
+    expect(res.status).toBe(200);
+    return (await res.json()) as {
+      state: string;
+      email: string | null;
+      episodeTitle: string | null;
+      playUrl: string | null;
+    };
+  }
+
+  it("describes a claimable link to a signed-out buyer", async () => {
+    const body = await status(withOrder(guestOrder()).app, tokenFor());
+    expect(body).toMatchObject({
+      state: "claimable",
+      email: "buyer@example.com",
+      episodeTitle: "False Dawn",
+      playUrl: null,
+    });
+  });
+
+  it("sends the owner straight to the episode", async () => {
+    const body = await status(
+      withOrder(guestOrder({ userId: "u_verified" })).app,
+      tokenFor(),
+      "verified",
+    );
+    expect(body.state).toBe("claimed_by_you");
+    expect(body.playUrl).toBe("/play?mode=campaign&episode=false-dawn");
+  });
+
+  it("calls out used, expired and forged links", async () => {
+    expect((await status(withOrder(guestOrder({ userId: "u_x" })).app, tokenFor())).state).toBe(
+      "claimed",
+    );
+    const old = tokenFor("ord_guest", nowSeconds() - CLAIM_TOKEN_TTL_SECONDS - 5);
+    expect((await status(withOrder(guestOrder()).app, old)).state).toBe("expired");
+    expect((await status(withOrder(guestOrder()).app, `${tokenFor()}tampered`)).state).toBe(
+      "invalid",
+    );
+  });
+
+  it("requires a session to claim", async () => {
+    const res = await withOrder(guestOrder()).app.request(
+      "/api/v1/checkout/claim",
+      jsonPost({ token: tokenFor() }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("queues a claimable link for the signed-in account", async () => {
+    const harnessed = withOrder(guestOrder());
+    const res = await harnessed.app.request(
+      "/api/v1/checkout/claim",
+      jsonPost({ token: tokenFor() }, "verified"),
+    );
+    expect(res.status).toBe(202);
+    expect(harnessed.enqueued).toEqual([
+      expect.objectContaining({
+        queue: "entitlements",
+        name: "claim",
+        payload: expect.objectContaining({ userId: "u_verified" }),
+      }),
+    ]);
+  });
+
+  it("refuses links that can never succeed, with a code, and queues nothing", async () => {
+    const cases: [ReturnType<typeof guestOrder>, string, number, string][] = [
+      [guestOrder({ userId: "u_other" }), tokenFor(), 409, "already_claimed"],
+      [
+        guestOrder(),
+        tokenFor("ord_guest", nowSeconds() - CLAIM_TOKEN_TTL_SECONDS - 5),
+        410,
+        "claim_expired",
+      ],
+      [guestOrder({ status: "confirming" }), tokenFor(), 409, "claim_pending"],
+      [guestOrder({ status: "refunded" }), tokenFor(), 409, "claim_unavailable"],
+      [guestOrder(), "x".repeat(40), 400, "invalid_claim"],
+    ];
+    for (const [order, token, code, reason] of cases) {
+      const harnessed = withOrder(order);
+      const res = await harnessed.app.request(
+        "/api/v1/checkout/claim",
+        jsonPost({ token }, "verified"),
+      );
+      expect(res.status, reason).toBe(code);
+      const body = (await res.json()) as { error: { code: string } };
+      expect(body.error.code).toBe(reason);
+      expect(harnessed.enqueued).toHaveLength(0);
+    }
+  });
+
+  it("answers an already-claimed-by-you claim without queueing", async () => {
+    const harnessed = withOrder(guestOrder({ userId: "u_verified" }));
+    const res = await harnessed.app.request(
+      "/api/v1/checkout/claim",
+      jsonPost({ token: tokenFor() }, "verified"),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      status: "claimed",
+      playUrl: "/play?mode=campaign&episode=false-dawn",
+    });
+    expect(harnessed.enqueued).toHaveLength(0);
+  });
+
+  it("re-sends a fresh link for an expired token, to the paying address only", async () => {
+    const harnessed = withOrder(guestOrder());
+    const old = tokenFor("ord_guest", nowSeconds() - CLAIM_TOKEN_TTL_SECONDS - 5);
+    const res = await harnessed.app.request(
+      "/api/v1/checkout/claim/resend",
+      jsonPost({ token: old }),
+    );
+    expect(res.status).toBe(202);
+    expect(harnessed.enqueued).toHaveLength(1);
+    const job = harnessed.enqueued[0]!.payload as { to: string; claimUrl: string; kind: string };
+    expect(job.kind).toBe("purchase-claim");
+    expect(job.to).toBe("buyer@example.com");
+    expect(job.claimUrl).toMatch(/^https:\/\/nightcell7\.com\/claim\/[\w-]+\.[\w-]+$/);
+    // The new link is live.
+    const fresh = job.claimUrl.split("/claim/")[1]!;
+    expect((await status(harnessed.app, fresh)).state).toBe("claimable");
+  });
+
+  it("re-sends by email without revealing whether the address bought anything", async () => {
+    const hit = withOrder(guestOrder());
+    const miss = withOrder(guestOrder());
+    const a = await hit.app.request(
+      "/api/v1/checkout/claim/resend",
+      jsonPost({ email: "Buyer@Example.com" }),
+    );
+    const b = await miss.app.request(
+      "/api/v1/checkout/claim/resend",
+      jsonPost({ email: "nobody@example.com" }),
+    );
+    expect(a.status).toBe(202);
+    expect(b.status).toBe(202);
+    expect(await a.json()).toEqual(await b.json());
+    expect(hit.enqueued).toHaveLength(1);
+    expect(miss.enqueued).toHaveLength(0);
+  });
+
+  it("never re-sends for a claimed order or a forged token", async () => {
+    const claimed = withOrder(guestOrder({ userId: "u_other" }));
+    await claimed.app.request("/api/v1/checkout/claim/resend", jsonPost({ token: tokenFor() }));
+    expect(claimed.enqueued).toHaveLength(0);
+
+    const forged = withOrder(guestOrder());
+    const bad = createClaimToken(
+      { orderId: "ord_guest", email: "attacker@example.com" },
+      "a-different-secret-000000000000",
+      nowSeconds(),
+    ).token;
+    await forged.app.request("/api/v1/checkout/claim/resend", jsonPost({ token: bad }));
+    expect(forged.enqueued).toHaveLength(0);
   });
 });
