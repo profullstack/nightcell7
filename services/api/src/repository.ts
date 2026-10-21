@@ -7,6 +7,7 @@ import {
   offlineLicenses,
   entitlementEvents,
   entitlements,
+  episodes,
   feedback,
   multiplayerBans,
   multiplayerBlocks,
@@ -21,7 +22,7 @@ import {
   users,
 } from "@nightcell7/database";
 import type { AccountContext } from "@nightcell7/auth";
-import type { OrderStatus } from "@nightcell7/entitlements";
+import { findCatalogEntry, type OrderStatus } from "@nightcell7/entitlements";
 
 /**
  * Data access for the API service.
@@ -263,24 +264,43 @@ export function createRepositories(db: Database): Repositories {
     },
 
     async createOrder(input) {
-      await db.insert(orders).values({
-        id: input.id,
-        userId: input.userId,
-        email: input.email,
-        provider: "coinpay",
-        currency: input.currency,
-        subtotal: input.unitAmount,
-        tax: 0,
-        total: input.unitAmount,
-        status: "created",
-        idempotencyKey: input.idempotencyKey,
-      });
-      await db.insert(orderItems).values({
-        id: `oi_${input.id}`,
-        orderId: input.id,
-        episodeId: input.episodeId,
-        unitAmount: input.unitAmount,
-        quantity: 1,
+      const entry = findCatalogEntry(input.episodeId);
+      await db.transaction(async (tx) => {
+        // order_items (and entitlements) reference episodes(id), and nothing
+        // seeds that table: the server catalog is the authority, so the row
+        // it needs is written from the catalog on first sale. Without it every
+        // checkout failed on the foreign key.
+        if (entry) {
+          await tx
+            .insert(episodes)
+            .values({
+              id: entry.episodeId,
+              slug: entry.episodeId,
+              title: entry.title,
+              theater: "NIGHTCELL 7",
+              status: entry.status,
+            })
+            .onConflictDoNothing();
+        }
+        await tx.insert(orders).values({
+          id: input.id,
+          userId: input.userId,
+          email: input.email,
+          provider: "coinpay",
+          currency: input.currency,
+          subtotal: input.unitAmount,
+          tax: 0,
+          total: input.unitAmount,
+          status: "created",
+          idempotencyKey: input.idempotencyKey,
+        });
+        await tx.insert(orderItems).values({
+          id: `oi_${input.id}`,
+          orderId: input.id,
+          episodeId: input.episodeId,
+          unitAmount: input.unitAmount,
+          quantity: 1,
+        });
       });
     },
 
