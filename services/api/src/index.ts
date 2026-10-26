@@ -8,7 +8,7 @@ import {
   installGracefulShutdown,
   namespacedKey,
 } from "@nightcell7/observability";
-import { getDatabase, closeDatabase } from "@nightcell7/database";
+import { getDatabase, getPool, closeDatabase } from "@nightcell7/database";
 import { CoinpayClient } from "@nightcell7/coinpay";
 import { PROTOCOL_VERSION } from "@nightcell7/multiplayer-protocol";
 import { createApp } from "./app";
@@ -16,6 +16,7 @@ import { loadEnv } from "./env";
 import { RedisRateLimiter } from "./rate-limit";
 import { createRepositories } from "./repository";
 import { createAuth } from "@nightcell7/auth/server";
+import { createProfileStore } from "@profullstack/profile";
 import { createR2ManifestLoader, createR2Signer, createUnconfiguredSigner } from "./r2";
 
 /**
@@ -90,12 +91,18 @@ const app = createApp({
     getSession: async (headers) => {
       const session = await auth.api.getSession({ headers });
       if (!session?.user) return null;
-      return { userId: session.user.id, verified: session.user.emailVerified === true };
+      return {
+        userId: session.user.id,
+        verified: session.user.emailVerified === true,
+        email: session.user.email,
+      };
     },
   },
   logger,
   health,
   repos: createRepositories(database),
+  // user_profiles, created by the drizzle migration 0002_profile_fields.
+  profiles: createProfileStore(getPool(), { keyType: "text" }),
   rateLimiter: new RedisRateLimiter(redis),
   coinpay,
   enqueue: async (queue, name, payload) => {

@@ -9,6 +9,13 @@ import {
 } from "@nightcell7/observability";
 import { canPlayMultiplayer, type AccountContext } from "@nightcell7/auth";
 import {
+  COLUMNS as PROFILE_COLUMNS,
+  mountProfileRoutes,
+  saveSignupProfile,
+  validateProfile,
+  type ProfileStore,
+} from "@profullstack/profile";
+import {
   CATALOG,
   MAX_REMEMBERED_DEVICES,
   OFFLINE_GRACE_DAYS,
@@ -92,8 +99,16 @@ export interface Dependencies {
      * the cookie name, signing and rotation, and a hand-rolled lookup silently
      * saw nobody as signed in when those did not match.
      */
-    getSession: (headers: Headers) => Promise<{ userId: string; verified: boolean } | null>;
+    getSession: (
+      headers: Headers,
+    ) => Promise<{ userId: string; verified: boolean; email?: string | null } | null>;
   };
+  /**
+   * The signup profile (@profullstack/profile, table `user_profiles`). Absent,
+   * the signup form's profile fields are still validated but not stored, and
+   * `/api/v1/me/profile` is not mounted.
+   */
+  profiles?: ProfileStore;
   /** Content manifest loading and per-object R2 signing (PRD §26.4). */
   content: {
     loadManifest: (episodeId: string, version: string) => Promise<ContentManifest | null>;
@@ -173,7 +188,74 @@ export function createApp(deps: Dependencies) {
    * Mounted before the v1 router so its routes are not shadowed, and given the
    * raw Request because it does its own cookie and body handling.
    */
+  /**
+   * Email+password signup also takes the house signup profile (first and last
+   * name required; company domain, job title and LinkedIn optional). Checked
+   * before Better Auth sees the request, so a refused form creates no account,
+   * then stripped so Better Auth only gets the fields it owns, and saved once
+   * the user row exists. A failed save never fails the signup: the account
+   * page can fill it in. Magic-link and passkey signups are not asked.
+   */
+  app.post("/api/v1/auth/sign-up/email", async (c) => {
+    const raw = c.req.raw;
+    const body = (await raw
+      .clone()
+      .json()
+      .catch(() => null)) as Record<string, unknown> | null;
+    if (!body || typeof body !== "object" || Array.isArray(body)) return deps.auth.handler(raw);
+
+    const check = validateProfile(body);
+    if (!check.ok) {
+      return c.json(
+        {
+          code: "INVALID_PROFILE",
+          message: "A few of those fields need another look.",
+          errors: check.errors,
+        },
+        400,
+      );
+    }
+
+    const forwarded = { ...body };
+    for (const column of PROFILE_COLUMNS) if (column !== "email") delete forwarded[column];
+    const headers = new Headers(raw.headers);
+    headers.delete("content-length");
+    const response = await deps.auth.handler(
+      new Request(raw.url, { method: "POST", headers, body: JSON.stringify(forwarded) }),
+    );
+
+    if (response.ok && deps.profiles) {
+      const created = (await response
+        .clone()
+        .json()
+        .catch(() => null)) as { user?: { id?: string; email?: string } } | null;
+      const userId = created?.user?.id;
+      try {
+        // Only for a row that really exists: never a stand-in user.
+        if (userId && (await deps.repos.findAccountById(userId))) {
+          await saveSignupProfile(deps.profiles, userId, check.profile, {
+            email: created?.user?.email ?? null,
+          });
+        }
+      } catch (error) {
+        deps.logger.error("signup profile not saved", { error: String(error) });
+      }
+    }
+    return response;
+  });
+
   app.on(["GET", "POST"], "/api/v1/auth/*", (c) => deps.auth.handler(c.req.raw));
+
+  // GET / PUT / PATCH /api/v1/me/profile: the signed-in player's own profile.
+  if (deps.profiles) {
+    mountProfileRoutes(app, {
+      store: deps.profiles,
+      getUser: async (request: Request) => {
+        const session = await deps.auth.getSession(request.headers);
+        return session ? { id: session.userId, email: session.email ?? null } : null;
+      },
+    });
+  }
 
   const v1 = new Hono<{ Variables: Variables }>();
 

@@ -1306,6 +1306,40 @@ a {
   cursor: progress;
 }
 
+/* The signup profile from @profullstack/profile (/register, /account). Its
+   inputs and labels pick up the .auth-form rules above; this lays out the rows. */
+.pfs-profile {
+  display: grid;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.pfs-profile__row {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.pfs-profile__optional {
+  letter-spacing: 0.05em;
+  text-transform: none;
+  color: color-mix(in srgb, var(--bone-300) 70%, transparent);
+}
+
+.pfs-profile input[aria-invalid="true"] {
+  border-color: var(--signal-red);
+}
+
+.pfs-profile__error {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--bone-100);
+  border-left: 3px solid var(--signal-red);
+  padding-left: 0.5rem;
+}
+
 .auth-form__foot {
   margin: 0;
   font-size: 0.85rem;

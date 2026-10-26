@@ -567,3 +567,33 @@ export const feedback = pgTable("feedback", {
   message: text("message").notNull(),
   createdAt: text("created_at").notNull().default(currentTimestampText),
 });
+
+// --------------------------------------------------------------------------
+// Signup profile
+// --------------------------------------------------------------------------
+
+/**
+ * The house signup profile (@profullstack/profile): the six contract fields,
+ * keyed by `users.id`. The package reads and writes it by name (its own
+ * default `user_profiles` / `user_id`), so the shape here matches its
+ * `profile schema --key-type text` output. Server-only: no public endpoint
+ * lists it, and the `/api/v1/me/profile` routes answer only for the owner.
+ */
+export const userProfiles = pgTable(
+  "user_profiles",
+  {
+    userId: text("user_id").primaryKey(),
+    email: text("email"),
+    firstName: text("first_name"),
+    lastName: text("last_name"),
+    companyDomain: text("company_domain"),
+    jobTitle: text("job_title"),
+    linkedinUrl: text("linkedin_url"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => ({
+    emailIdx: index("user_profiles_email").on(sql`lower(${table.email})`),
+    companyDomainIdx: index("user_profiles_company_domain").on(table.companyDomain),
+  }),
+);

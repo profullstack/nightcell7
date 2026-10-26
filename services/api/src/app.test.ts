@@ -129,6 +129,7 @@ interface Harness {
 function harness(
   repoOverrides: Partial<Repositories> = {},
   manifest: ContentManifest | null = null,
+  extra: Partial<Dependencies> = {},
 ): Harness {
   const enqueued: Harness["enqueued"] = [];
   const tickets: string[] = [];
@@ -184,6 +185,7 @@ function harness(
         return null;
       },
     },
+    ...extra,
   });
 
   return {
@@ -782,5 +784,88 @@ describe("guest claim", () => {
     ).token;
     await forged.app.request("/api/v1/checkout/claim/resend", jsonPost({ token: bad }));
     expect(forged.enqueued).toHaveLength(0);
+  });
+});
+
+describe("signup profile", () => {
+  function profileHarness() {
+    const saved: { userId: string; profile: Record<string, unknown> }[] = [];
+    const forwarded: Record<string, unknown>[] = [];
+    const profiles = {
+      table: "user_profiles",
+      key: "user_id",
+      save: async (userId: string, profile: Record<string, unknown>) => {
+        saved.push({ userId, profile });
+        return { user_id: userId, ...profile };
+      },
+      get: async () => null,
+    } as unknown as NonNullable<Dependencies["profiles"]>;
+    const { app } = harness({}, null, {
+      profiles,
+      auth: {
+        handler: async (request) => {
+          const body = (await request.json()) as Record<string, unknown>;
+          forwarded.push(body);
+          return Response.json({ token: null, user: { id: "u_new", email: body.email } });
+        },
+        getSession: async () => null,
+      },
+    });
+    return { app, saved, forwarded };
+  }
+
+  it("stores the profile fields of an email signup and keeps them away from Better Auth", async () => {
+    const { app, saved, forwarded } = profileHarness();
+    const res = await app.request(
+      "/api/v1/auth/sign-up/email",
+      jsonPost({
+        email: "ada@acme.com",
+        password: "correct horse battery",
+        displayName: "ada",
+        name: "",
+        first_name: "Ada",
+        last_name: "Lovelace",
+        company_domain: "https://www.acme.com/about",
+        job_title: "VP Engineering",
+        linkedin_url: "in/ada-lovelace",
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(forwarded[0]).toEqual({
+      email: "ada@acme.com",
+      password: "correct horse battery",
+      displayName: "ada",
+      name: "",
+    });
+    expect(saved).toHaveLength(1);
+    expect(saved[0]!.userId).toBe("u_new");
+    expect(saved[0]!.profile).toMatchObject({
+      email: "ada@acme.com",
+      first_name: "Ada",
+      last_name: "Lovelace",
+      company_domain: "acme.com",
+      job_title: "VP Engineering",
+      linkedin_url: "https://www.linkedin.com/in/ada-lovelace",
+    });
+  });
+
+  it("refuses a signup without a name before any account is attempted", async () => {
+    const { app, saved, forwarded } = profileHarness();
+    const res = await app.request(
+      "/api/v1/auth/sign-up/email",
+      jsonPost({ email: "ada@acme.com", password: "correct horse battery", first_name: "Ada" }),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code: string; errors: Record<string, string> };
+    expect(body.code).toBe("INVALID_PROFILE");
+    expect(body.errors.last_name).toBeTruthy();
+    expect(forwarded).toHaveLength(0);
+    expect(saved).toHaveLength(0);
+  });
+
+  it("answers /api/v1/me/profile only for a signed-in player", async () => {
+    const { app } = profileHarness();
+    const res = await app.request("/api/v1/me/profile");
+    expect(res.status).toBe(401);
   });
 });

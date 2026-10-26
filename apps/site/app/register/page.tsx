@@ -39,6 +39,7 @@ export default function RegisterPage() {
         // `name` is Better Auth's real-name field; we do not ask for one, so it
         // mirrors the display name rather than sitting empty.
         extra={{ name: "" }}
+        profile
         successMessage={
           <>
             <strong>Check your email.</strong> We sent a verification link. You need to verify

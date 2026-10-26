@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
+import { ProfileFields } from "@profullstack/profile/react";
 import { safeNext } from "./safe-next";
 
 /**
@@ -39,14 +40,29 @@ interface Props {
   successMessage?: ReactNode;
   /** Extra values posted alongside the fields. */
   extra?: Record<string, unknown>;
+  /**
+   * Signup only: also ask for the house profile (@profullstack/profile) —
+   * first and last name required; company, job title and LinkedIn optional.
+   */
+  profile?: boolean;
   children?: ReactNode;
 }
+
+/** The profile fields besides email, which the form already has. */
+const PROFILE_FIELDS = [
+  "first_name",
+  "last_name",
+  "company_domain",
+  "job_title",
+  "linkedin_url",
+] as const;
 
 const FRIENDLY_ERRORS: Record<string, string> = {
   INVALID_EMAIL_OR_PASSWORD: "That email and password do not match an account.",
   USER_ALREADY_EXISTS: "An account with that email already exists.",
   EMAIL_NOT_VERIFIED: "Verify your email before signing in. Check your inbox.",
   PASSWORD_TOO_SHORT: "That password is too short.",
+  INVALID_PROFILE: "A few of those fields need another look.",
   INVALID_TOKEN: "That link is invalid or has already been used.",
   TOKEN_EXPIRED: "That link has expired. Request a new one.",
 };
@@ -59,9 +75,11 @@ export function AuthForm({
   honorNext,
   successMessage,
   extra,
+  profile,
   children,
 }: Props) {
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -73,6 +91,7 @@ export function AuthForm({
     const form = new FormData(event.currentTarget);
     const payload: Record<string, unknown> = { ...extra };
     for (const field of fields) payload[field.name] = form.get(field.name);
+    if (profile) for (const name of PROFILE_FIELDS) payload[name] = form.get(name);
 
     try {
       const response = await fetch(endpoint, {
@@ -88,7 +107,9 @@ export function AuthForm({
           code?: string;
           message?: string;
           error?: { code?: string; message?: string };
+          errors?: Record<string, string>;
         };
+        setFieldErrors(body.errors ?? {});
         const code = body.code ?? body.error?.code ?? "";
         setError(
           FRIENDLY_ERRORS[code] ??
@@ -134,6 +155,10 @@ export function AuthForm({
           {field.help ? <p className="auth-form__help">{field.help}</p> : null}
         </div>
       ))}
+
+      {profile ? (
+        <ProfileFields fields={PROFILE_FIELDS} errors={fieldErrors} idPrefix="signup-" />
+      ) : null}
 
       {error ? (
         <p className="auth-form__error" role="alert">
