@@ -163,8 +163,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </a>
           </p>
         </footer>
-        {/* Copyright and the Profullstack webring, from @profullstack/footer. */}
-        <Footer site="https://nightcell7.com/" />
+        {/* Copyright, the Profullstack webring and our Foundplay badge, from @profullstack/footer. */}
+        <Footer
+          site="https://nightcell7.com/"
+          badges={[
+            {
+              href: "https://foundplay.io/games/nightcell-7-false-dawn?utm_source=badge",
+              src: "https://foundplay.io/badge/nightcell-7-false-dawn.svg",
+              alt: "Play NIGHTCELL 7: FALSE DAWN on Foundplay",
+              width: 242,
+              height: 28,
+            },
+          ]}
+        />
         <Script
           data-site="af9ab953-caa6-4a2b-a306-42fb4eac4630"
           src="https://crawlproof.com/stats.js"
