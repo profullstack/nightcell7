@@ -1,8 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "Node16",
+    "rootDir": "src",
+    "moduleResolution": "Node16",
     "verbatimModuleSyntax": false,
     "types": ["node", "electron"]
   },

@@ -200,7 +200,7 @@ let stale = 0;
 for (const [rel, content] of TARGETS) {
   const path = join(ROOT, rel);
   if (check) {
-    let current = "";
+    let current;
     try {
       current = readFileSync(path, "utf8");
     } catch {

@@ -71,9 +71,11 @@ export default defineConfig({
     sourcemap: "hidden", // source maps stay private (PRD §33.1)
     rollupOptions: {
       output: {
-        manualChunks: {
-          babylon: ["@babylonjs/core"],
-          netcode: ["colyseus.js"],
+        // Vite 8 (Rolldown) takes only the function form.
+        manualChunks(id: string) {
+          if (id.includes("/node_modules/@babylonjs/core/")) return "babylon";
+          if (id.includes("/node_modules/colyseus.js/")) return "netcode";
+          return undefined;
         },
       },
     },

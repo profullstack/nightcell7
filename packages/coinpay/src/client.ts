@@ -305,7 +305,7 @@ export class CoinpayClient {
     if (known && Date.now() - known.at < SESSION_PROBE_TTL_MS) return known.available;
     // An empty body is refused by validation when the route exists, and 404s
     // when it does not; nothing is created either way.
-    let available = false;
+    let available: boolean;
     try {
       const response = await this.raw("/api/checkout/sessions", { method: "POST", body: "{}" });
       available = response.status !== 404 && response.status !== 405;

@@ -11,10 +11,10 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "hono": "^4.12.0",
-    "@hono/node-server": "^1.13.7",
-    "zod": "^4.1.13",
-    "ioredis": "^5.4.2",
+    "hono": "^4.13.14",
+    "@hono/node-server": "^2.1.5",
+    "zod": "^4.6.7",
+    "ioredis": "^6.0.0",
     "@nightcell7/observability": "workspace:*",
     "@nightcell7/entitlements": "workspace:*",
     "@nightcell7/coinpay": "workspace:*",
@@ -23,14 +23,14 @@
     "@nightcell7/auth": "workspace:*",
     "@nightcell7/content-schema": "workspace:*",
     "@nightcell7/database": "workspace:*",
-    "@profullstack/profile": "0.1.3",
-    "bullmq": "^5.34.5",
-    "drizzle-orm": "^0.38.3",
-    "@aws-sdk/client-s3": "^3.716.0",
-    "@aws-sdk/s3-request-presigner": "^3.716.0",
-    "pg": "^8.13.0"
+    "@profullstack/profile": "0.1.6",
+    "bullmq": "^6.4.2",
+    "drizzle-orm": "^0.45.4",
+    "@aws-sdk/client-s3": "^3.1156.0",
+    "@aws-sdk/s3-request-presigner": "^3.1156.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.10"
+    "@types/pg": "^8.23.1"
   }
 }

@@ -10,14 +10,14 @@
     "./server": "./src/server.ts"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit false --emitDeclarationOnly --outDir dist",
+    "build": "tsc -p tsconfig.json --noEmit false --emitDeclarationOnly --rootDir src --outDir dist",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@better-auth/passkey": "1.6.25",
+    "@better-auth/passkey": "1.7.13",
     "@nightcell7/database": "workspace:*",
     "@simplewebauthn/server": "13.3.3",
-    "better-auth": "^1.6.25",
-    "zod": "^4.1.13"
+    "better-auth": "^1.7.13",
+    "zod": "^4.6.7"
   }
 }
