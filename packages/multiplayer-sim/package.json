@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit false --emitDeclarationOnly --outDir dist",
+    "build": "tsc -p tsconfig.json --noEmit false --emitDeclarationOnly --rootDir src --outDir dist",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {

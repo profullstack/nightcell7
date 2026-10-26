@@ -1,4 +1,4 @@
-/* global window, document, localStorage, requestAnimationFrame, HTMLCanvasElement, MouseEvent */
+/* global window, document, requestAnimationFrame, HTMLCanvasElement, MouseEvent */
 /** Exercise the real browser demo, including a remembered empty-yard preference. */
 import { chromium } from "playwright";
 import { createServer } from "../../../apps/game/node_modules/vite/dist/node/index.js";

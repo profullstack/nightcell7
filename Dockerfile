@@ -13,7 +13,7 @@
 # and passes a PUBLIC_ORIGIN build arg. The Node image never declared it, so the
 # build never saw it; it is deliberately still undeclared, keeping the build
 # identical. Port 8080, env and the /health/ready path are unchanged.
-FROM oven/bun:1.4.0-slim AS base
+FROM oven/bun:1.4.4-slim AS base
 WORKDIR /app
 
 FROM base AS build

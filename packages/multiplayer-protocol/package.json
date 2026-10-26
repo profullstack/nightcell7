@@ -11,11 +11,11 @@
     "./ticket": "./src/ticket.ts"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit false --emitDeclarationOnly --outDir dist",
+    "build": "tsc -p tsconfig.json --noEmit false --emitDeclarationOnly --rootDir src --outDir dist",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@colyseus/schema": "^3.0.31",
-    "zod": "^4.1.13"
+    "@colyseus/schema": "^3.0.76",
+    "zod": "^4.6.7"
   }
 }
