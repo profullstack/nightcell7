@@ -23,6 +23,7 @@
     "@nightcell7/auth": "workspace:*",
     "@nightcell7/content-schema": "workspace:*",
     "@nightcell7/database": "workspace:*",
+    "@profullstack/profile": "0.1.3",
     "bullmq": "^5.34.5",
     "drizzle-orm": "^0.38.3",
     "@aws-sdk/client-s3": "^3.716.0",

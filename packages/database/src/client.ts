@@ -58,6 +58,15 @@ export function getDatabase(config?: DatabaseConfig): Database {
   return database;
 }
 
+/**
+ * The shared pool behind `getDatabase()`, for libraries that take a plain
+ * `pg` client (the @profullstack/profile store) rather than Drizzle.
+ */
+export function getPool(config?: DatabaseConfig): pg.Pool {
+  getDatabase(config);
+  return pool!;
+}
+
 /** Graceful shutdown hook for SIGTERM handling (PRD §17.6). */
 export async function closeDatabase(): Promise<void> {
   const closing = pool;

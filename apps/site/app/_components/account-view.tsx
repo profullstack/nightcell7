@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ResendVerification } from "./resend-verification";
 import { AddPasskey } from "./passkey-button";
+import { ProfileForm } from "./profile-form";
 
 /**
  * Client-side account and library views.
@@ -148,6 +149,10 @@ export function AccountView() {
           <ResendVerification />
         </>
       )}
+
+      <h3>Your details</h3>
+      <p>Your name and, if you like, where you work. Only the email and your name are required.</p>
+      <ProfileForm />
 
       <h3>Passkeys</h3>
       <p>Sign in with your fingerprint, face or device PIN instead of an email link.</p>
