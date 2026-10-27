@@ -19,4 +19,10 @@ describe("safeNext", () => {
     }
     expect(safeNext("")).toBeNull();
   });
+
+  it("refuses tab and newline tricks a browser would turn into //host", () => {
+    for (const raw of ["/%09/evil.test", "/%0a/evil.test", "/%0d%0a/evil.test", "/a\\b"]) {
+      expect(safeNext(`?next=${raw}`)).toBeNull();
+    }
+  });
 });

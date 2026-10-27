@@ -40,6 +40,8 @@ export function createCrawlGate(env: NodeJS.ProcessEnv = process.env): CrawlGate
       "/llms.txt",
       "/.well-known/",
       "/favicon.ico",
+      // Invite links are handed to people; never charge or block them.
+      "/i/",
     ],
     exempt: (request: Request) => SESSION_COOKIE.test(request.headers.get("cookie") ?? ""),
   });

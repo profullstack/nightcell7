@@ -15,6 +15,7 @@ import { createApp } from "./app";
 import { loadEnv } from "./env";
 import { RedisRateLimiter } from "./rate-limit";
 import { createRepositories } from "./repository";
+import { createCreditsDeps, warmCredits } from "./credits";
 import { createAuth } from "@nightcell7/auth/server";
 import { createProfileStore } from "@profullstack/profile";
 import { createR2ManifestLoader, createR2Signer, createUnconfiguredSigner } from "./r2";
@@ -84,6 +85,13 @@ const auth = createAuth({
   },
 });
 
+// Gift codes + invites: their tables (credit_*, aff_*) are created by the
+// stores; warmed here so the first request does not race to create them.
+const credits = createCreditsDeps(getPool(), database);
+await warmCredits(credits).catch((error) =>
+  logger.error("credit/invite tables not ready", { error: String(error) }),
+);
+
 const app = createApp({
   env,
   auth: {
@@ -103,6 +111,7 @@ const app = createApp({
   repos: createRepositories(database),
   // user_profiles, created by the drizzle migration 0002_profile_fields.
   profiles: createProfileStore(getPool(), { keyType: "text" }),
+  credits,
   rateLimiter: new RedisRateLimiter(redis),
   coinpay,
   enqueue: async (queue, name, payload) => {
