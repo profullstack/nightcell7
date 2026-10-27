@@ -64,6 +64,7 @@ import {
 } from "./errors";
 import type { RateLimitName, RateLimiter } from "./rate-limit";
 import type { Repositories } from "./repository";
+import { acceptInvite, redeemCode, type CreditsDeps } from "./credits";
 import type { ApiEnv } from "./env";
 
 /**
@@ -109,6 +110,11 @@ export interface Dependencies {
    * `/api/v1/me/profile` is not mounted.
    */
   profiles?: ProfileStore;
+  /**
+   * Gift codes (an episode) and invites. Absent, those routes are not mounted.
+   * Minting is staff-only and has no route: services/api/scripts/mint-credit-code.ts.
+   */
+  credits?: CreditsDeps;
   /** Content manifest loading and per-object R2 signing (PRD §26.4). */
   content: {
     loadManifest: (episodeId: string, version: string) => Promise<ContentManifest | null>;
@@ -300,6 +306,72 @@ export function createApp(deps: Dependencies) {
       status: account.status,
     });
   });
+
+  // ------------------------------------------------ gift codes + invites
+  if (deps.credits) {
+    const cd = deps.credits;
+    const codeBody = async (c: { req: { json: () => Promise<unknown> } }) => {
+      const body = (await c.req.json().catch(() => null)) as { code?: unknown } | null;
+      const code = typeof body?.code === "string" ? body.code.trim().slice(0, 64) : "";
+      if (code.length < 4) throw badRequest("invalid_code", "Enter a code.");
+      return code;
+    };
+
+    v1.post("/me/credits/redeem", async (c) => {
+      const account = requireAccount(c);
+      const userId = account.userId ?? "";
+      if (!userId) throw unauthorized();
+      await limit("checkout", userId);
+      const r = await redeemCode(cd, userId, await codeBody(c));
+      if (!r.ok) return c.json({ ok: false, reason: r.reason, error: r.message }, 400);
+      return c.json(r);
+    });
+
+    v1.get("/me/invites", async (c) => {
+      const account = requireAccount(c);
+      const userId = account.userId ?? "";
+      if (!userId) throw unauthorized();
+      const [quota, invites, invitedBy] = await Promise.all([
+        cd.affiliates.quota(userId),
+        cd.affiliates.invites(userId),
+        cd.affiliates.invitedBy(userId),
+      ]);
+      return c.json({ quota, invites, invited: Boolean(invitedBy) });
+    });
+
+    v1.post("/me/invites", async (c) => {
+      const account = requireAccount(c);
+      const userId = account.userId ?? "";
+      if (!userId) throw unauthorized();
+      if (!account.verified)
+        throw forbidden("not_verified", "Verify your email before inviting anyone.");
+      const body = (await c.req.json().catch(() => null)) as { note?: unknown } | null;
+      const note = typeof body?.note === "string" ? body.note.slice(0, 120) : "";
+      if ((await cd.affiliates.quota(userId)).left < 1)
+        throw badRequest("no_invites_left", "No invites left.");
+      const invite = await cd.affiliates.createInvite(userId, note);
+      return c.json(
+        {
+          invite: { ...invite, url: `${deps.env.PUBLIC_ORIGIN}/i/${invite.code}` },
+          quota: await cd.affiliates.quota(userId),
+        },
+        201,
+      );
+    });
+
+    v1.post("/me/invites/accept", async (c) => {
+      const account = requireAccount(c);
+      const userId = account.userId ?? "";
+      if (!userId) throw unauthorized();
+      const r = await acceptInvite(
+        cd,
+        { userId: userId, verified: Boolean(account.verified) },
+        await codeBody(c),
+      );
+      if (!r.ok) return c.json({ ok: false, reason: r.reason, error: r.message }, 400);
+      return c.json({ ok: true });
+    });
+  }
 
   v1.get("/me/entitlements", async (c) => {
     const account = requireAccount(c);

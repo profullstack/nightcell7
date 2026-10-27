@@ -175,6 +175,21 @@ coach in the yard that teaches one control at a time in §10.1's order and
 advances only when the player does the thing. Skippable from the gate (Esc);
 remembered in `nc7.onboarded`. Logic is pure in `apps/game/src/onboarding.ts`.
 
+## Gift codes and invites, 2026-10-27
+
+- **Gift codes** (`@profullstack/redeem-credits`) are Episode 1 for one account:
+  unit `episode:false-dawn`, written into `entitlements` (`reason = credit_code`,
+  no source order) with a `granted` event whose actor is `code:<id>`. An owner is
+  refused before the code is spent. Codes are stored only as hashes; staff mint
+  them with `services/api/scripts/mint-credit-code.ts` (no minting route). Gift
+  codes are not in-game credits, which are never purchasable (see Prohibited).
+- **Invites** (`@profullstack/affiliates`): three per verified account, single
+  use, 30 days, `/invites` and `/i/<code>`. A new (7-day), verified account with
+  no throwaway domain and no +tag/Gmail-dot alias of another account accepts one;
+  a second is refused `already_invited` and stays unused. Invites grant nothing:
+  an episode per invite would let every new account mint three more free copies.
+  What an invite should give is open.
+
 ## Budgets held in code
 
 Changing any of these is a product decision, not a tuning tweak.

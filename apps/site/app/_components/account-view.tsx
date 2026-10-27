@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ResendVerification } from "./resend-verification";
 import { AddPasskey } from "./passkey-button";
 import { ProfileForm } from "./profile-form";
+import { RedeemCode } from "./codes-view";
 
 /**
  * Client-side account and library views.
@@ -154,6 +155,10 @@ export function AccountView() {
       <p>Your name and, if you like, where you work. Only the email and your name are required.</p>
       <ProfileForm />
 
+      <h3 id="redeem">Have a code?</h3>
+      <p>A gift code puts Episode 1 in your library. It works once.</p>
+      <RedeemCode />
+
       <h3>Passkeys</h3>
       <p>Sign in with your fingerprint, face or device PIN instead of an email link.</p>
       <AddPasskey />
@@ -203,6 +208,9 @@ export function AccountView() {
         </li>
         <li>
           <a href="/orders">Your orders</a>
+        </li>
+        <li>
+          <a href="/invites">Your invites</a>
         </li>
         <li>
           <a href="/support">Support</a>
