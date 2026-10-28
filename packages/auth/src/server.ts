@@ -56,6 +56,34 @@ export function defaultDisplayName(email: string, random: () => number = Math.ra
   return name.length >= DISPLAY_NAME_MIN ? name : `player-${suffix}`;
 }
 
+/**
+ * Provider tokens Better Auth writes to `accounts` on every social sign-in.
+ *
+ * Nothing in NIGHTCELL 7 calls a provider API on a player's behalf, so these
+ * are never needed after sign-in, and a plaintext refresh token sitting in our
+ * database is a standing credential for an attacker with database access.
+ * Sign-in today is email+password, magic link and passkey (no social provider),
+ * so these columns are always NULL; this keeps them NULL if one is ever added.
+ * A feature that genuinely needs a provider token must seal it under a
+ * user-derived key (@profullstack/sealed-secrets), not store it here.
+ */
+const OAUTH_TOKEN_FIELDS = [
+  "accessToken",
+  "refreshToken",
+  "idToken",
+  "accessTokenExpiresAt",
+  "refreshTokenExpiresAt",
+] as const;
+
+/** Returns the account record with every provider token set to null. */
+export function stripOAuthTokens<T extends Record<string, unknown>>(account: T): T {
+  const out: Record<string, unknown> = { ...account };
+  for (const field of OAUTH_TOKEN_FIELDS) {
+    if (field in out) out[field] = null;
+  }
+  return out as T;
+}
+
 export function createAuth(config: AuthConfig) {
   const options = {
     appName: "NIGHTCELL 7",
@@ -77,6 +105,15 @@ export function createAuth(config: AuthConfig) {
     }),
 
     databaseHooks: {
+      account: {
+        // Never persist social-login provider tokens (see stripOAuthTokens).
+        create: {
+          before: async (account) => ({ data: stripOAuthTokens(account) }),
+        },
+        update: {
+          before: async (account) => ({ data: stripOAuthTokens(account) }),
+        },
+      },
       user: {
         create: {
           // The email+password signup form asks for a display name; a magic
