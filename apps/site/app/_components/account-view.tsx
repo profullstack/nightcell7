@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ResendVerification } from "./resend-verification";
 import { AddPasskey } from "./passkey-button";
+import { CoinpayConnect } from "./coinpay-button";
 import { ProfileForm } from "./profile-form";
 import { RedeemCode } from "./codes-view";
 
@@ -162,6 +163,8 @@ export function AccountView() {
       <h3>Passkeys</h3>
       <p>Sign in with your fingerprint, face or device PIN instead of an email link.</p>
       <AddPasskey />
+
+      <CoinpayConnect />
 
       <h3>Devices</h3>
       <p>

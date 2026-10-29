@@ -50,7 +50,12 @@ describe("social-login provider tokens are never persisted", () => {
   });
 
   it("leaves a credential account (password hash) alone and adds no token keys", () => {
-    const account = { providerId: "credential", accountId: "u1", userId: "u1", password: "salt:hash" };
+    const account = {
+      providerId: "credential",
+      accountId: "u1",
+      userId: "u1",
+      password: "salt:hash",
+    };
     expect(stripOAuthTokens(account)).toEqual(account);
   });
 

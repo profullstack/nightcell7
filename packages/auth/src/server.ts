@@ -1,6 +1,7 @@
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink } from "better-auth/plugins/magic-link";
+import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { passkey } from "@better-auth/passkey";
 import type { Database } from "@nightcell7/database";
 import { accounts, passkeys, sessions, users, verifications } from "@nightcell7/database";
@@ -30,6 +31,74 @@ export interface AuthConfig {
    * sent without sending anything.
    */
   sendEmail: (job: AuthEmail) => Promise<void>;
+  /**
+   * Sign in with CoinPay (a confidential OIDC client). Absent, the provider is
+   * not registered and the site hides its buttons.
+   */
+  coinpay?: CoinpaySignInConfig | null;
+  /** Tests only: a Better Auth adapter in place of the Drizzle one over `db`. */
+  adapter?: BetterAuthOptions["database"];
+}
+
+export interface CoinpaySignInConfig {
+  clientId: string;
+  clientSecret: string;
+  /** CoinPay origin; discovery is read from /.well-known/openid-configuration. */
+  issuer?: string;
+}
+
+/** The provider id: callback is /api/v1/auth/callback/coinpay. */
+export const COINPAY_PROVIDER_ID = "coinpay";
+
+/** Address domain of accounts made by a CoinPay sign-in (never deliverable). */
+export const COINPAY_PLACEHOLDER_DOMAIN = "coinpay.nightcell7.invalid";
+
+/**
+ * The account email of a CoinPay-only account. CoinPay never verifies email
+ * addresses, so its email is never used as ours: matching on it would let
+ * anyone register CoinPay with your address and sign into your account.
+ */
+export function coinpayPlaceholderEmail(sub: string): string {
+  return `${sub.toLowerCase().replace(/[^a-z0-9-]/g, "-")}@${COINPAY_PLACEHOLDER_DOMAIN}`;
+}
+
+export function isCoinpayPlaceholderEmail(email: string | null | undefined): boolean {
+  return (email ?? "").trim().toLowerCase().endsWith(`@${COINPAY_PLACEHOLDER_DOMAIN}`);
+}
+
+/**
+ * Better Auth's generic OAuth provider for CoinPay: discovery, PKCE S256,
+ * state, nonce bound to the id_token, id_token verified against CoinPay's JWKS,
+ * and the account bound to the CoinPay `sub` (accounts.provider_id = coinpay,
+ * account_id = sub). The profile maps to an unverified placeholder email, so a
+ * CoinPay sign-in can never match an existing account by email.
+ */
+export function coinpayProvider(config: CoinpaySignInConfig) {
+  const issuer = (config.issuer ?? "https://coinpayportal.com").replace(/\/+$/, "");
+  return {
+    providerId: COINPAY_PROVIDER_ID,
+    name: "CoinPay",
+    clientId: config.clientId,
+    clientSecret: config.clientSecret,
+    discoveryUrl: `${issuer}/.well-known/openid-configuration`,
+    scopes: ["openid", "profile", "email"],
+    pkce: true,
+    requireIdTokenVerification: true,
+    accountSubject: ({ profile }: { profile: Record<string, unknown> }) =>
+      String(profile.sub ?? ""),
+    // Never refresh the account's email or name from CoinPay on later sign-ins.
+    overrideUserInfo: false,
+    mapProfileToUser: (profile: Record<string, unknown>) => {
+      const sub = String(profile.sub ?? "");
+      const name = typeof profile.name === "string" ? profile.name : "";
+      return {
+        email: coinpayPlaceholderEmail(sub),
+        emailVerified: false,
+        name,
+        displayName: defaultDisplayName(`${name.replace(/\s+/g, "") || "player"}@x`),
+      };
+    },
+  };
 }
 
 export type AuthEmail =
@@ -92,17 +161,19 @@ export function createAuth(config: AuthConfig) {
     // Everything the browser talks to lives under /api/v1 (PRD §29).
     basePath: "/api/v1/auth",
 
-    database: drizzleAdapter(config.db, {
-      provider: "pg",
-      // Our tables are plural; Better Auth's models are singular.
-      schema: {
-        user: users,
-        session: sessions,
-        account: accounts,
-        verification: verifications,
-        passkey: passkeys,
-      },
-    }),
+    database:
+      config.adapter ??
+      drizzleAdapter(config.db, {
+        provider: "pg",
+        // Our tables are plural; Better Auth's models are singular.
+        schema: {
+          user: users,
+          session: sessions,
+          account: accounts,
+          verification: verifications,
+          passkey: passkeys,
+        },
+      }),
 
     databaseHooks: {
       account: {
@@ -118,7 +189,15 @@ export function createAuth(config: AuthConfig) {
         create: {
           // The email+password signup form asks for a display name; a magic
           // link or passkey signup does not, and the column is NOT NULL.
-          before: async (user) => {
+          before: async (user, context) => {
+            // The placeholder domain belongs to CoinPay sign-ins: nobody can
+            // sign up (password or magic link) with it and squat a sub.
+            if (
+              isCoinpayPlaceholderEmail(user.email) &&
+              !String(context?.path ?? "").startsWith("/callback/")
+            ) {
+              return false;
+            }
             const record = user as typeof user & { displayName?: string | null };
             if (record.displayName) return { data: record };
             return { data: { ...record, displayName: defaultDisplayName(record.email) } };
@@ -191,7 +270,23 @@ export function createAuth(config: AuthConfig) {
       max: 20,
     },
 
+    account: {
+      accountLinking: {
+        enabled: true,
+        // Never link a sign-in to an existing account by email. A CoinPay
+        // identity joins an existing account only through link-social, which
+        // needs that account's session.
+        disableImplicitLinking: true,
+        // link-social from a signed-in session: CoinPay's (placeholder) email
+        // never equals the account's, and CoinPay never says verified.
+        allowDifferentEmails: true,
+        trustedProviders: config.coinpay ? [COINPAY_PROVIDER_ID] : [],
+        updateUserInfoOnLink: false,
+      },
+    },
+
     plugins: [
+      ...(config.coinpay ? [genericOAuth({ config: [coinpayProvider(config.coinpay)] })] : []),
       // The house sign-in: the link proves the address, and the address is
       // the account, so the same link signs a new buyer up.
       magicLink({

@@ -4,6 +4,7 @@ import { AuthForm } from "../_components/auth-form";
 import { MagicLinkForm } from "../_components/magic-link-form";
 import { PasskeyLogin } from "../_components/passkey-login";
 import { safeNext } from "../_components/safe-next";
+import { CoinpaySignIn } from "../_components/coinpay-button";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -18,6 +19,7 @@ export default async function LoginPage({
 
   return (
     <PageShell label="Account" title="Sign in" lede="For multiplayer and your library.">
+      <CoinpaySignIn next={next} />
       <p>We email you a one-click link. No password needed; a new address gets a new account.</p>
       <MagicLinkForm callbackURL={next} idPrefix="login" />
       <p className="cta-row" style={{ marginTop: "1rem" }}>

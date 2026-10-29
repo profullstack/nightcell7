@@ -869,3 +869,42 @@ describe("signup profile", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("Connect / Disconnect CoinPay", () => {
+  const cookie = { cookie: "session=unverified" };
+  const linked = (canDisconnect: boolean) => ({
+    coinpayLinkStatus: async () => ({ linked: true, canDisconnect }),
+    unlinkCoinpay: async () => {
+      unlinked += 1;
+    },
+  });
+  let unlinked = 0;
+
+  it("needs a session to disconnect", async () => {
+    const { app } = harness(linked(true));
+    const response = await app.request("/api/v1/me/coinpay", { method: "DELETE" });
+    expect(response.status).toBe(401);
+  });
+
+  it("refuses to drop the only way in", async () => {
+    unlinked = 0;
+    const { app } = harness(linked(false));
+    const response = await app.request("/api/v1/me/coinpay", { method: "DELETE", headers: cookie });
+    expect(response.status).toBe(400);
+    expect(unlinked).toBe(0);
+  });
+
+  it("disconnects when there is another way in", async () => {
+    unlinked = 0;
+    const { app } = harness(linked(true));
+    const response = await app.request("/api/v1/me/coinpay", { method: "DELETE", headers: cookie });
+    expect(response.status).toBe(200);
+    expect(unlinked).toBe(1);
+  });
+
+  it("reports whether CoinPay sign-in is configured", async () => {
+    const { app } = harness();
+    const body = (await (await app.request("/api/v1/me/coinpay")).json()) as { enabled: boolean };
+    expect(body.enabled).toBe(false);
+  });
+});
