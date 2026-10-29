@@ -27,6 +27,9 @@ export const apiEnvSchema = baseEnvSchema.extend({
   /** Hosted checkout sessions: auto feature-detects, on/off force it. */
   COINPAY_CHECKOUT_SESSIONS: z.enum(["auto", "on", "off"]).default("auto"),
   COINPAY_WEBHOOK_SECRET: z.string().min(16),
+  /** Sign in with CoinPay (confidential OIDC client). Both unset: no CoinPay sign-in. */
+  COINPAY_OAUTH_CLIENT_ID: z.string().optional(),
+  COINPAY_OAUTH_CLIENT_SECRET: z.string().optional(),
 
   // R2 is optional at boot so local development and CI do not need object
   // storage; the content routes degrade to an obvious placeholder instead.

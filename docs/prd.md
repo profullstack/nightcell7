@@ -18,43 +18,43 @@ commit as the code (CLAUDE.md).
 
 ## Locked V1 decisions (PRD §2)
 
-| Area                             | Decision                                                                 |
-| -------------------------------- | ------------------------------------------------------------------------ |
-| Working title                    | NIGHTCELL 7                                                              |
-| Episode 1                        | FALSE DAWN                                                               |
-| Genre                            | First-person tactical action shooter, single-player + online multiplayer |
-| Camera                           | First person                                                             |
-| Story structure                  | Two playable opposing perspectives                                       |
-| First theater                    | Fictional near-future Iran crisis                                        |
-| Free product                     | Launcher, benchmark, training, dual-side demo, Multiplayer Alpha         |
-| Episode price                    | **$9.99 USD**                                                            |
-| Purchase includes                | Both sides, Complete Truth epilogue, all platforms                       |
-| Subscription / microtransactions | **None**                                                                 |
-| Multiplayer                      | P0 V1 requirement, server-authoritative                                  |
-| V1 multiplayer mode              | 6v6 Team Deathmatch, private matches, optional bot fill                  |
-| V1 multiplayer map               | Ardavan Yard (derived from Episode 1 architecture)                       |
-| V1 throwable                     | **Frag grenade only** — 2 per life, no resupply, no other gadget         |
-| Multiplayer access               | Free to verified accounts, no pay-to-win                                 |
-| Runtime target                   | 60–90 minutes per campaign side                                          |
-| Engine / build                   | Babylon.js / Vite                                                        |
-| Physics                          | Havok client-side; simplified authoritative server simulation            |
-| UI                               | Preact for menus and HUD only                                            |
-| Marketing site                   | Next.js App Router, custom art-directed design system                    |
-| Repository                       | **One** Git repository and pnpm workspace                                |
-| Separate repositories            | **Prohibited** for V1                                                    |
-| Deployment                       | **Railway** for every deployable application service                     |
-| Public domain                    | `nightcell7.com`                                                         |
-| API base                         | `https://nightcell7.com/api/v1`                                          |
-| Realtime endpoint                | `wss://nightcell7.com/api/v1/multiplayer/sync/...`                       |
-| Multiplayer framework            | Colyseus on Node.js                                                      |
-| Ephemeral realtime state         | Railway Redis                                                            |
-| Durable database                 | Postgres + Drizzle                                                       |
-| Authentication                   | Better Auth, verified email                                              |
-| Payments                         | **CoinPayPortal only** — direct Stripe integration prohibited            |
-| Email                            | Resend                                                                   |
-| Asset/content storage            | Cloudflare R2                                                            |
-| Mobile touch play                | Out of scope                                                             |
-| DRM                              | Low-friction entitlement, no invasive DRM                                |
+| Area                             | Decision                                                                                                                    |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Working title                    | NIGHTCELL 7                                                                                                                 |
+| Episode 1                        | FALSE DAWN                                                                                                                  |
+| Genre                            | First-person tactical action shooter, single-player + online multiplayer                                                    |
+| Camera                           | First person                                                                                                                |
+| Story structure                  | Two playable opposing perspectives                                                                                          |
+| First theater                    | Fictional near-future Iran crisis                                                                                           |
+| Free product                     | Launcher, benchmark, training, dual-side demo, Multiplayer Alpha                                                            |
+| Episode price                    | **$9.99 USD**                                                                                                               |
+| Purchase includes                | Both sides, Complete Truth epilogue, all platforms                                                                          |
+| Subscription / microtransactions | **None**                                                                                                                    |
+| Multiplayer                      | P0 V1 requirement, server-authoritative                                                                                     |
+| V1 multiplayer mode              | 6v6 Team Deathmatch, private matches, optional bot fill                                                                     |
+| V1 multiplayer map               | Ardavan Yard (derived from Episode 1 architecture)                                                                          |
+| V1 throwable                     | **Frag grenade only** — 2 per life, no resupply, no other gadget                                                            |
+| Multiplayer access               | Free to verified accounts, no pay-to-win                                                                                    |
+| Runtime target                   | 60–90 minutes per campaign side                                                                                             |
+| Engine / build                   | Babylon.js / Vite                                                                                                           |
+| Physics                          | Havok client-side; simplified authoritative server simulation                                                               |
+| UI                               | Preact for menus and HUD only                                                                                               |
+| Marketing site                   | Next.js App Router, custom art-directed design system                                                                       |
+| Repository                       | **One** Git repository and pnpm workspace                                                                                   |
+| Separate repositories            | **Prohibited** for V1                                                                                                       |
+| Deployment                       | **Railway** for every deployable application service                                                                        |
+| Public domain                    | `nightcell7.com`                                                                                                            |
+| API base                         | `https://nightcell7.com/api/v1`                                                                                             |
+| Realtime endpoint                | `wss://nightcell7.com/api/v1/multiplayer/sync/...`                                                                          |
+| Multiplayer framework            | Colyseus on Node.js                                                                                                         |
+| Ephemeral realtime state         | Railway Redis                                                                                                               |
+| Durable database                 | Postgres + Drizzle                                                                                                          |
+| Authentication                   | Better Auth, verified email; Sign in with CoinPay (bound to the CoinPay sub, never by email; unverified, so no multiplayer) |
+| Payments                         | **CoinPayPortal only** — direct Stripe integration prohibited                                                               |
+| Email                            | Resend                                                                                                                      |
+| Asset/content storage            | Cloudflare R2                                                                                                               |
+| Mobile touch play                | Out of scope                                                                                                                |
+| DRM                              | Low-friction entitlement, no invasive DRM                                                                                   |
 
 ---
 

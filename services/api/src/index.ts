@@ -74,6 +74,13 @@ const auth = createAuth({
   secret: env.AUTH_SECRET,
   publicOrigin: env.PUBLIC_ORIGIN,
   isProduction: env.NODE_ENV === "production",
+  coinpay:
+    env.COINPAY_OAUTH_CLIENT_ID && env.COINPAY_OAUTH_CLIENT_SECRET
+      ? {
+          clientId: env.COINPAY_OAUTH_CLIENT_ID,
+          clientSecret: env.COINPAY_OAUTH_CLIENT_SECRET,
+        }
+      : null,
   // Verification and reset mail goes through the same queue as everything
   // else, so a mail outage delays sign-ups rather than failing them outright.
   sendEmail: async (job) => {

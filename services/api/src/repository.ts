@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "@nightcell7/database";
 import {
+  accounts,
   devices,
   downloads,
   episodeVersions,
@@ -18,6 +19,7 @@ import {
   newsletterSubscribers,
   orderItems,
   orders,
+  passkeys,
   paymentEvents,
   users,
 } from "@nightcell7/database";
@@ -72,7 +74,21 @@ export interface Repositories {
 
   subscribeNewsletter(email: string, source: string): Promise<void>;
   createFeedback(input: CreateFeedbackInput): Promise<void>;
+
+  /** Sign in with CoinPay: is it linked, and is there another way in? */
+  coinpayLinkStatus?(userId: string): Promise<CoinpayLinkStatus>;
+  /** Removes the CoinPay link (the caller checks canDisconnect first). */
+  unlinkCoinpay?(userId: string): Promise<void>;
 }
+
+export interface CoinpayLinkStatus {
+  linked: boolean;
+  /** False when CoinPay is the only way into the account. */
+  canDisconnect: boolean;
+}
+
+/** Accounts made by a CoinPay sign-in get this undeliverable address. */
+const COINPAY_PLACEHOLDER_SUFFIX = "@coinpay.nightcell7.invalid";
 
 export interface ClaimOrderRow {
   id: string;
@@ -193,6 +209,36 @@ export interface CreateFeedbackInput {
 
 export function createRepositories(db: Database): Repositories {
   return {
+    async coinpayLinkStatus(userId) {
+      const linked = await db
+        .select({ providerId: accounts.providerId })
+        .from(accounts)
+        .where(eq(accounts.userId, userId));
+      const providers = new Set(linked.map((row) => row.providerId));
+      if (!providers.has("coinpay")) return { linked: false, canDisconnect: false };
+      // Another way in: a password, a deliverable email (magic link), or a passkey.
+      const [user] = await db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      const deliverable =
+        Boolean(user) && !user!.email.toLowerCase().endsWith(COINPAY_PLACEHOLDER_SUFFIX);
+      const keys = await db
+        .select({ id: passkeys.id })
+        .from(passkeys)
+        .where(eq(passkeys.userId, userId))
+        .limit(1);
+      const other = providers.has("credential") || deliverable || keys.length > 0;
+      return { linked: true, canDisconnect: other };
+    },
+
+    async unlinkCoinpay(userId) {
+      await db
+        .delete(accounts)
+        .where(and(eq(accounts.userId, userId), eq(accounts.providerId, "coinpay")));
+    },
+
     async findAccountById(userId) {
       const rows = await db
         .select({

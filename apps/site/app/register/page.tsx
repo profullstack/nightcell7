@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageShell } from "../_components/page-shell";
 import { AuthForm } from "../_components/auth-form";
+import { CoinpaySignIn } from "../_components/coinpay-button";
 
 export const metadata: Metadata = {
   title: "Create an account",
@@ -14,6 +15,7 @@ export default function RegisterPage() {
       title="Create an account"
       lede="Free. Required for online multiplayer and to own an episode — not required to play the demo."
     >
+      <CoinpaySignIn next="/account" label="Sign up with CoinPay" />
       <AuthForm
         endpoint="/api/v1/auth/sign-up/email"
         submitLabel="Create account"

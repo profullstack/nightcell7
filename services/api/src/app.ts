@@ -295,6 +295,38 @@ export function createApp(deps: Dependencies) {
     });
   });
 
+  // ------------------------------------------------- Sign in with CoinPay
+  // Signing in and linking are Better Auth's (/api/v1/auth/sign-in/social and
+  // /link-social with provider "coinpay"); these two answer the account page.
+  const coinpayEnabled = Boolean(
+    deps.env.COINPAY_OAUTH_CLIENT_ID && deps.env.COINPAY_OAUTH_CLIENT_SECRET,
+  );
+  v1.get("/me/coinpay", async (c) => {
+    const account = c.get("account");
+    if (!account?.userId || !deps.repos.coinpayLinkStatus) {
+      return c.json({ enabled: coinpayEnabled, linked: false, canDisconnect: false });
+    }
+    return c.json({
+      enabled: coinpayEnabled,
+      ...(await deps.repos.coinpayLinkStatus(account.userId)),
+    });
+  });
+  v1.delete("/me/coinpay", async (c) => {
+    const account = requireAccount(c);
+    const userId = account.userId ?? "";
+    if (!deps.repos.coinpayLinkStatus || !deps.repos.unlinkCoinpay) throw notFound();
+    const status = await deps.repos.coinpayLinkStatus(userId);
+    if (!status.linked) throw badRequest("not_linked", "CoinPay is not connected.");
+    if (!status.canDisconnect) {
+      throw badRequest(
+        "only_sign_in",
+        "CoinPay is the only way into this account. Add a passkey first, then disconnect it.",
+      );
+    }
+    await deps.repos.unlinkCoinpay(userId);
+    return c.json({ ok: true });
+  });
+
   // -------------------------------------------------------------------- me
   v1.get("/me", (c) => {
     const account = c.get("account");
