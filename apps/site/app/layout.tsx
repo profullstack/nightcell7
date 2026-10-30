@@ -1,3 +1,4 @@
+import PwaRegistration from './PwaRegistration';
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
@@ -44,6 +45,7 @@ const shareVideo = `${ORIGIN}/media/trailer/${trailer.file}`;
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
+  manifest: '/manifest.webmanifest',
   metadataBase: new URL(ORIGIN),
   title: {
     default: "NIGHTCELL 7: FALSE DAWN",
@@ -108,6 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <PwaRegistration />
         <a href="#main" className="tag" style={{ position: "absolute", left: "-9999px" }}>
           Skip to content
         </a>
