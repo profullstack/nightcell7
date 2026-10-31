@@ -31,7 +31,9 @@ self.addEventListener("install", (event) =>
             }),
           );
         }
-      } catch {}
+      } catch {
+        // The app still installs when the optional offline cache cannot warm.
+      }
       await self.skipWaiting();
     })(),
   ),

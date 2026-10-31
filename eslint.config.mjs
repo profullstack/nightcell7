@@ -31,6 +31,10 @@ export default [
     languageOptions: { globals: { ...globals.browser } },
   },
   {
+    files: ["apps/site/public/sw.js"],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
+  {
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "error",
