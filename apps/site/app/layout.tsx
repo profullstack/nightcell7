@@ -1,4 +1,4 @@
-import PwaRegistration from './PwaRegistration';
+import PwaRegistration from "./PwaRegistration";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
@@ -44,7 +44,7 @@ const shareVideo = `${ORIGIN}/media/trailer/${trailer.file}`;
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  manifest: '/manifest.webmanifest',
+  manifest: "/manifest.webmanifest",
   metadataBase: new URL(ORIGIN),
   title: {
     default: "NIGHTCELL 7: FALSE DAWN",
@@ -134,11 +134,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         {/* Keep the game's fiction and photosensitivity notice outside the shared footer. */}
         <p className="disclaimer">
-          NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its
-          organizations, facilities, operations, and characters are fictional. The game does not
-          depict or endorse any real government, military operation, political movement, or
-          current event. It contains flashing lights and can be played with flash reduction
-          enabled.
+          NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its organizations,
+          facilities, operations, and characters are fictional. The game does not depict or endorse
+          any real government, military operation, political movement, or current event. It contains
+          flashing lights and can be played with flash reduction enabled.
         </p>
         {/* The shared template carries the site's links, badges, webring, and copyright. */}
         <Footer
@@ -150,7 +149,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             { label: "Support", href: "/support" },
             { label: "Status", href: "/status" },
             { label: "Press", href: "/press" },
-            { label: "Source", href: "https://github.com/profullstack/nightcell7", rel: "noopener noreferrer" },
+            {
+              label: "Source",
+              href: "https://github.com/profullstack/nightcell7",
+              rel: "noopener noreferrer",
+            },
             { label: "Privacy", href: "/privacy" },
             { label: "Terms", href: "/terms" },
             { label: "Refunds", href: "/refunds" },
