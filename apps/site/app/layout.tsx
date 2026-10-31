@@ -1,10 +1,9 @@
-import PwaRegistration from './PwaRegistration';
+import PwaRegistration from "./PwaRegistration";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Script from "next/script";
 import { Footer } from "@profullstack/footer/react";
 import { AdUnit } from "./_components/ad-unit";
-import { PitFooter } from "./_components/pit-footer";
 import captures from "../public/media/yard/manifest.json";
 import trailer from "../public/media/trailer/manifest.json";
 
@@ -45,7 +44,7 @@ const shareVideo = `${ORIGIN}/media/trailer/${trailer.file}`;
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  manifest: '/manifest.webmanifest',
+  manifest: "/manifest.webmanifest",
   metadataBase: new URL(ORIGIN),
   title: {
     default: "NIGHTCELL 7: FALSE DAWN",
@@ -133,42 +132,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AdUnit />
           {children}
         </main>
-        <footer className="footer">
-          <nav aria-label="Footer">
-            <a href="/downloads">Downloads</a>
-            <a href="/faq">FAQ</a>
-            <a href="/support">Support</a>
-            <a href="/status">Status</a>
-            <a href="/press">Press</a>
-            <a href="https://github.com/profullstack/nightcell7">Source</a>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-            <a href="/refunds">Refunds</a>
-            <a href="/licenses">Licenses</a>
-            <a href="/community-guidelines">Guidelines</a>
-          </nav>
-          {/* Required fiction disclaimer (PRD §32), with the photosensitivity notice. */}
-          <p className="disclaimer">
-            NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its
-            organizations, facilities, operations, and characters are fictional. The game does not
-            depict or endorse any real government, military operation, political movement, or
-            current event. It contains flashing lights and can be played with flash reduction
-            enabled.
-          </p>
-          <p className="footer__badges">
-            <a href="https://built.indie.pit.world/p/nightcell-7?ref=badge">
-              <img
-                src="https://built.indie.pit.world/badge/nightcell-7.svg"
-                alt="NIGHTCELL 7 on built.indie"
-                width="200"
-                height="44"
-              />
-            </a>
-          </p>
-        </footer>
-        {/* Copyright, the Profullstack webring and our Foundplay badge, from @profullstack/footer. */}
+        {/* Keep the game's fiction and photosensitivity notice outside the shared footer. */}
+        <p className="disclaimer">
+          NIGHTCELL 7 is a fictional work set in an invented near-future crisis. Its organizations,
+          facilities, operations, and characters are fictional. The game does not depict or endorse
+          any real government, military operation, political movement, or current event. It contains
+          flashing lights and can be played with flash reduction enabled.
+        </p>
+        {/* The shared template carries the site's links, badges, webring, and copyright. */}
         <Footer
           site="https://nightcell7.com/"
+          builtIndieHref="https://built.indie.pit.world/p/nightcell-7?ref=badge"
+          links={[
+            { label: "Downloads", href: "/downloads" },
+            { label: "FAQ", href: "/faq" },
+            { label: "Support", href: "/support" },
+            { label: "Status", href: "/status" },
+            { label: "Press", href: "/press" },
+            {
+              label: "Source",
+              href: "https://github.com/profullstack/nightcell7",
+              rel: "noopener noreferrer",
+            },
+            { label: "Privacy", href: "/privacy" },
+            { label: "Terms", href: "/terms" },
+            { label: "Refunds", href: "/refunds" },
+            { label: "Licenses", href: "/licenses" },
+            { label: "Guidelines", href: "/community-guidelines" },
+          ]}
           badges={[
             {
               href: "https://foundplay.io/games/nightcell-7-false-dawn?utm_source=badge",
@@ -185,7 +176,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           strategy="afterInteractive"
         />
         <Script src="https://crawlproof.com/ad.js" strategy="afterInteractive" />
-        <PitFooter />
       </body>
     </html>
   );
