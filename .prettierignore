@@ -5,6 +5,7 @@ out
 .next
 pnpm-lock.yaml
 public/assets
+apps/site/public/sw.js
 
 # drizzle-kit generated migration metadata — regenerated, never hand-edited
 packages/database/drizzle
