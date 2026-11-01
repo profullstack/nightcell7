@@ -63,7 +63,7 @@ export function ProfileForm() {
         defaultValues={values}
         errors={errors}
         idPrefix="account-"
-              importOpenProfile
+        importOpenProfile
       />
       <button className="button button--primary" type="submit" disabled={busy}>
         {busy ? "Saving…" : "Save details"}
