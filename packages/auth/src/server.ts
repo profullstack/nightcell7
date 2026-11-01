@@ -5,6 +5,7 @@ import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { passkey } from "@better-auth/passkey";
 import type { Database } from "@nightcell7/database";
 import { accounts, passkeys, sessions, users, verifications } from "@nightcell7/database";
+import { saveOpenProfileContact, type ProfileStore } from "@profullstack/profile";
 import { DISPLAY_NAME_MAX, DISPLAY_NAME_MIN } from "./index.js";
 
 /**
@@ -36,6 +37,8 @@ export interface AuthConfig {
    * not registered and the site hides its buttons.
    */
   coinpay?: CoinpaySignInConfig | null;
+  /** Shared private contact profile; used to import CoinPay's OpenProfile claim. */
+  profiles?: ProfileStore;
   /** Tests only: a Better Auth adapter in place of the Drizzle one over `db`. */
   adapter?: BetterAuthOptions["database"];
 }
@@ -99,6 +102,25 @@ export function coinpayProvider(config: CoinpaySignInConfig) {
       };
     },
   };
+}
+
+/**
+ * CoinPay's OpenProfile URL is also present in its verified OIDC ID token.
+ * Better Auth verifies that token against the discovered JWKS before its
+ * account database hooks run, so the claim can be used for this import.
+ */
+function openProfileUrlFromVerifiedToken(idToken: unknown): string | null {
+  if (typeof idToken !== "string") return null;
+  try {
+    const [, encoded] = idToken.split(".");
+    if (!encoded) return null;
+    const claims = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as {
+      openprofile_url?: unknown;
+    };
+    return typeof claims.openprofile_url === "string" ? claims.openprofile_url : null;
+  } catch {
+    return null;
+  }
 }
 
 export type AuthEmail =
@@ -179,7 +201,21 @@ export function createAuth(config: AuthConfig) {
       account: {
         // Never persist social-login provider tokens (see stripOAuthTokens).
         create: {
-          before: async (account) => ({ data: stripOAuthTokens(account) }),
+          before: async (account) => {
+            if (account.providerId === COINPAY_PROVIDER_ID && config.profiles) {
+              const openProfileUrl = openProfileUrlFromVerifiedToken(account.idToken);
+              if (openProfileUrl) {
+                await saveOpenProfileContact(config.profiles, account.userId, openProfileUrl).catch(
+                  (error) =>
+                    console.warn(
+                      "[auth] CoinPay OpenProfile import failed:",
+                      error instanceof Error ? error.message : error,
+                    ),
+                );
+              }
+            }
+            return { data: stripOAuthTokens(account) };
+          },
         },
         update: {
           before: async (account) => ({ data: stripOAuthTokens(account) }),

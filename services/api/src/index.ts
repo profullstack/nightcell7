@@ -37,6 +37,7 @@ const health = new HealthReporter("api", env.BUILD_VERSION, PROTOCOL_VERSION);
 
 const redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
 const database = getDatabase({ url: env.DATABASE_URL });
+const profiles = createProfileStore(getPool(), { keyType: "text" });
 
 const queues = new Map<string, Queue>();
 function queueFor(name: string): Queue {
@@ -81,6 +82,7 @@ const auth = createAuth({
           clientSecret: env.COINPAY_OAUTH_CLIENT_SECRET,
         }
       : null,
+  profiles,
   // Verification and reset mail goes through the same queue as everything
   // else, so a mail outage delays sign-ups rather than failing them outright.
   sendEmail: async (job) => {
@@ -117,7 +119,7 @@ const app = createApp({
   health,
   repos: createRepositories(database),
   // user_profiles, created by the drizzle migration 0002_profile_fields.
-  profiles: createProfileStore(getPool(), { keyType: "text" }),
+  profiles,
   credits,
   rateLimiter: new RedisRateLimiter(redis),
   coinpay,
