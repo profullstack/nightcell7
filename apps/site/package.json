@@ -15,7 +15,7 @@
     "@nightcell7/game-core": "workspace:*",
     "@nightcell7/ui": "workspace:*",
     "@profullstack/footer": "latest",
-    "@profullstack/profile": "0.1.6",
+    "@profullstack/profile": "0.1.7",
     "better-auth": "1.7.13",
     "next": "16.4.3",
     "react": "^19.3.1",

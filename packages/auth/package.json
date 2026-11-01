@@ -18,6 +18,7 @@
     "@nightcell7/database": "workspace:*",
     "@simplewebauthn/server": "13.3.3",
     "better-auth": "^1.7.13",
+    "@profullstack/profile": "0.1.7",
     "zod": "^4.6.7"
   }
 }

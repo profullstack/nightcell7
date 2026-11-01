@@ -23,7 +23,7 @@
     "@nightcell7/multiplayer-protocol": "workspace:*",
     "@nightcell7/observability": "workspace:*",
     "@profullstack/affiliates": "0.3.0",
-    "@profullstack/profile": "0.1.6",
+    "@profullstack/profile": "0.1.7",
     "@profullstack/redeem-credits": "0.2.0",
     "bullmq": "^6.4.2",
     "disposable-email-domains": "1.0.62",
