@@ -62,7 +62,7 @@
         "@nightcell7/game-core": "workspace:*",
         "@nightcell7/ui": "workspace:*",
         "@profullstack/footer": "latest",
-        "@profullstack/profile": "0.1.7",
+        "@profullstack/profile": "0.1.8",
         "better-auth": "1.7.13",
         "next": "16.4.3",
         "react": "^19.3.1",
@@ -80,7 +80,7 @@
       "dependencies": {
         "@better-auth/passkey": "1.7.13",
         "@nightcell7/database": "workspace:*",
-        "@profullstack/profile": "0.1.7",
+        "@profullstack/profile": "0.1.8",
         "@simplewebauthn/server": "13.3.3",
         "better-auth": "^1.7.13",
         "zod": "^4.6.7",
@@ -186,7 +186,7 @@
         "@nightcell7/multiplayer-protocol": "workspace:*",
         "@nightcell7/observability": "workspace:*",
         "@profullstack/affiliates": "0.3.0",
-        "@profullstack/profile": "0.1.7",
+        "@profullstack/profile": "0.1.8",
         "@profullstack/redeem-credits": "0.2.0",
         "bullmq": "^6.4.2",
         "disposable-email-domains": "1.0.62",
@@ -893,7 +893,7 @@
 
     "@profullstack/openprofile": ["@profullstack/openprofile@0.2.0", "", {}, "sha512-cdFsBbfRXurvy5KqHDNcKXxurK2s/YlfVgnILFRpVl2hq3860rExqDee8IfsFGxw5cPdqGv2fxUxtek1Xy2U5Q=="],
 
-    "@profullstack/profile": ["@profullstack/profile@0.1.7", "", { "dependencies": { "@profullstack/openprofile": "^0.2.0" }, "peerDependencies": { "@libsql/client": ">=0.6.0", "postgres": "^3.4.0", "react": ">=18" }, "optionalPeers": ["@libsql/client", "postgres", "react"], "bin": { "profile": "src/cli.js" } }, "sha512-N7UkypkkY2JkSBKzmdmyy6+DCoxI048qUZQksEjSRwSIyy4mjU9H1qW4yhZD+LJBhTEupgJv//Uxwhiy2FuGmA=="],
+    "@profullstack/profile": ["@profullstack/profile@0.1.8", "", { "dependencies": { "@profullstack/openprofile": "^0.2.0" }, "peerDependencies": { "@libsql/client": ">=0.6.0", "postgres": "^3.4.0", "react": ">=18" }, "optionalPeers": ["@libsql/client", "postgres", "react"], "bin": { "profile": "src/cli.js" } }, "sha512-MQ/AGGM++NZEbjMglRlEvjCrmsL46CXDz2GKb510eMBEKUik1cwix9ag20gakYrrVCaB5mNcNCMYon53vwDTfw=="],
 
     "@profullstack/redeem-credits": ["@profullstack/redeem-credits@0.2.0", "", { "bin": { "redeem-credits": "dist/cli.js" } }, "sha512-JLowb7mWYfouIK7O522tuPPhvLjQjhdEfm6g3xEYrlNLGzLhrIADDhrYldBlGHfiVBWUFX7wefLuCSLF9fnyog=="],
 
