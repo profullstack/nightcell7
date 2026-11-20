@@ -32,9 +32,15 @@ jobs:
 
       - name: Determine version
         id: version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            V="${{ github.event.inputs.version }}"
+          if [ -n "$INPUT_VERSION" ]; then
+            if [[ ! "$INPUT_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "::error::Invalid version input (expected e.g. 0.2.0)"
+              exit 1
+            fi
+            V="$INPUT_VERSION"
           else
             V="${GITHUB_REF#refs/tags/}"
           fi
@@ -44,10 +50,17 @@ jobs:
       # step fails loudly if the release is incomplete rather than publishing a
       # manifest that points at a missing or mismatched binary.
       - name: Generate
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          MANAGERS: ${{ github.event.inputs.managers || 'all' }}
         run: |
+          if [[ ! "$MANAGERS" =~ ^[A-Za-z0-9,\ -]+$ ]]; then
+            echo "::error::Invalid managers input (expected e.g. homebrew,scoop or all)"
+            exit 1
+          fi
           node tools/release/package-managers.mjs \
-            --version "${{ steps.version.outputs.version }}" \
-            --manager "${{ github.event.inputs.managers || 'all' }}" \
+            --version "$VERSION" \
+            --manager "$MANAGERS" \
             --out dist/packaging
 
       - name: Show what was generated
