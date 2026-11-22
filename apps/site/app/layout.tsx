@@ -114,7 +114,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="module"
           data-webmcp=""
           src="https://cdn.jsdelivr.net/npm/@profullstack/webmcp@0/src/embed.js"
-          data-pages={JSON.stringify({ downloads: "/downloads", multiplayer: "/multiplayer", episodes: "/episodes", characters: "/characters", news: "/news", faq: "/faq", system_requirements: "/system-requirements", support: "/support" })}
+          data-pages={JSON.stringify({
+            downloads: "/downloads",
+            multiplayer: "/multiplayer",
+            episodes: "/episodes",
+            characters: "/characters",
+            news: "/news",
+            faq: "/faq",
+            system_requirements: "/system-requirements",
+            support: "/support",
+          })}
         />
       </head>
       <body>
