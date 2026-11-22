@@ -28,7 +28,10 @@ export function createCrawlGate(env: NodeJS.ProcessEnv = process.env): CrawlGate
     // x402-gateway 0.13 sends no User-Agent of its own; name the site on its
     // CoinPay calls (x402 verify/settle, checkout sessions) through its fetch hook.
     fetch: (url: string | URL | Request, init: RequestInit = {}) =>
-      fetch(url, { ...init, headers: { ...headersObject(init.headers), "user-agent": crawlUserAgent(siteUrl) } }),
+      fetch(url, {
+        ...init,
+        headers: { ...headersObject(init.headers), "user-agent": crawlUserAgent(siteUrl) },
+      }),
     payTo,
     contact: "mailto:anthony@profullstack.com",
     // Health checks, the API (game clients, CoinPay webhooks, matchmaking),
