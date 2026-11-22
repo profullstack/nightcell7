@@ -111,7 +111,9 @@ function crawlUserAgent(siteUrl: string): string {
   let host = "nightcell7.com";
   try {
     host = new URL(siteUrl).hostname;
-  } catch {}
+  } catch {
+    // SITE_URL unparsable: keep the default host.
+  }
   const version = process.env["npm_package_version"];
   return `${host}${version ? `/${version}` : ""} (+${siteUrl})`;
 }
