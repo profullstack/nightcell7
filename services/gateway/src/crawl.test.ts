@@ -86,6 +86,13 @@ describe("crawl gate", () => {
     expect(await res.text()).toContain("site");
   });
 
+  it("does not let a forged session cookie exempt a training crawler (x402-gateway 0.18.3 sessionCookie)", async () => {
+    const res = await fetch(`${origin}/`, {
+      headers: { "user-agent": GPTBOT, accept: "application/json", "x-real-ip": "203.0.113.10", cookie: "nc7_session=forged" },
+    });
+    expect(res.status).toBe(402);
+  });
+
   it("never charges the health checks or the API", async () => {
     const ready = await fetch(`${origin}/health/ready`, { headers: { "user-agent": GPTBOT } });
     expect(ready.status).not.toBe(402);
