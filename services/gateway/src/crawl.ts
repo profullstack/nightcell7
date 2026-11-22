@@ -25,6 +25,13 @@ export function createCrawlGate(env: NodeJS.ProcessEnv = process.env): CrawlGate
     siteUrl,
     siteName: "NIGHTCELL 7",
     coinpay: { apiKey },
+    // x402-gateway 0.13 sends no User-Agent of its own; name the site on its
+    // CoinPay calls (x402 verify/settle, checkout sessions) through its fetch hook.
+    fetch: (url: string | URL | Request, init: RequestInit = {}) =>
+      fetch(url, {
+        ...init,
+        headers: { ...headersObject(init.headers), "user-agent": crawlUserAgent(siteUrl) },
+      }),
     payTo,
     contact: "mailto:anthony@profullstack.com",
     // Health checks, the API (game clients, CoinPay webhooks, matchmaking),
@@ -97,4 +104,23 @@ export async function answerWith(res: http.ServerResponse, answer: Response): Pr
   if (cookies.length) headers["set-cookie"] = cookies;
   res.writeHead(answer.status, headers);
   res.end(Buffer.from(await answer.arrayBuffer()));
+}
+
+/** `<host>[/<version>] (+<siteUrl>)`, the User-Agent CoinPay sees from the crawl door. */
+function crawlUserAgent(siteUrl: string): string {
+  let host = "nightcell7.com";
+  try {
+    host = new URL(siteUrl).hostname;
+  } catch {
+    // SITE_URL unparsable: keep the default host.
+  }
+  const version = process.env["npm_package_version"];
+  return `${host}${version ? `/${version}` : ""} (+${siteUrl})`;
+}
+
+function headersObject(headers: RequestInit["headers"]): Record<string, string> {
+  if (!headers) return {};
+  if (headers instanceof Headers) return Object.fromEntries(headers.entries());
+  if (Array.isArray(headers)) return Object.fromEntries(headers);
+  return headers as Record<string, string>;
 }
