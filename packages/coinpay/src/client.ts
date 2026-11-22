@@ -28,6 +28,14 @@ export const COINPAY_DEFAULT_ORIGIN = "https://coinpayportal.com";
 export const PROPERTY = "nightcell7.com";
 export const PAYPAL_METHOD = "paypal";
 
+/**
+ * The User-Agent on every CoinPay call. Every Profullstack app shares one host,
+ * so the runtime default (`Bun/1.4.4`) made them one caller in CoinPay's logs
+ * and throttle; this names us. `userAgent` in the config overrides it.
+ */
+const APP_VERSION = (typeof process !== "undefined" && process.env["npm_package_version"]) || "";
+export const COINPAY_USER_AGENT = `nightcell7.com${APP_VERSION ? `/${APP_VERSION}` : ""} (+https://nightcell7.com)`;
+
 /** CoinPay's `blockchain` values, with the names a buyer recognises. */
 export const COIN_LABELS: Readonly<Record<string, string>> = {
   BTC: "Bitcoin",
@@ -76,6 +84,8 @@ export interface CoinpayConfig {
   /** "auto" feature-detects hosted sessions; "off" never uses them. */
   sessions?: "auto" | "on" | "off";
   fetchImpl?: typeof fetch;
+  /** Sent as User-Agent on every call; defaults to COINPAY_USER_AGENT. */
+  userAgent?: string;
   timeoutMs?: number;
   /** Payment window, 15-120 minutes. */
   expiresInMinutes?: number;
@@ -389,6 +399,7 @@ export class CoinpayClient {
           authorization: `Bearer ${this.config.apiKey}`,
           "content-type": "application/json",
           accept: "application/json",
+          "user-agent": this.config.userAgent ?? COINPAY_USER_AGENT,
           ...init.headers,
         },
         body: init.body,
