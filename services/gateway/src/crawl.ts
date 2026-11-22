@@ -14,7 +14,7 @@ export interface CrawlGate {
   handle: (request: Request) => Promise<Response | null>;
 }
 
-const SESSION_COOKIE = /(?:^|;\s*)nc7_session=/;
+const SESSION_COOKIE = "nc7_session";
 
 export function createCrawlGate(env: NodeJS.ProcessEnv = process.env): CrawlGate | null {
   const apiKey = env["COINPAY_X402_KEY"] ?? "";
@@ -50,7 +50,10 @@ export function createCrawlGate(env: NodeJS.ProcessEnv = process.env): CrawlGate
       // Invite links are handed to people; never charge or block them.
       "/i/",
     ],
-    exempt: (request: Request) => SESSION_COOKIE.test(request.headers.get("cookie") ?? ""),
+    // A session cookie that is merely present is a hint, never a pass (x402-gateway
+    // 0.18.3): it spares a signed-in reader's odd browser string, but GPTBot with a
+    // made-up cookie is still charged. It used to be `exempt`, which let it read free.
+    sessionCookie: SESSION_COOKIE,
   });
 }
 
